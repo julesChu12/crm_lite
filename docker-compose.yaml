@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:14
+    container_name: crm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: crm_db
+      POSTGRES_USER: crm_user
+      POSTGRES_PASSWORD: crm_pass
+    volumes:
+      - ./tmp/pg_data:/var/lib/postgresql/data
+    restart: always
+
+  redis:
+    image: redis:6-alpine
+    container_name: crm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./tmp/redis_data:/data
+    restart: always
+
+  adminer:
+    image: adminer
+    container_name: crm-adminer
+    ports:
+      - "8081:8080"
+    restart: always
+networks:
+  crm-network:
+    driver: bridge

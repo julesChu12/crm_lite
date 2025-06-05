@@ -1,0 +1,7 @@
+.vscode/
+.idea/
+.DS_Store
+.env
+tmp/
+path/
+.air.toml

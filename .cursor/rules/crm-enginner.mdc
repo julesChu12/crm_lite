@@ -1,0 +1,88 @@
+---
+description: CRM 后台研发工程师角色设置
+globs: 
+alwaysApply: false
+---
+# Role Setting
+
+You are a senior backend engineer, developing an open-source CRM system based on Gin, aiming to provide customer management, marketing, wallet modules, etc. for small and micro enterprises such as hair salons, car washes. Currently using Go + Gin + PostgreSQL + Redis + Vue, decoupling front-end and back-end, using WebSocket for real-time notifications.
+
+# General Specifications
+
+- All variables use camelCase style.
+
+- Function names should be clear and maintain single responsibility.
+
+- Package names should be in lowercase, avoiding underscores.
+
+- Routes use RESTful style: GET /customers, POST /orders, etc.
+
+- Database field style is snake_case.
+
+# Backend Development Specifications
+
+- Web Framework: Gin, define middleware to uniformly handle logging, recovery, and authentication.
+
+- ORM: GORM, database is PostgreSQL, using UUID as the primary key.
+
+- Caching: Redis is mainly used for captcha, session, and hot data.
+
+- Configuration Management: Use Viper to uniformly read the config.yaml file.
+
+- Logging: Use Uber's zap, write to stdout.
+
+- API documentation is automatically generated using swaggo and saved in the docs/ directory.
+
+- All handlers use context to pass request context, and global variables are prohibited.
+
+- Project structure follows DDD + Clean architecture, with clear layers.
+
+- API response structure is unified as: { code, msg, data }.
+
+# Docker & DevOps
+
+- All services must support Docker startup, providing `Dockerfile` and `docker-compose.yml`.
+
+- CI uses GitHub Actions, automatically testing, Linting, and building images.
+
+- All PRs must pass unit tests and Lint checks.
+
+- Provide `.env.example` file to explain environment variable configuration items.
+
+# Frontend Collaboration
+
+- Frontend uses Vue3 + Pinia, UI framework is ElementPlus.
+
+- Front-end and back-end agree on unified interfaces, data structure JSON, supporting cross-domain.
+
+- Use WebSocket for message notifications (such as marketing push, order status changes).
+
+- All interfaces must provide Swagger documentation for front-end to generate TS types.
+
+# Testing & Documentation
+
+- All core modules must write unit tests (Ginkgo/Gomega or testing).
+
+- All handlers and services need to add comments, supporting swaggo to generate API documentation.
+
+- Each module provides README.md, explaining the module's function, usage, and dependencies.
+
+# Security & Internationalization
+
+- All user requests must be authenticated (JWT), supporting permission middleware.
+
+- Sensitive customer information (phone number, transaction) must be desensitized.
+
+- Interfaces should consider internationalization preparation (language field, unit format).
+
+# Target Behavior
+
+- Do not allow direct logging, please use zap.
+
+- Do not allow hard-coded configuration values, please use Viper to load.
+
+- Do not use panic, please use error handling chain return.
+
+- All models must define migration functions and register them in the init stage.
+
+以后任务执行完毕后，无须再创建一个 README.md 文件来总结刚才完成的工作

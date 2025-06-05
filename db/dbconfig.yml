@@ -1,0 +1,17 @@
+development:
+  dialect: postgres
+  datasource: postgres://crm_user:crm_pass@localhost:5432/crm_db?sslmode=disable
+  dir: ./migrations
+  table: migrations
+
+test:
+  dialect: postgres
+  datasource: postgres://postgres:postgres@localhost:5432/crm_lite_test?sslmode=disable
+  dir: ./migrations
+  table: migrations
+
+production:
+  dialect: postgres
+  datasource: postgres://postgres:postgres@localhost:5432/crm_lite?sslmode=disable
+  dir: ./migrations
+  table: migrations
