@@ -1,0 +1,17 @@
+mode: set
+crm_lite/internal/resource/manager.go:38.28,42.2 1 1
+crm_lite/internal/resource/manager.go:45.62,49.37 3 1
+crm_lite/internal/resource/manager.go:49.37,51.3 1 1
+crm_lite/internal/resource/manager.go:52.2,54.12 3 1
+crm_lite/internal/resource/manager.go:58.54,62.28 3 1
+crm_lite/internal/resource/manager.go:62.28,63.50 1 1
+crm_lite/internal/resource/manager.go:63.50,65.4 1 1
+crm_lite/internal/resource/manager.go:67.2,67.12 1 1
+crm_lite/internal/resource/manager.go:71.55,75.41 3 1
+crm_lite/internal/resource/manager.go:75.41,77.45 2 1
+crm_lite/internal/resource/manager.go:77.45,79.4 1 1
+crm_lite/internal/resource/manager.go:81.2,81.12 1 1
+crm_lite/internal/resource/manager.go:88.63,92.31 3 1
+crm_lite/internal/resource/manager.go:92.31,93.28 1 1
+crm_lite/internal/resource/manager.go:93.28,95.4 1 1
+crm_lite/internal/resource/manager.go:97.2,98.72 2 1

@@ -1,20 +1,20 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS activities (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    customer_id UUID NOT NULL, -- 逻辑外键 -> customers.id
-    contact_id UUID, -- 具体联系人 (逻辑外键 -> contacts.id)
-    type VARCHAR(20) CHECK (type IN ('call', 'meeting', 'email', 'visit', 'follow_up', 'complaint', 'feedback')) NOT NULL,
+    id VARCHAR(36) PRIMARY KEY,
+    customer_id VARCHAR(36) NOT NULL,
+    contact_id VARCHAR(36) COMMENT '具体联系人',
+    type VARCHAR(20) NOT NULL COMMENT '活动类型: call, meeting, email, visit, follow_up, complaint, feedback',
     title VARCHAR(200) NOT NULL,
     content TEXT,
-    status VARCHAR(20) CHECK (status IN ('planned', 'in_progress', 'completed', 'cancelled')) DEFAULT 'planned',
-    priority VARCHAR(10) CHECK (priority IN ('low', 'medium', 'high', 'urgent')) DEFAULT 'medium',
-    scheduled_at TIMESTAMP WITH TIME ZONE,
-    completed_at TIMESTAMP WITH TIME ZONE,
-    assigned_to UUID, -- 负责人 (逻辑外键 -> admin_users.id)
-    created_by UUID, -- 创建人 (逻辑外键 -> admin_users.id)
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE
+    status VARCHAR(20) DEFAULT 'planned' COMMENT '活动状态: planned, in_progress, completed, cancelled',
+    priority VARCHAR(10) DEFAULT 'medium' COMMENT '优先级: low, medium, high, urgent',
+    scheduled_at DATETIME(6) NULL,
+    completed_at DATETIME(6) NULL,
+    assigned_to VARCHAR(36) COMMENT '负责人',
+    created_by VARCHAR(36) COMMENT '创建人',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME(6) NULL
 );
 
 -- 创建索引

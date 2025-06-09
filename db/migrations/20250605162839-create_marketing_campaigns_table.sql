@@ -1,26 +1,26 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS marketing_campaigns (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id VARCHAR(36) PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
-    type VARCHAR(20) CHECK (type IN ('sms', 'email', 'push_notification', 'wechat', 'call')) NOT NULL,
-    status VARCHAR(20) CHECK (status IN ('draft', 'scheduled', 'active', 'paused', 'completed', 'archived')) DEFAULT 'draft',
-    target_tags JSONB DEFAULT '[]', -- 目标客户标签
-    target_segment_id UUID, -- 目标客户分群ID（如果有客户分群功能）
-    content_template_id UUID, -- 内容模板ID（如果有模板功能）
-    content TEXT NOT NULL, -- 活动具体内容或模板变量的JSON数据
-    start_time TIMESTAMP WITH TIME ZONE,
-    end_time TIMESTAMP WITH TIME ZONE,
-    actual_start_time TIMESTAMP WITH TIME ZONE,
-    actual_end_time TIMESTAMP WITH TIME ZONE,
-    target_count INTEGER DEFAULT 0, -- 目标客户数量
-    sent_count INTEGER DEFAULT 0, -- 已发送数量
-    success_count INTEGER DEFAULT 0, -- 成功数量
-    click_count INTEGER DEFAULT 0, -- 点击数量
-    created_by UUID, -- 创建人 (逻辑外键 -> admin_users.id)
-    updated_by UUID, -- 更新人 (逻辑外键 -> admin_users.id)
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE
+    type VARCHAR(20) NOT NULL COMMENT '营销类型: sms, email, push_notification, wechat, call',
+    status VARCHAR(20) DEFAULT 'draft' COMMENT '状态: draft, scheduled, active, paused, completed, archived',
+    target_tags JSON COMMENT '目标客户标签',
+    target_segment_id VARCHAR(36) COMMENT '目标客户分群ID（如果有客户分群功能）',
+    content_template_id VARCHAR(36) COMMENT '内容模板ID（如果有模板功能）',
+    content TEXT NOT NULL COMMENT '活动具体内容或模板变量的JSON数据',
+    start_time DATETIME(6) NULL,
+    end_time DATETIME(6) NULL,
+    actual_start_time DATETIME(6) NULL,
+    actual_end_time DATETIME(6) NULL,
+    target_count INTEGER DEFAULT 0 COMMENT '目标客户数量',
+    sent_count INTEGER DEFAULT 0 COMMENT '已发送数量',
+    success_count INTEGER DEFAULT 0 COMMENT '成功数量',
+    click_count INTEGER DEFAULT 0 COMMENT '点击数量',
+    created_by VARCHAR(36) COMMENT '创建人',
+    updated_by VARCHAR(36) COMMENT '更新人',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME(6) NULL
 );
 
 -- 创建索引
@@ -31,7 +31,6 @@ CREATE INDEX idx_marketing_campaigns_start_time ON marketing_campaigns(start_tim
 CREATE INDEX idx_marketing_campaigns_end_time ON marketing_campaigns(end_time);
 CREATE INDEX idx_marketing_campaigns_created_by ON marketing_campaigns(created_by);
 CREATE INDEX idx_marketing_campaigns_deleted_at ON marketing_campaigns(deleted_at);
-CREATE INDEX idx_marketing_campaigns_target_tags ON marketing_campaigns USING GIN(target_tags);
 
 -- +migrate Down
 DROP TABLE IF EXISTS marketing_campaigns;

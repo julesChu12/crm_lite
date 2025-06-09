@@ -9,6 +9,7 @@ server:
   timeout: 30s               # HTTP 读写超时时间，防止慢连接占用资源
   wsAddr: ""                 # WebSocket 地址 (ws://)，留空则不启用
   wssAddr: ""                # 安全WebSocket 地址 (wss://)，留空则不启用
+  pidFile: "server.pid"      # PID文件路径
   tls:                       # HTTPS/WSS 证书配置
     certFile: ""             # SSL 证书文件路径，留空则使用 HTTP
     keyFile: ""              # SSL 私钥文件路径
@@ -18,12 +19,17 @@ logger:
   dir: "./log"               # 日志文件存储目录
   level: 0                   # 日志级别: 0=debug, 1=info, 2=warn, 3=error, 4=panic, 5=fatal
   lineNum: true              # 是否在日志中显示代码行号，便于调试
+  filename: "app.log"        # 日志文件名
+  maxSize: 100               # 单文件最大大小(MB)
+  maxAge: 7                  # 保存天数
+  maxBackups: 3              # 最大备份数
+  compress: false            # 是否压缩
 
 # ==================== 数据库配置 ====================
 db:
-  driver: postgres           # 数据库驱动: postgres, mysql, sqlite3
+  driver: mysql              # 数据库驱动: postgres, mysql, sqlite3
   host: "localhost"          # 数据库服务器地址
-  port: 5432                 # 数据库端口 (PostgreSQL默认5432, MySQL默认3306)
+  port: 3306                 # 数据库端口 (PostgreSQL默认5432, MySQL默认3306)
   user: "crm_user"           # 数据库用户名
   password: "crm_pass"       # 数据库密码
   dbname: "crm_db"           # 数据库名称

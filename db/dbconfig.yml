@@ -1,17 +1,17 @@
 development:
-  dialect: postgres
-  datasource: postgres://crm_user:crm_pass@localhost:5432/crm_db?sslmode=disable
+  dialect: mysql
+  datasource: crm_user:crm_pass@tcp(localhost:3306)/crm_db?parseTime=true
   dir: ./migrations
   table: migrations
 
 test:
-  dialect: postgres
-  datasource: postgres://postgres:postgres@localhost:5432/crm_lite_test?sslmode=disable
+  dialect: mysql
+  datasource: root:root_password@tcp(localhost:3306)/crm_lite_test?parseTime=true
   dir: ./migrations
   table: migrations
 
 production:
-  dialect: postgres
-  datasource: postgres://postgres:postgres@localhost:5432/crm_lite?sslmode=disable
+  dialect: mysql
+  datasource: crm_user:crm_pass@tcp(localhost:3306)/crm_db?parseTime=true
   dir: ./migrations
   table: migrations

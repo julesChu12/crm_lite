@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"crm_lite/internal/common/logger"
-
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +11,6 @@ var migrateCmd = &cobra.Command{
 	Short: "Run database migrations",
 	Long:  `Run database migrations to set up or update the database schema.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.Log.Info("Running database migrations...")
 
 		// TODO: 实际迁移逻辑
 		// 1. 连接数据库

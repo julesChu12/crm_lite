@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"crm_lite/pkg/config"
+	"crm_lite/internal/core/config"
 	"fmt"
 	"os"
 	"strings"

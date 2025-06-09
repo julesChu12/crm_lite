@@ -1,16 +1,16 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS wallet_transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    wallet_id UUID NOT NULL, -- 逻辑外键 -> wallets.id
-    type VARCHAR(20) CHECK (type IN ('recharge', 'consume', 'refund', 'freeze', 'unfreeze', 'correction')) NOT NULL,
-    amount DECIMAL(10,2) NOT NULL, -- 正数表示增加，负数表示减少
-    balance_before DECIMAL(10,2) NOT NULL, -- 交易前余额
-    balance_after DECIMAL(10,2) NOT NULL, -- 交易后余额
-    source VARCHAR(50) NOT NULL, -- 交易来源：manual, order, refund, system等
-    related_id UUID, -- 关联ID（如订单ID、退款ID等）
+    id VARCHAR(36) PRIMARY KEY,
+    wallet_id VARCHAR(36) NOT NULL,
+    type VARCHAR(20) NOT NULL COMMENT '交易类型: recharge, consume, refund, freeze, unfreeze, correction',
+    amount DECIMAL(10,2) NOT NULL COMMENT '正数表示增加，负数表示减少',
+    balance_before DECIMAL(10,2) NOT NULL COMMENT '交易前余额',
+    balance_after DECIMAL(10,2) NOT NULL COMMENT '交易后余额',
+    source VARCHAR(50) NOT NULL COMMENT '交易来源：manual, order, refund, system等',
+    related_id VARCHAR(36) COMMENT '关联ID（如订单ID、退款ID等）',
     remark TEXT,
-    operator_id UUID, -- 操作人员 (逻辑外键 -> admin_users.id)
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    operator_id VARCHAR(36) COMMENT '操作人员',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 创建索引

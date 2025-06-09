@@ -1,15 +1,16 @@
 services:
-  postgres:
-    image: postgres:14
-    container_name: crm-postgres
+  mariadb:
+    image: mariadb:10.8
+    container_name: crm-mariadb
     ports:
-      - "5432:5432"
+      - "3306:3306"
     environment:
-      POSTGRES_DB: crm_db
-      POSTGRES_USER: crm_user
-      POSTGRES_PASSWORD: crm_pass
+      MARIADB_ROOT_PASSWORD: root_password
+      MARIADB_DATABASE: crm_db
+      MARIADB_USER: crm_user
+      MARIADB_PASSWORD: crm_pass
     volumes:
-      - ./tmp/pg_data:/var/lib/postgresql/data
+      - ./tmp/mariadb_data:/var/lib/mysql
     restart: always
 
   redis:
@@ -21,12 +22,16 @@ services:
       - ./tmp/redis_data:/data
     restart: always
 
-  adminer:
-    image: adminer
-    container_name: crm-adminer
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: crm-phpmyadmin
     ports:
-      - "8081:8080"
+      - "8081:80"
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_PORT=3306
     restart: always
+
 networks:
   crm-network:
     driver: bridge

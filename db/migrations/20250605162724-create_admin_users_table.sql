@@ -1,28 +1,23 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS admin_users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username VARCHAR(50) NOT NULL UNIQUE,
-    email VARCHAR(100) NOT NULL UNIQUE,
+    id VARCHAR(36) PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     real_name VARCHAR(50),
     phone VARCHAR(20),
     avatar VARCHAR(255),
-    is_active BOOLEAN DEFAULT TRUE,
-    last_login_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP WITH TIME ZONE
+    is_active TINYINT(1) DEFAULT 1,
+    last_login_at DATETIME(6) NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted_at DATETIME(6) NULL,
+    UNIQUE KEY (username),
+    UNIQUE KEY (email)
 );
 
 -- 创建索引
-CREATE INDEX idx_admin_users_username ON admin_users(username);
-CREATE INDEX idx_admin_users_email ON admin_users(email);
-CREATE INDEX idx_admin_users_is_active ON admin_users(is_active);
 CREATE INDEX idx_admin_users_deleted_at ON admin_users(deleted_at);
 
--- 创建管理员用户角色关联表
-
-
 -- +migrate Down
-
 DROP TABLE IF EXISTS admin_users;

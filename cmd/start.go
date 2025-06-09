@@ -1,7 +1,13 @@
 package cmd
 
 import (
-	"github.com/gin-gonic/gin"
+	"fmt"
+	"os"
+
+	"crm_lite/internal/bootstrap"
+	"crm_lite/internal/routes"
+	"crm_lite/internal/startup"
+
 	"github.com/spf13/cobra"
 )
 
@@ -11,11 +17,19 @@ func init() {
 
 var startCmd = &cobra.Command{
 	Use:   "start",
-	Short: "Start the server",
-	Long:  `Start the server`,
-}
+	Short: "Start the crm_lite server",
+	Run: func(cmd *cobra.Command, args []string) {
+		// 1. 引导程序, 初始化资源
+		resManager, cleanup, err := bootstrap.Bootstrap()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to bootstrap application: %v\n", err)
+			os.Exit(1)
+		}
 
-func start() {
-	router := gin.Default()
-	router.Run(":8080")
+		// 2. 初始化路由，传入资源管理器
+		router := routes.NewRouter(resManager)
+
+		// 3. 启动服务
+		startup.Start(router, cleanup)
+	},
 }
