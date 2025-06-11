@@ -1,74 +1,68 @@
+# ===================================================================
+#                      TESTING ENVIRONMENT
+#
+# IMPORTANT: This configuration is for the test environment.
+# Please ensure the database specified here is a dedicated test database
+# as tests may truncate or delete data.
+# ===================================================================
+
 # CRM Lite 开发环境配置文件
 # 本文件包含了开发环境的完整配置，包括服务器、数据库、缓存、认证等模块
 
 # ==================== 服务器配置 ====================
 server:
-  mode: debug                 # 运行模式: debug(开发), release(生产), test(测试)
-  host: "0.0.0.0"            # 监听地址: 0.0.0.0 表示监听所有网络接口
-  port: 8080                 # HTTP 服务端口
-  timeout: 30s               # HTTP 读写超时时间，防止慢连接占用资源
-  wsAddr: ""                 # WebSocket 地址 (ws://)，留空则不启用
-  wssAddr: ""                # 安全WebSocket 地址 (wss://)，留空则不启用
-  pidFile: "server.pid"      # PID文件路径
-  tls:                       # HTTPS/WSS 证书配置
-    certFile: ""             # SSL 证书文件路径，留空则使用 HTTP
-    keyFile: ""              # SSL 私钥文件路径
+  mode: test
+  host: "127.0.0.1"
+  port: 8081 # Use a different port for testing to avoid conflicts
+  timeout: 30s
+  pidFile: "server_test.pid"
 
 # ==================== 日志配置 ====================
 logger:
-  dir: "./log"               # 日志文件存储目录
-  level: 0                   # 日志级别: 0=debug, 1=info, 2=warn, 3=error, 4=panic, 5=fatal
-  lineNum: true              # 是否在日志中显示代码行号，便于调试
-  filename: "app.log"        # 日志文件名
-  maxSize: 100               # 单文件最大大小(MB)
-  maxAge: 7                  # 保存天数
-  maxBackups: 3              # 最大备份数
-  compress: false            # 是否压缩
+  dir: "logs"
+  filename: "test.log"
+  level: -1 # Debug level
+  lineNum: true
+  maxSize: 10
+  maxAge: 3
+  maxBackups: 5
+  compress: false
 
 # ==================== 数据库配置 ====================
 db:
-  driver: mysql              # 数据库驱动: postgres, mysql, sqlite3
-  host: "localhost"          # 数据库服务器地址
-  port: 3306                 # 数据库端口 (PostgreSQL默认5432, MySQL默认3306)
-  user: "crm_user"           # 数据库用户名
-  password: "crm_pass"       # 数据库密码
-  dbname: "crm_db"           # 数据库名称
-  sslmode: disable           # PostgreSQL SSL模式: disable, require, verify-ca, verify-full
-  timeZone: "Asia/Shanghai"  # 数据库时区设置
-  maxOpenConns: 100          # 最大活跃连接数，根据服务器性能调整
-  maxIdleConns: 10           # 最大空闲连接数，保持一定数量提高性能
-  connMaxLifetime: 1h        # 连接最大存活时间，防止长时间连接导致的问题
+  driver: "mysql" # or "postgres"
+  host: "127.0.0.1"
+  port: 3306
+  user: "crm_user"
+  password: "crm_pass"
+  dbname: "crm_db" # Use a dedicated test database name
+  sslmode: "disable"
+  timeZone: "Asia/Shanghai"
+  maxOpenConns: 10
+  maxIdleConns: 5
+  connMaxLifetime: 1h
 
 # ==================== 缓存配置 ====================
 cache:
-  driver: redis              # 缓存驱动: redis, memcached
+  driver: "redis"
   redis:
-    host: "localhost"        # Redis 服务器地址
-    port: 6379              # Redis 端口
-    password: ""            # Redis 密码，留空表示无密码
-    db: 0                   # Redis 数据库编号 (0-15)
-    maxRetries: 3           # 连接失败最大重试次数
-    poolSize: 10            # 连接池大小，根据并发量调整
-    minIdleConns: 5         # 最小空闲连接数
-    maxConnAge: 1h          # 连接最大存活时间
-    idleTimeout: 5m         # 空闲连接超时时间
-    dialTimeout: 5s         # 连接超时时间
-    readTimeout: 3s         # 读取超时时间
-    writeTimeout: 3s        # 写入超时时间
+    host: "127.0.0.1"
+    port: 6379
+    password: ""
+    db: 1 # Use a different Redis DB for testing
+    poolSize: 10
+    minIdleConns: 5
 
 # ==================== 认证授权配置 ====================
 auth:
   jwt:
-    secret: "dev-secret"           # JWT 签名密钥，生产环境务必使用复杂密钥
-    issuer: "crm_lite"             # JWT 发行者标识
-    algorithm: "HS256"             # 签名算法: HS256, HS384, HS512
-    expire_duration: 3600s         # 默认 token 过期时间 (秒)
-    access_token_expire: 3600s     # 访问令牌过期时间 (1小时)
-    refresh_token_expire: 3600s    # 刷新令牌过期时间 (建议设置更长时间)
+    secret: "test-secret-key-that-is-long-and-secure"
+    issuer: "crm-lite-test"
+    access_token_expire: 15m
+    refresh_token_expire: 72h
   rbac:
-    modelFile: "config/rbac_model.conf"  # Casbin RBAC 模型文件路径
-  oauthEnabled: false              # 是否启用第三方 OAuth 登录 (如微信、钉钉等)
-  BCryptCost: 10                   # 密码加密强度: 10-12 适合生产环境
+    modelFile: "config/model.conf"
+  BCryptCost: 10
 
 # ==================== 性能监控配置 ====================
-pprofOn: true                      # 是否启用 pprof 性能分析，生产环境建议关闭
+pprofOn: true

@@ -114,3 +114,8 @@
 2025-06-09T22:44:17.041+0800	INFO	resource/manager.go:77	Database resource closed successfully.
 2025-06-09T22:44:17.041+0800	INFO	startup/start.go:54	All resources closed successfully
 2025-06-09T22:44:17.041+0800	INFO	cmd/start.go:33	Server exited properly
+2025-06-10T20:57:19.653+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-10T20:57:19.677+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-10T20:57:19.680+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-10T20:57:19.680+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-10T20:57:19.682+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
