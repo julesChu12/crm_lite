@@ -1,0 +1,191 @@
+2025-06-07T14:07:26.546+0800	INFO	cmd/start.go:22	Starting to initialize all resources...
+2025-06-07T14:07:26.549+0800	ERROR	cmd/start.go:22	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:07:26.549+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:08:50.010+0800	INFO	cmd/start.go:22	Starting to initialize all resources...
+2025-06-07T14:08:50.012+0800	ERROR	cmd/start.go:22	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:08:50.012+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:09:01.749+0800	INFO	cmd/start.go:22	Starting to initialize all resources...
+2025-06-07T14:09:01.751+0800	ERROR	cmd/start.go:22	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:09:01.751+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:10:04.304+0800	INFO	cmd/start.go:22	Starting to initialize all resources...
+2025-06-07T14:10:04.308+0800	ERROR	cmd/start.go:22	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:10:04.308+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:10:19.305+0800	INFO	cmd/start.go:22	Starting to initialize all resources...
+2025-06-07T14:10:19.307+0800	ERROR	cmd/start.go:22	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:10:19.307+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:10:33.701+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:10:33.706+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:10:33.706+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:10:39.568+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:10:39.571+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:10:39.571+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:13:01.359+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:13:01.365+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:13:01.365+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:13:03.988+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:13:03.990+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:13:03.991+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:13:12.705+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:13:12.707+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:13:12.707+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:13:16.445+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:13:16.448+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused"}
+2025-06-07T14:13:16.448+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-07T14:14:37.816+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-07T14:14:37.844+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: postgres
+2025-06-07T14:14:37.847+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-07T14:14:37.847+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-07T14:14:37.847+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-07T14:26:52.925+0800	INFO	gin@v1.10.1/context.go:185	/	{"status": 200, "method": "GET", "path": "/", "query": "", "ip": "127.0.0.1", "user-agent": "", "errors": "", "cost": 0.000242834}
+2025-06-09T21:12:28.176+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:12:28.179+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:12:28.179+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:12:32.161+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:12:32.167+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:12:32.167+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:12:53.724+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:12:53.727+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:12:53.727+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:13:42.773+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:13:42.777+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:13:42.778+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:14:20.395+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:14:20.403+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:14:20.403+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:14:33.787+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:14:33.789+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:14:33.789+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:14:41.583+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:14:41.586+0800	ERROR	cmd/start.go:23	Failed to initialize resources, attempting cleanup...	{"error": "init db: failed to connect to database: failed to connect to `user=crm_user database=crm_db`:\n\t[::1]:5432 (localhost): dial error: dial tcp [::1]:5432: connect: connection refused\n\t127.0.0.1:5432 (localhost): dial error: dial tcp 127.0.0.1:5432: connect: connection refused"}
+2025-06-09T21:14:41.586+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:15:28.082+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:15:28.112+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T21:15:28.116+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T21:15:28.116+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-09T21:15:28.116+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-09T21:16:08.943+0800	INFO	gin@v1.10.1/context.go:185	/	{"status": 200, "method": "GET", "path": "/", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.000108166}
+2025-06-09T21:16:34.763+0800	INFO	gin@v1.10.1/context.go:185	/	{"status": 200, "method": "GET", "path": "/", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.00008475}
+2025-06-09T21:17:36.239+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:17:36.249+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T21:17:36.251+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T21:17:36.252+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-09T21:17:36.252+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-09T21:19:12.379+0800	INFO	cmd/start.go:33	Server is shutting down...
+2025-06-09T21:19:12.379+0800	INFO	startup/start.go:54	Starting to close all resources...
+2025-06-09T21:19:12.379+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-09T21:19:12.379+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:19:12.380+0800	INFO	startup/start.go:54	All resources closed successfully
+2025-06-09T21:19:12.380+0800	INFO	cmd/start.go:33	Server exited properly
+2025-06-09T21:19:42.975+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T21:19:42.992+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T21:19:42.994+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T21:19:42.994+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-09T21:19:42.994+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-09T21:19:46.327+0800	INFO	cmd/start.go:33	Server is shutting down...
+2025-06-09T21:19:46.327+0800	INFO	startup/start.go:54	Starting to close all resources...
+2025-06-09T21:19:46.327+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-09T21:19:46.327+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T21:19:46.327+0800	INFO	startup/start.go:54	All resources closed successfully
+2025-06-09T21:19:46.327+0800	INFO	cmd/start.go:33	Server exited properly
+2025-06-09T22:42:09.705+0800	INFO	cmd/router.go:29	Starting to initialize all resources...
+2025-06-09T22:42:09.719+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T22:42:09.722+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T22:42:09.722+0800	INFO	cmd/router.go:29	All resources initialized successfully
+2025-06-09T22:42:09.724+0800	INFO	cmd/router.go:90	Starting to close all resources...
+2025-06-09T22:42:09.724+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-09T22:42:09.724+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T22:42:09.724+0800	INFO	cmd/router.go:90	All resources closed successfully
+2025-06-09T22:43:25.695+0800	INFO	cmd/router.go:29	Starting to initialize all resources...
+2025-06-09T22:43:25.715+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T22:43:25.719+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T22:43:25.719+0800	INFO	cmd/router.go:29	All resources initialized successfully
+2025-06-09T22:43:25.721+0800	INFO	cmd/router.go:90	Starting to close all resources...
+2025-06-09T22:43:25.721+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-09T22:43:25.721+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T22:43:25.721+0800	INFO	cmd/router.go:90	All resources closed successfully
+2025-06-09T22:43:28.324+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-09T22:43:28.330+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-09T22:43:28.332+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-09T22:43:28.332+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-09T22:43:28.333+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-09T22:44:17.039+0800	INFO	cmd/start.go:33	Server is shutting down...
+2025-06-09T22:44:17.041+0800	INFO	startup/start.go:54	Starting to close all resources...
+2025-06-09T22:44:17.041+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-09T22:44:17.041+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-09T22:44:17.041+0800	INFO	startup/start.go:54	All resources closed successfully
+2025-06-09T22:44:17.041+0800	INFO	cmd/start.go:33	Server exited properly
+2025-06-10T20:57:19.653+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-10T20:57:19.677+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-10T20:57:19.680+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-10T20:57:19.680+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-10T20:57:19.682+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-11T21:33:37.219+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-11T21:33:37.241+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-11T21:33:37.245+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-11T21:33:37.245+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-11T21:33:37.247+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-11T21:34:34.442+0800	INFO	gin@v1.10.0/context.go:185	/	{"status": 200, "method": "GET", "path": "/", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.000128792}
+2025-06-12T21:02:33.427+0800	INFO	gin@v1.10.0/context.go:185	/ping	{"status": 404, "method": "GET", "path": "/ping", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.000002208}
+2025-06-12T21:02:44.353+0800	INFO	gin@v1.10.0/context.go:185	/ping	{"status": 404, "method": "GET", "path": "/ping", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.000000667}
+2025-06-12T21:04:09.465+0800	INFO	cmd/router.go:29	Starting to initialize all resources...
+2025-06-12T21:04:09.479+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-12T21:04:09.482+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-12T21:04:09.482+0800	INFO	cmd/router.go:29	All resources initialized successfully
+2025-06-12T21:04:09.482+0800	INFO	cmd/router.go:90	Starting to close all resources...
+2025-06-12T21:04:09.482+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-12T21:04:09.482+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-12T21:04:09.482+0800	INFO	cmd/router.go:90	All resources closed successfully
+2025-06-12T21:04:25.334+0800	INFO	gin@v1.10.0/context.go:185	/health	{"status": 200, "method": "GET", "path": "/health", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.00011675}
+2025-06-12T21:04:36.928+0800	INFO	gin@v1.10.0/context.go:185	/	{"status": 200, "method": "GET", "path": "/", "query": "", "ip": "127.0.0.1", "user-agent": "HTTPie", "errors": "", "cost": 0.000054208}
+2025-06-12T22:36:24.367+0800	INFO	cmd/start.go:33	Server is shutting down...
+2025-06-12T22:36:24.369+0800	INFO	startup/start.go:54	Starting to close all resources...
+2025-06-12T22:36:24.369+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-12T22:36:24.370+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-12T22:36:24.370+0800	INFO	startup/start.go:54	All resources closed successfully
+2025-06-12T22:36:24.370+0800	INFO	cmd/start.go:33	Server exited properly
+2025-06-12T22:37:02.168+0800	INFO	cmd/start.go:23	Starting to initialize all resources...
+2025-06-12T22:37:02.181+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-12T22:37:02.183+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-12T22:37:02.183+0800	INFO	cmd/start.go:23	All resources initialized successfully
+2025-06-12T22:37:02.186+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.001837333, "rows": 0, "sql": "SELECT * FROM `admin_users` WHERE `admin_users`.`username` = 'admin' AND `admin_users`.`deleted_at` IS NULL ORDER BY `admin_users`.`id` LIMIT 1"}
+2025-06-12T22:37:02.251+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.003839166, "rows": 1, "sql": "INSERT INTO `admin_users` (`id`,`username`,`email`,`password_hash`,`real_name`,`phone`,`avatar`,`is_active`,`last_login_at`,`deleted_at`) VALUES ('39295bfc-00b4-46cd-af22-b088248dc23c','admin','admin@example.com','$2a$10$4lT8cjgQVVA5zyCXomn5ROTtxLEGoJnMKD6d90C0Zew2J45fL1X7C','SuperAdmin','','',true,'0000-00-00 00:00:00',NULL) RETURNING `created_at`,`updated_at`"}
+2025-06-12T22:37:02.251+0800	INFO	bootstrap/bootstrap.go:59	Super admin account created	{"username": "admin"}
+2025-06-12T22:37:02.251+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000335667, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:02.253+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.001309708, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:02.253+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000783375, "rows": -1, "sql": "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND table_type = 'BASE TABLE'"}
+2025-06-12T22:37:02.261+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.007876, "rows": 0, "sql": "CREATE TABLE `casbin_rule` (`id` int(11) AUTO_INCREMENT,`ptype` varchar(100),`v0` varchar(100),`v1` varchar(100),`v2` varchar(100),`v3` varchar(100),`v4` varchar(100),`v5` varchar(100),PRIMARY KEY (`id`),INDEX `idx_casbin_rules_ptype` (`ptype`),INDEX `idx_casbin_rules_v0` (`v0`),INDEX `idx_casbin_rules_v1` (`v1`))"}
+2025-06-12T22:37:02.262+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000319291, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:02.263+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.0010785, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:02.264+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000908666, "rows": -1, "sql": "SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND index_name = 'idx_casbin_rule'"}
+2025-06-12T22:37:02.271+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.006786833, "rows": 0, "sql": "CREATE UNIQUE INDEX idx_casbin_rule ON casbin_rule (ptype,v0,v1,v2,v3,v4,v5)"}
+2025-06-12T22:37:02.271+0800	ERROR	cmd/start.go:23	Failed to init super admin	{"error": "open ./config/rbac_model.conf: no such file or directory"}
+2025-06-12T22:37:02.271+0800	INFO	runtime/asm_arm64.s:1223	Server is starting...	{"address": "0.0.0.0:8080"}
+2025-06-12T22:37:14.620+0800	INFO	cmd/router.go:29	Starting to initialize all resources...
+2025-06-12T22:37:14.627+0800	INFO	resource/manager.go:63	Database resource initialized successfully for driver: mysql
+2025-06-12T22:37:14.632+0800	INFO	resource/manager.go:63	Cache resource (Redis) initialized successfully.
+2025-06-12T22:37:14.632+0800	INFO	cmd/router.go:29	All resources initialized successfully
+2025-06-12T22:37:14.635+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.002033083, "rows": 1, "sql": "SELECT * FROM `admin_users` WHERE `admin_users`.`username` = 'admin' AND `admin_users`.`deleted_at` IS NULL ORDER BY `admin_users`.`id` LIMIT 1"}
+2025-06-12T22:37:14.636+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000490458, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.637+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.000977167, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.638+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.001287292, "rows": -1, "sql": "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND table_type = 'BASE TABLE'"}
+2025-06-12T22:37:14.639+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000355708, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.639+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.0008555, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.641+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.001196709, "rows": -1, "sql": "SELECT * FROM `casbin_rule` LIMIT 1"}
+2025-06-12T22:37:14.643+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.001901458, "rows": -1, "sql": "SELECT column_name, column_default, is_nullable = 'YES', data_type, character_maximum_length, column_type, column_key, extra, column_comment, numeric_precision, numeric_scale , datetime_precision FROM information_schema.columns WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' ORDER BY ORDINAL_POSITION"}
+2025-06-12T22:37:14.643+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000259875, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.644+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.00103525, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.645+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000650708, "rows": -1, "sql": "SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND index_name = 'idx_casbin_rules_ptype'"}
+2025-06-12T22:37:14.645+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000271, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.646+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.00082475, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.646+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000559917, "rows": -1, "sql": "SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND index_name = 'idx_casbin_rules_v0'"}
+2025-06-12T22:37:14.647+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000255625, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.648+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.000955541, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.648+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000488416, "rows": -1, "sql": "SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND index_name = 'idx_casbin_rules_v1'"}
+2025-06-12T22:37:14.648+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000233667, "rows": -1, "sql": "SELECT DATABASE()"}
+2025-06-12T22:37:14.649+0800	INFO	gorm@v1.25.10/finisher_api.go:543	gorm_trace	{"elapsed": 0.000767208, "rows": 1, "sql": "SELECT SCHEMA_NAME from Information_schema.SCHEMATA where SCHEMA_NAME LIKE 'crm_db%' ORDER BY SCHEMA_NAME='crm_db' DESC,SCHEMA_NAME limit 1"}
+2025-06-12T22:37:14.650+0800	INFO	gorm@v1.25.10/callbacks.go:134	gorm_trace	{"elapsed": 0.000553, "rows": -1, "sql": "SELECT count(*) FROM information_schema.statistics WHERE table_schema = 'crm_db' AND table_name = 'casbin_rule' AND index_name = 'idx_casbin_rule'"}
+2025-06-12T22:37:14.650+0800	ERROR	cmd/router.go:29	Failed to init super admin	{"error": "open ./config/rbac_model.conf: no such file or directory"}
+2025-06-12T22:37:14.650+0800	INFO	cmd/router.go:90	Starting to close all resources...
+2025-06-12T22:37:14.650+0800	INFO	resource/manager.go:77	Cache resource (Redis) closed successfully.
+2025-06-12T22:37:14.650+0800	INFO	resource/manager.go:77	Database resource closed successfully.
+2025-06-12T22:37:14.650+0800	INFO	cmd/router.go:90	All resources closed successfully

@@ -4,8 +4,8 @@ import (
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
+	"crm_lite/pkg/resp"
 	"errors"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,19 +40,62 @@ func NewAuthController(resManager *resource.Manager) *AuthController {
 func (c *AuthController) Login(ctx *gin.Context) {
 	var req dto.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
+		resp.Error(ctx, resp.CodeInvalidParam, "Invalid request payload")
 		return
 	}
 
-	resp, err := c.authService.Login(ctx.Request.Context(), &req)
+	response, err := c.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrInvalidPassword) {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+			resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
 			return
 		}
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to login"})
+		resp.SystemError(ctx, err)
 		return
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	resp.Success(ctx, response)
+}
+
+// Register 用户注册
+func (c *AuthController) Register(ctx *gin.Context) {
+	var req dto.RegisterRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		resp.Error(ctx, resp.CodeInvalidParam, "Invalid request payload")
+		return
+	}
+
+	if err := c.authService.Register(ctx.Request.Context(), &req); err != nil {
+		if errors.Is(err, service.ErrUserAlreadyExists) {
+			resp.Error(ctx, resp.CodeInvalidParam, "User already exists")
+			return
+		}
+		resp.SystemError(ctx, err)
+		return
+	}
+
+	resp.Success(ctx, gin.H{"message": "register success"})
+}
+
+// UpdateProfile 修改用户信息（仅示例修改 RealName）
+func (c *AuthController) UpdateProfile(ctx *gin.Context) {
+	var req dto.UpdateUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		resp.Error(ctx, resp.CodeInvalidParam, "Invalid request payload")
+		return
+	}
+
+	// 从 JWT 中解析当前用户 ID，这里仅示例，实际应有鉴权中间件
+	claimsCtx := ctx.Request.Context()
+
+	if err := c.authService.UpdateProfile(claimsCtx, &req); err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			resp.Error(ctx, resp.CodeNotFound, "User not found")
+			return
+		}
+		resp.SystemError(ctx, err)
+		return
+	}
+
+	resp.Success(ctx, gin.H{"message": "update success"})
 }

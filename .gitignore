@@ -7,3 +7,4 @@ path/
 .air.toml
 log/
 config/app.dev.yaml
+server.pid
