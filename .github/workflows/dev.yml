@@ -1,3 +1,4 @@
+# 本 workflow 可用 act 本地调试，需在项目根目录添加 .secrets 文件，内容参考 GitHub Actions secrets。
 name: Build Dev Environment
 
 on:
@@ -14,13 +15,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          node-version: '18'
+          go-version: '1.24'
 
       - name: Install dependencies
-        run: npm install
+        run: go mod download
 
-      - name: Run dev build
-        run: npm run build:dev 
+      - name: Build
+        run: go build -v ./...
+
+      - name: Run unit tests
+        run: go test ./...

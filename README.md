@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-- **后端**: Go + Gin + PostgreSQL + Redis + Cobra + Zap
+- **后端**: Go + Gin + MariaDB + Redis + Cobra + Zap
 - **安全**: JWT + Casbin
 - **前端**: Vue3 + Pinia + WebSocket
 - **部署**: Docker Compose + GitHub Actions（CI）
@@ -105,17 +105,17 @@ admin_user_roles.role_id -> roles.id
 
 - Go 1.21+
 - Docker & Docker Compose
-- PostgreSQL 14+
+- MariaDB 10.8+
 - Redis 6+
 
 ### 2. 启动数据库
 
 ```bash
-# 启动 PostgreSQL 和 Redis
-docker-compose up -d postgres redis
+# 启动 MariaDB 和 Redis
+docker-compose up -d mariadb redis
 
-# 可选：启动 Adminer 数据库管理工具
-docker-compose up -d adminer
+# 可选：启动 phpMyAdmin 数据库管理工具
+docker-compose up -d phpmyadmin
 ```
 
 ### 3. 运行迁移
@@ -135,8 +135,8 @@ go run main.go serve
 ### 5. 访问服务
 
 - API服务器: <http://localhost:8080>
-- Adminer数据库管理: <http://localhost:8081>
-  - 服务器: `postgres`
+- phpMyAdmin数据库管理: <http://localhost:8081>
+  - 服务器: `mariadb`
   - 用户名: `crm_user`
   - 密码: `crm_pass`
   - 数据库: `crm_db`
@@ -169,6 +169,37 @@ go run main.go migrate
 1. **权限表优先**: 先完善 `roles`、`admin_users`、`casbin_rules` 权限核心
 2. **最小闭环**: `customers` → `contacts` → `orders`/`products` 形成基础业务闭环
 3. **按需扩展**: 钱包、活动、营销功能可按业务需求逐步添加
+
+## 本地调试 GitHub Actions（act）
+
+本项目所有 CI/CD workflow 支持使用 [act](https://github.com/nektos/act) 进行本地调试。
+
+### 步骤
+
+1. 安装 act：
+   ```bash
+   brew install act # macOS
+   # 或参考官方文档安装
+   ```
+2. 在项目根目录新建 `.secrets` 文件，内容参考下方示例。
+3. 运行本地 workflow，例如：
+   ```bash
+   act -j deploy-production -W .github/workflows/release.yml
+   # 或
+   act -j build-dev -W .github/workflows/dev.yml
+   ```
+
+### .secrets 文件示例
+
+```
+PROD_HOST=your-production-host
+PROD_USER=your-ssh-user
+PROD_SSH_KEY=your-ssh-private-key
+# 其他 workflow 用到的 secrets 也可在此补充
+```
+
+> `.secrets` 文件内容需与 workflow 中用到的 `${{ secrets.XXX }}` 保持一致。
+> act 会自动加载该文件并注入到 workflow 运行环境。
 
 ## 文档
 

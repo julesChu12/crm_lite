@@ -1,4 +1,5 @@
-name: Deploy to Staging
+# 本 workflow 可用 act 本地调试，需在项目根目录添加 .secrets 文件，内容参考 GitHub Actions secrets。
+name: Build & Push Staging Docker Image
 
 on:
   push:
@@ -6,29 +7,32 @@ on:
       - main
 
 jobs:
-  deploy-staging:
+  build-and-push-staging:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          node-version: '18'
+          go-version: '1.24'
 
       - name: Install dependencies
-        run: npm install
+        run: go mod download
 
-      - name: Run staging build
-        run: npm run build:staging
+      - name: Build binary
+        run: go build -v -o app .
 
-      - name: Deploy to staging server
-        uses: appleboy/scp-action@v0.1.4
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/myapp:staging .
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
         with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          source: "dist/"
-          target: "/var/www/staging" 
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image (staging)
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/myapp:staging
