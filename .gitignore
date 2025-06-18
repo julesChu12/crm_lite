@@ -5,3 +5,5 @@
 tmp/
 path/
 .air.toml
+log/
+config/app.dev.yaml
