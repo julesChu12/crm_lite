@@ -5,13 +5,15 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MARIADB_ROOT_PASSWORD: root_password
-      MARIADB_DATABASE: crm_db
-      MARIADB_USER: crm_user
-      MARIADB_PASSWORD: crm_pass
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASS}
     volumes:
       - ./tmp/mariadb_data:/var/lib/mysql
     restart: always
+    networks:
+      - crm-network
 
   redis:
     image: redis:6-alpine
@@ -21,6 +23,8 @@ services:
     volumes:
       - ./tmp/redis_data:/data
     restart: always
+    networks:
+      - crm-network
 
   phpmyadmin:
     image: phpmyadmin
@@ -31,6 +35,29 @@ services:
       - PMA_HOST=mariadb
       - PMA_PORT=3306
     restart: always
+    networks:
+      - crm-network
+
+  crm-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crm-app
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+    command: air
+    depends_on:
+      - mariadb
+      - redis
+    env_file:
+      - .env
+    environment:
+      - ENV=development
+    restart: always
+    networks:
+      - crm-network
 
 networks:
   crm-network:

@@ -3,6 +3,7 @@ package main
 
 import (
 	"crm_lite/internal/core/config"
+	"flag"
 	"fmt"
 	"os"
 
@@ -14,10 +15,15 @@ import (
 )
 
 func main() {
+	var env string
+	flag.StringVar(&env, "env", "dev", "环境名 (dev/test/prod)")
+	flag.Parse()
+
 	fmt.Println("Starting GORM model generation...")
 
-	// 1. 加载配置 - 假设从项目根目录运行
-	if err := config.InitOptions("config/app.dev.yaml"); err != nil {
+	// 1. 加载配置 - 根据环境选择配置文件
+	configFile := fmt.Sprintf("config/app.%s.yaml", env)
+	if err := config.InitOptions(configFile); err != nil {
 		fmt.Printf("Failed to initialize configuration: %v\n", err)
 		os.Exit(1)
 	}

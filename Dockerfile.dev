@@ -1,4 +1,4 @@
-# Dockerfile for Production
+# Dockerfile.dev
 FROM golang:1.24-alpine
 
 # 安装 mysql-client 用于数据库连接检测
@@ -6,23 +6,22 @@ RUN apk add --no-cache mysql-client
 
 WORKDIR /app
 
-# 优化 Docker 缓存：先复制依赖文件并下载
 COPY go.mod ./
 COPY go.sum ./
 RUN go mod download
 
-# 复制所有源码
-COPY . .
+# 安装 air 热加载工具
+RUN go install github.com/air-verse/air@v1.62.0
 
-# 编译应用
-RUN go build -o /usr/local/bin/crm-lite ./cmd/server
+ENV PATH="/go/bin:$PATH"
 
-# 复制 entrypoint 脚本并授权
+# 复制 entrypoint 脚本
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
     sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 
+# 将剩余代码和 air 配置挂载进来，由 compose 完成，不 COPY 源码
+# docker-compose.yaml 挂载本地 ./ 到容器 /app
 EXPOSE 8080
-
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["crm-lite", "start"]
+CMD ["air"]

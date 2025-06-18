@@ -5,6 +5,8 @@
 tmp/
 path/
 .air.toml
-log/
+logs/
 config/app.dev.yaml
-server.pid
+*.pid
+*.out
+.secrets

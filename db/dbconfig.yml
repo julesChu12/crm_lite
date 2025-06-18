@@ -1,17 +1,17 @@
 development:
   dialect: mysql
-  datasource: crm_user:crm_pass@tcp(localhost:3306)/crm_db?parseTime=true
-  dir: ./migrations
+  datasource: ${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  dir: db/migrations
   table: migrations
 
 test:
   dialect: mysql
-  datasource: root:root_password@tcp(localhost:3306)/crm_lite_test?parseTime=true
-  dir: ./migrations
+  datasource: root:root_password@tcp(${DB_HOST}:3306)/crm_lite_test?parseTime=true
+  dir: db/migrations
   table: migrations
 
 production:
   dialect: mysql
-  datasource: crm_user:crm_pass@tcp(localhost:3306)/crm_db?parseTime=true
-  dir: ./migrations
+  datasource: ${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  dir: db/migrations
   table: migrations
