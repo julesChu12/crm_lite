@@ -5,3 +5,4 @@
 tmp/
 path/
 .air.toml
+server.pid

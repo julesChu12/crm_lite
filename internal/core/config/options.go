@@ -103,12 +103,20 @@ type RbacOptions struct {
 	ModelFile string `mapstructure:"modelFile"` // Casbin模型文件路径
 }
 
+// SuperAdminOptions 超级管理员账号配置
+type SuperAdminOptions struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+	Email    string `mapstructure:"email"`
+}
+
 // AuthOptions 认证授权配置
 type AuthOptions struct {
 	JWTOptions   `mapstructure:"jwt"`  // JWT配置
 	RbacOptions  `mapstructure:"rbac"` // RBAC配置
 	OAuthEnabled bool                  `mapstructure:"oauthEnabled"` // 是否启用OAuth
 	BCryptCost   int                   `mapstructure:"BCryptCost"`   // 密码加密成本
+	SuperAdmin   SuperAdminOptions     `mapstructure:"superAdmin"`   // 超级管理员配置
 }
 
 // ==================== 主配置结构体 ====================
@@ -247,6 +255,11 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 		},
 		OAuthEnabled: o.getBoolWithDefault("auth.oauthEnabled", false),
 		BCryptCost:   o.getIntWithDefault("auth.BCryptCost", 10),
+		SuperAdmin: SuperAdminOptions{
+			Username: o.getStringWithDefault("auth.superAdmin.username", "admin"),
+			Password: o.getStringWithDefault("auth.superAdmin.password", "admin"),
+			Email:    o.getStringWithDefault("auth.superAdmin.email", "admin@example.com"),
+		},
 	}
 
 	// 其他配置

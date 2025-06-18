@@ -55,7 +55,12 @@ func Bootstrap() (*resource.Manager, func(), error) {
 
 	log.Info("All resources initialized successfully")
 
-	// 6. 创建并返回一个优雅关闭的函数
+	// 6. 初始化超级管理员与 Casbin
+	if err := initSuperAdmin(dbResource.DB); err != nil {
+		log.Error("Failed to init super admin", zap.Error(err))
+	}
+
+	// 7. 创建并返回一个优雅关闭的函数
 	cleanup := func() {
 		log.Info("Starting to close all resources...")
 		if err := resManager.CloseAll(context.Background()); err != nil {
