@@ -7,6 +7,7 @@ import (
 	"crm_lite/internal/dto"
 	"crm_lite/pkg/utils"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -34,13 +35,27 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 	// 1. 根据用户名查找用户
 	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.Username.Eq(req.Username)).First()
 	if err != nil {
+		fmt.Printf("User not found: %v\n", err)
 		return nil, ErrUserNotFound
 	}
 
+	fmt.Printf("Login attempt details:\n")
+	fmt.Printf("- Username: %s\n", user.Username)
+	fmt.Printf("- Stored Hash: %s\n", user.PasswordHash)
+	fmt.Printf("- Input Password: %s\n", req.Password)
+	fmt.Printf("- Hash Format: %s (algorithm), %s (cost), %s (salt+hash)\n",
+		user.PasswordHash[0:4], // $2a$
+		user.PasswordHash[4:6], // 10
+		user.PasswordHash[6:],  // 剩余部分
+	)
+
 	// 2. 验证密码 - 注意字段名是 PasswordHash
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		fmt.Printf("Password verification failed: %v\n", err)
 		return nil, ErrInvalidPassword
 	}
+
+	fmt.Printf("Password verification successful!\n")
 
 	// 3. 生成JWT
 	accessToken, refreshToken, err := utils.GenerateTokens(user.ID, user.Username)

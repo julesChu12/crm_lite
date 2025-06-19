@@ -4,11 +4,13 @@ import (
 	"context"
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/logger"
-	"crm_lite/internal/dao/model"
+	dao_model "crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
+	"embed"
 	"errors"
 
 	"github.com/casbin/casbin/v2"
+	casbinmodel "github.com/casbin/casbin/v2/model"
 	gormadapter "github.com/casbin/gorm-adapter/v3"
 
 	"github.com/google/uuid"
@@ -16,6 +18,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
+
+//go:embed model.conf
+var casbinModel embed.FS
 
 // initSuperAdmin 确保系统启动时存在一个超级管理员账号，并通过 Casbin 授予对应权限。
 func initSuperAdmin(db *gorm.DB) error {
@@ -42,7 +47,7 @@ func initSuperAdmin(db *gorm.DB) error {
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		hashed, _ := bcrypt.GenerateFromPassword([]byte(adminCfg.Password), bcrypt.DefaultCost)
-		admin = &model.AdminUser{
+		admin = &dao_model.AdminUser{
 			ID:           uuid.New().String(),
 			Username:     adminCfg.Username,
 			PasswordHash: string(hashed),
@@ -57,11 +62,16 @@ func initSuperAdmin(db *gorm.DB) error {
 	}
 
 	// 初始化 Casbin，使该用户拥有超级管理员角色
-	adapter, err := gormadapter.NewAdapterByDBWithCustomTable(db, &model.CasbinRule{})
+	adapter, err := gormadapter.NewAdapterByDBWithCustomTable(db, &dao_model.CasbinRule{})
 	if err != nil {
 		return err
 	}
-	enforcer, err := casbin.NewEnforcer("./config/rbac_model.conf", adapter)
+	// 从嵌入的文件系统创建 casbin model
+	m, err := casbinmodel.NewModelFromString(string(mustLoadFile(casbinModel, "model.conf")))
+	if err != nil {
+		return err
+	}
+	enforcer, err := casbin.NewEnforcer(m, adapter)
 	if err != nil {
 		return err
 	}
@@ -72,4 +82,12 @@ func initSuperAdmin(db *gorm.DB) error {
 	enforcer.SavePolicy()
 
 	return nil
+}
+
+func mustLoadFile(fs embed.FS, path string) []byte {
+	b, err := fs.ReadFile(path)
+	if err != nil {
+		panic("cannot read embedded file: " + path)
+	}
+	return b
 }

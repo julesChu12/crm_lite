@@ -1,11 +1,10 @@
 package routes
 
 import (
-	"crm_lite/internal/controller"
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/middleware"
-	"net/http"
+	"crm_lite/pkg/resp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,47 +14,26 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 	gin.SetMode(string(config.GetInstance().Server.Mode))
 	router := gin.New()
 
-	// 2. 注册中间件
+	// 2. 注册通用中间件
 	router.Use(middleware.GinLogger(), gin.Recovery())
 
-	// 3. 设置路由
+	// 3. 设置 API 路由组
 	v1 := router.Group("/api/v1")
 
-	// ===== Auth Routes =====
-	authController := controller.NewAuthController(resManager)
-	auth := v1.Group("/auth")
-	{
-		auth.POST("/login", authController.Login)
-		auth.POST("/register", authController.Register)
-		authAuth := auth.Group("").Use(middleware.JWTAuthMiddleware())
-		authAuth.PUT("/profile", authController.UpdateProfile)
-	}
+	// 4. 注册各个模块的路由
+	registerAuthRoutes(v1, resManager)
+	// registerUserRoutes(v1, resManager)      // 待实现时取消注释
+	// registerCustomerRoutes(v1, resManager) // 待实现时取消注释
 
-	// ===== User Routes (待实现) =====
-	// userController := controller.NewUserController(resManager)
-	// user := v1.Group("/users")
-	// {
-	// 	user.GET("/", userController.List)
-	// 	user.POST("/", userController.Create)
-	// }
-
-	// ===== Customer Routes (待实现) =====
-	// customerController := controller.NewCustomerController(resManager)
-	// customer := v1.Group("/customers")
-	// {
-	// 	customer.GET("/", customerController.List)
-	// }
-
-	// 例如，一个健康检查路由
+	// 5. 设置一些通用路由
+	// 健康检查
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "ok",
-		})
+		resp.Success(c, "ok")
 	})
 
-	// 原有的根路由
+	// 欢迎页
 	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Hello, World!"})
+		resp.Success(c, "Hello, World!")
 	})
 
 	return router

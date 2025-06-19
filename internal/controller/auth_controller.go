@@ -6,6 +6,7 @@ import (
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,16 +41,18 @@ func NewAuthController(resManager *resource.Manager) *AuthController {
 func (c *AuthController) Login(ctx *gin.Context) {
 	var req dto.LoginRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		resp.Error(ctx, resp.CodeInvalidParam, "Invalid request payload")
+		resp.Error(ctx, resp.CodeInvalidParam, err.Error())
 		return
 	}
 
 	response, err := c.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrInvalidPassword) {
+			fmt.Println(err.Error())
 			resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
 			return
 		}
+
 		resp.SystemError(ctx, err)
 		return
 	}

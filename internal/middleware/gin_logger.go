@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"bytes"
+	"io"
 	"time"
 
 	"crm_lite/internal/core/logger"
@@ -16,6 +18,14 @@ func GinLogger() gin.HandlerFunc {
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery
 
+		// 读取请求体
+		var bodyBytes []byte
+		if c.Request.Body != nil {
+			bodyBytes, _ = io.ReadAll(c.Request.Body)
+			// 重要：重置请求体，使其可以被后续的处理器重新读取
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		}
+
 		// 处理请求
 		c.Next()
 
@@ -28,6 +38,7 @@ func GinLogger() gin.HandlerFunc {
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),
 			zap.String("query", query),
+			zap.String("params", string(bodyBytes)),
 			zap.String("ip", c.ClientIP()),
 			zap.String("user-agent", c.Request.UserAgent()),
 			zap.String("errors", c.Errors.ByType(gin.ErrorTypePrivate).String()),

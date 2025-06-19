@@ -1,4 +1,0 @@
-{"level":"INFO","ts":"2025-06-05T16:42:27.389+0800","caller":"cmd/root.go:18","msg":"Logger initializedlevelinfofilePathlogs/app.log"}
-{"level":"INFO","ts":"2025-06-05T16:42:32.432+0800","caller":"cmd/root.go:18","msg":"Logger initializedlevelinfofilePathlogs/app.log"}
-{"level":"INFO","ts":"2025-06-05T16:42:32.432+0800","caller":"cobra@v1.9.1/command.go:1019","msg":"Starting CRM Lite server..."}
-{"level":"INFO","ts":"2025-06-05T17:00:22.056+0800","caller":"cmd/root.go:18","msg":"Logger initializedlevelinfofilePathlogs/app.log"}
