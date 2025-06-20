@@ -27,13 +27,13 @@ logger:
 
 # ==================== 数据库配置 ====================
 db:
-  driver: mysql              # 数据库驱动: postgres, mysql, sqlite3
+  driver: mysql              # 数据库驱动: mysql, sqlite3
   host: "localhost"          # 数据库服务器地址
-  port: 3306                 # 数据库端口 (PostgreSQL默认5432, MySQL默认3306)
+  port: 3306                 # 数据库端口 (MySQL/MariaDB 默认 3306)
   user: "crm_user"           # 数据库用户名
   password: "crm_pass"       # 数据库密码
   dbname: "crm_db"           # 数据库名称
-  sslmode: disable           # PostgreSQL SSL模式: disable, require, verify-ca, verify-full
+  sslmode: disable           # (主要用于PostgreSQL) SSL模式: disable, require, verify-ca, verify-full
   timeZone: "Asia/Shanghai"  # 数据库时区设置
   maxOpenConns: 100          # 最大活跃连接数，根据服务器性能调整
   maxIdleConns: 10           # 最大空闲连接数，保持一定数量提高性能

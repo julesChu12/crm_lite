@@ -1,4 +1,4 @@
-// main.go for the standalone generator tool.
+// gorm_gen.go for the standalone gorm-gen tool.
 package main
 
 import (
@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"gorm.io/gen"
@@ -36,8 +35,6 @@ func main() {
 	dsn := getDSN(dbOpts)
 
 	switch dbOpts.Driver {
-	case "postgres":
-		db, err = gorm.Open(postgres.Open(dsn))
 	case "mysql":
 		db, err = gorm.Open(mysql.Open(dsn))
 	default:
@@ -70,10 +67,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Printf("Generating models and queries for %d tables...\n", len(tables))
+	fmt.Printf("Found %d tables in database\n", len(tables))
 
-	// 使用 GenerateAllTable 生成所有表的模型和查询
-	allModels := g.GenerateAllTable()
+	// 过滤掉不需要的表
+	var filteredTables []string
+	for _, table := range tables {
+		// 跳过错误的 casbin_rule 单数表，只保留正确的 casbin_rules 复数表
+		if table == "casbin_rule" {
+			fmt.Printf("Skipping table: %s (using casbin_rules instead)\n", table)
+			continue
+		}
+		filteredTables = append(filteredTables, table)
+		fmt.Printf("Including table: %s\n", table)
+	}
+
+	fmt.Printf("Generating models and queries for %d filtered tables...\n", len(filteredTables))
+
+	// 为过滤后的表生成模型
+	var allModels []interface{}
+	for _, tableName := range filteredTables {
+		model := g.GenerateModel(tableName)
+		allModels = append(allModels, model)
+	}
 
 	// 应用基础查询方法
 	g.ApplyBasic(allModels...)
@@ -87,9 +102,6 @@ func main() {
 // getDSN 根据数据库配置构建DSN字符串
 func getDSN(dbOpts config.DBOptions) string {
 	switch dbOpts.Driver {
-	case "postgres":
-		return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-			dbOpts.Host, dbOpts.User, dbOpts.Password, dbOpts.DBName, dbOpts.Port, dbOpts.SSLMode, dbOpts.TimeZone)
 	case "mysql":
 		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 			dbOpts.User, dbOpts.Password, dbOpts.Host, dbOpts.Port, dbOpts.DBName)
@@ -97,3 +109,5 @@ func getDSN(dbOpts config.DBOptions) string {
 		return ""
 	}
 }
+
+// ... existing code ...

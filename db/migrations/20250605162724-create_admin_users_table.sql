@@ -1,6 +1,7 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS admin_users (
-    id VARCHAR(36) PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    uuid VARCHAR(36) NOT NULL,
     username VARCHAR(50) NOT NULL,
     email VARCHAR(100) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME(6) NULL,
+    UNIQUE KEY (uuid),
     UNIQUE KEY (username),
     UNIQUE KEY (email)
 );

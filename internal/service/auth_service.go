@@ -58,7 +58,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 	fmt.Printf("Password verification successful!\n")
 
 	// 3. 生成JWT
-	accessToken, refreshToken, err := utils.GenerateTokens(user.ID, user.Username)
+	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 
 	// 3. 创建用户
 	user := &model.AdminUser{
-		ID:           uuid.New().String(),
+		UUID:         uuid.New().String(),
 		Username:     req.Username,
 		Email:        req.Email,
 		PasswordHash: string(hashed),
@@ -114,7 +114,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 	}
 
 	// 2. 查询用户
-	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.ID.Eq(userID)).First()
+	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrUserNotFound

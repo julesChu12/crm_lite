@@ -27,7 +27,8 @@ func newAdminUser(db *gorm.DB, opts ...gen.DOOption) adminUser {
 
 	tableName := _adminUser.adminUserDo.TableName()
 	_adminUser.ALL = field.NewAsterisk(tableName)
-	_adminUser.ID = field.NewString(tableName, "id")
+	_adminUser.ID = field.NewInt64(tableName, "id")
+	_adminUser.UUID = field.NewString(tableName, "uuid")
 	_adminUser.Username = field.NewString(tableName, "username")
 	_adminUser.Email = field.NewString(tableName, "email")
 	_adminUser.PasswordHash = field.NewString(tableName, "password_hash")
@@ -49,7 +50,8 @@ type adminUser struct {
 	adminUserDo
 
 	ALL          field.Asterisk
-	ID           field.String
+	ID           field.Int64
+	UUID         field.String
 	Username     field.String
 	Email        field.String
 	PasswordHash field.String
@@ -77,7 +79,8 @@ func (a adminUser) As(alias string) *adminUser {
 
 func (a *adminUser) updateTableName(table string) *adminUser {
 	a.ALL = field.NewAsterisk(table)
-	a.ID = field.NewString(table, "id")
+	a.ID = field.NewInt64(table, "id")
+	a.UUID = field.NewString(table, "uuid")
 	a.Username = field.NewString(table, "username")
 	a.Email = field.NewString(table, "email")
 	a.PasswordHash = field.NewString(table, "password_hash")
@@ -105,8 +108,9 @@ func (a *adminUser) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (a *adminUser) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 12)
+	a.fieldMap = make(map[string]field.Expr, 13)
 	a.fieldMap["id"] = a.ID
+	a.fieldMap["uuid"] = a.UUID
 	a.fieldMap["username"] = a.Username
 	a.fieldMap["email"] = a.Email
 	a.fieldMap["password_hash"] = a.PasswordHash

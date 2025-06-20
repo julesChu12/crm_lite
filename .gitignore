@@ -10,3 +10,12 @@ config/app.dev.yaml
 *.pid
 *.out
 .secrets
+
+# Temporary files and directories
+*.tmp
+build-errors.log
+
+# IDE and editor files
+*.swp
+*.swo
+*~

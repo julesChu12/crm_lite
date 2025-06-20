@@ -14,7 +14,8 @@ const TableNameAdminUser = "admin_users"
 
 // AdminUser mapped from table <admin_users>
 type AdminUser struct {
-	ID           string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
+	ID           int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	UUID         string         `gorm:"column:uuid;type:varchar(36);not null;uniqueIndex:uuid,priority:1" json:"uuid"`
 	Username     string         `gorm:"column:username;type:varchar(50);not null;uniqueIndex:username,priority:1" json:"username"`
 	Email        string         `gorm:"column:email;type:varchar(100);not null;uniqueIndex:email,priority:1" json:"email"`
 	PasswordHash string         `gorm:"column:password_hash;type:varchar(255);not null" json:"password_hash"`

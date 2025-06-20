@@ -1,0 +1,153 @@
+---
+description: 开发规范
+globs: 
+alwaysApply: false
+---
+# CRM 后台研发工程师规范
+
+## 项目架构概览
+
+这是一个基于 Go + Gin + GORM 的 CRM 系统，采用模块化设计，注重安全性和可扩展性。
+
+## 核心原则
+
+### 1. 始终使用中文响应
+- 所有与用户的交流必须使用中文
+- 代码注释优先使用中文
+- 思考过程也请使用中文表达
+
+### 2. 路由系统设计
+
+**主路由文件**: [internal/routes/router.go](mdc:internal/routes/router.go)
+- 负责全局中间件注册
+- 调用各模块的路由注册函数
+- 设置通用路由（健康检查等）
+
+**模块化路由**: 每个业务模块都有独立的路由文件
+- 认证模块: [internal/routes/auth.go](mdc:internal/routes/auth.go)
+- 用户模块: [internal/routes/user.go](mdc:internal/routes/user.go)
+- 客户模块: [internal/routes/customer.go](mdc:internal/routes/customer.go)
+
+**路由规范**:
+- 每个模块必须有 `register...Routes` 函数
+- 所有路由都必须使用 [pkg/resp](mdc:pkg/resp/resp.go) 包进行响应封装
+- 必须使用 `resp.Success`、`resp.Error`、`resp.SystemError` 等标准化方法
+
+### 3. 中间件系统
+
+**请求日志**: [internal/middleware/gin_logger.go](mdc:internal/middleware/gin_logger.go)
+- 使用 Zap 记录所有 HTTP 请求
+- 记录路径、状态码、耗时、IP 等关键信息
+
+**JWT 认证**: [internal/middleware/jwt_auth.go](mdc:internal/middleware/jwt_auth.go)
+- 解析和验证 JWT Token
+- 将用户信息注入到上下文中
+
+### 4. 数据库设计规范
+
+**迁移文件**: [db/migrations/](mdc:db/migrations)
+- 所有数据库变更必须通过迁移文件完成
+- 迁移文件是数据库结构的唯一真实来源
+- 使用 `go-migrate` 工具管理
+
+**主键策略**:
+- 内部主键: 自增 `BIGINT` 类型的 `id` 字段，仅用于数据库内部关联
+- 外部标识: `VARCHAR(36)` 类型的 `uuid` 字段，用于 API 响应和业务逻辑
+- JSON 响应中隐藏内部 `id`，仅暴露 `uuid`
+
+**示例表结构** ([db/migrations/20250605162724-create_admin_users_table.sql](mdc:db/migrations/20250605162724-create_admin_users_table.sql)):
+```sql
+CREATE TABLE admin_users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    uuid VARCHAR(36) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    -- 其他字段...
+    UNIQUE KEY (uuid)
+);
+```
+
+### 5. GORM 模型规范
+
+**模型文件**: [internal/dao/model/](mdc:internal/dao/model)
+- 由 `gorm.io/gen` 工具自动生成
+- 修改数据库结构后必须重新生成模型文件
+
+**查询文件**: [internal/dao/query/](mdc:internal/dao/query)
+- 提供类型安全的数据库查询方法
+- 同样由 `gorm.io/gen` 工具生成
+
+**模型示例** ([internal/dao/model/admin_users.gen.go](mdc:internal/dao/model/admin_users.gen.go)):
+```go
+type AdminUser struct {
+    ID           int64  `gorm:"column:id;primaryKey;autoIncrement" json:"-"`
+    UUID         string `gorm:"column:uuid;uniqueIndex" json:"id"`
+    Username     string `gorm:"column:username" json:"username"`
+    PasswordHash string `gorm:"column:password_hash" json:"-"`
+    // ...
+}
+```
+
+### 6. 权限管理 (Casbin)
+
+**数据表**: `casbin_rules` (复数形式)
+- 定义在 [db/migrations/20250605162400-create_casbin_rules_table.sql](mdc:db/migrations/20250605162400-create_casbin_rules_table.sql)
+
+**模型文件**: [internal/dao/model/casbin_rules.gen.go](mdc:internal/dao/model/casbin_rules.gen.go)
+- 结构体名为 `CasbinRules`
+- 必须与数据库表名保持一致
+
+**配置文件**: [internal/bootstrap/model.conf](mdc:internal/bootstrap/model.conf)
+- RBAC 模型定义，通过 `go:embed` 嵌入到二进制文件中
+- 避免运行时路径问题
+
+**初始化逻辑**: [internal/bootstrap/admin_initializer.go](mdc:internal/bootstrap/admin_initializer.go)
+- 创建超级管理员账户
+- 初始化 Casbin 权限系统
+
+### 7. JWT 认证系统
+
+**Token 工具**: [pkg/utils/jwt.go](mdc:pkg/utils/jwt.go)
+- `UserID` 字段使用 `string` 类型存储 UUID
+- 生成和解析 Access Token / Refresh Token
+
+**认证服务**: [internal/service/auth_service.go](mdc:internal/service/auth_service.go)
+- 登录时使用 `user.UUID` 生成 Token
+- 注册时自动生成 UUID
+- 所有用户查询都基于 UUID 而非内部 ID
+
+### 8. 响应格式规范
+
+**统一响应**: [pkg/resp/resp.go](mdc:pkg/resp/resp.go)
+```go
+type Response struct {
+    Code    int         `json:"code"`
+    Message string      `json:"message"`
+    Data    interface{} `json:"data,omitempty"`
+}
+```
+
+**使用方式**:
+- 成功响应: `resp.Success(c, data)`
+- 业务错误: `resp.Error(c, code, message)`
+- 系统错误: `resp.SystemError(c, err)`
+
+### 9. 安全考虑
+
+**密码处理**:
+- 使用 `bcrypt` 进行密码哈希
+- `PasswordHash` 字段在 JSON 中隐藏
+
+**ID 安全**:
+- 对外暴露 UUID，防止 ID 遍历攻击
+- 内部 ID 仅用于数据库性能优化
+
+**Token 安全**:
+- JWT 中存储 UUID 而非敏感的内部 ID
+- 合理设置 Token 过期时间
+
+## 开发流程建议
+
+1. **数据库变更**: 先写迁移文件，再运行 `gorm.io/gen` 生成模型
+2. **API 开发**: 先定义路由，再实现控制器和服务层
+3. **测试验证**: 确保所有响应都使用统一格式
+4. **代码审查**: 检查是否遵循上述规范

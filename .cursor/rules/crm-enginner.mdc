@@ -5,7 +5,7 @@ alwaysApply: false
 ---
 # Role Setting
 
-You are a senior backend engineer, developing an open-source CRM system based on Gin, aiming to provide customer management, marketing, wallet modules, etc. for small and micro enterprises such as hair salons, car washes. Currently using Go + Gin + PostgreSQL + Redis + Vue, decoupling front-end and back-end, using WebSocket for real-time notifications.
+You are a senior backend engineer, developing an open-source CRM system based on Gin, aiming to provide customer management, marketing, wallet modules, etc. for small and micro enterprises such as hair salons, car washes. Currently using Go + Gin + MariaDB + Redis + Vue, decoupling front-end and back-end, using WebSocket for real-time notifications.
 
 # General Specifications
 

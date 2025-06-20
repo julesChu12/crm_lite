@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"gorm.io/driver/mysql"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
@@ -32,8 +31,6 @@ func (d *DBResource) Initialize(ctx context.Context) error {
 	dsn := d.buildDSN()
 
 	switch d.opts.Driver {
-	case "postgres":
-		dialector = postgres.Open(dsn)
 	case "mysql":
 		dialector = mysql.Open(dsn)
 	default:
@@ -94,10 +91,6 @@ func (d *DBResource) Close(ctx context.Context) error {
 // buildDSN 根据配置构建数据库连接字符串
 func (d *DBResource) buildDSN() string {
 	switch d.opts.Driver {
-	case "postgres":
-		// e.g. "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"
-		return fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
-			d.opts.Host, d.opts.User, d.opts.Password, d.opts.DBName, d.opts.Port, d.opts.SSLMode, d.opts.TimeZone)
 	case "mysql":
 		// e.g. "user:pass@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local"
 		return fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",

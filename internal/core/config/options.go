@@ -59,6 +59,7 @@ type DBOptions struct {
 	User            string        `mapstructure:"user"`            // 用户名
 	Password        string        `mapstructure:"password"`        // 密码
 	DBName          string        `mapstructure:"dbname"`          // 数据库名
+	TablePrefix     string        `mapstructure:"tablePrefix"`     // 表前缀
 	SSLMode         string        `mapstructure:"sslmode"`         // SSL模式
 	TimeZone        string        `mapstructure:"timeZone"`        // 时区
 	MaxOpenConns    int64         `mapstructure:"maxOpenConns"`    // 最大连接数
@@ -108,6 +109,7 @@ type SuperAdminOptions struct {
 	Username string `mapstructure:"username"`
 	Password string `mapstructure:"password"`
 	Email    string `mapstructure:"email"`
+	Role     string `mapstructure:"role"`
 }
 
 // AuthOptions 认证授权配置
@@ -208,12 +210,13 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 
 	// 数据库配置
 	o.Database = DBOptions{
-		Driver:          o.getStringWithDefault("db.driver", "postgres"),
+		Driver:          o.getStringWithDefault("db.driver", "mysql"),
 		Host:            o.getStringWithDefault("db.host", "127.0.0.1"),
-		Port:            o.getIntWithDefault("db.port", 5432),
+		Port:            o.getIntWithDefault("db.port", 3306),
 		User:            o.getStringWithDefault("db.user", "root"),
 		Password:        o.getStringWithDefault("db.password", ""),
 		DBName:          o.getStringWithDefault("db.dbname", "test_db"),
+		TablePrefix:     o.getStringWithDefault("db.tablePrefix", ""),
 		SSLMode:         o.getStringWithDefault("db.sslmode", "disable"),
 		TimeZone:        o.getStringWithDefault("db.timeZone", "Asia/Shanghai"),
 		MaxOpenConns:    o.getInt64WithDefault("db.maxOpenConns", 100),
@@ -259,6 +262,7 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 			Username: o.getStringWithDefault("auth.superAdmin.username", "admin"),
 			Password: o.getStringWithDefault("auth.superAdmin.password", "admin"),
 			Email:    o.getStringWithDefault("auth.superAdmin.email", "admin@example.com"),
+			Role:     o.getStringWithDefault("auth.superAdmin.role", "super_admin"),
 		},
 	}
 

@@ -12,8 +12,8 @@
 # ==================== 服务器配置 ====================
 server:
   mode: test
-  host: "127.0.0.1"
-  port: 8081 # Use a different port for testing to avoid conflicts
+  host: "0.0.0.0"
+  port: 8080
   timeout: 30s
   pidFile: "server_test.pid"
 
@@ -30,23 +30,23 @@ logger:
 
 # ==================== 数据库配置 ====================
 db:
-  driver: "mysql" # or "postgres"
-  host: "127.0.0.1"
-  port: 3306
-  user: "crm_user"
-  password: "crm_pass"
-  dbname: "crm_db" # Use a dedicated test database name
-  sslmode: "disable"
-  timeZone: "Asia/Shanghai"
-  maxOpenConns: 10
-  maxIdleConns: 5
+  driver: mysql              # 数据库驱动: mysql, sqlite3
+  host: "127.0.0.1"          # 数据库服务器地址
+  port: 3306                 # 数据库端口 (MySQL/MariaDB 默认 3306)
+  user: "root"               # 数据库用户名
+  password: "root_password"  # 数据库密码
+  dbname: "crm_lite_test"    # 数据库名称
+  sslmode: disable           # (主要用于PostgreSQL) SSL模式: disable, require, verify-ca, verify-full
+  timeZone: "Asia/Shanghai"  # 数据库时区设置
+  maxOpenConns: 10           # 最大活跃连接数
+  maxIdleConns: 5            # 最大空闲连接数
   connMaxLifetime: 1h
 
 # ==================== 缓存配置 ====================
 cache:
   driver: "redis"
   redis:
-    host: "127.0.0.1"
+    host: "redis"
     port: 6379
     password: ""
     db: 1 # Use a different Redis DB for testing
@@ -63,6 +63,11 @@ auth:
   rbac:
     modelFile: "config/model.conf"
   BCryptCost: 10
+  superAdmin:
+    username: "admin"
+    password: "admin123"
+    email: "admin@example.com"
+    role: "super_admin"
 
 # ==================== 性能监控配置 ====================
 pprofOn: true

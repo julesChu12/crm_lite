@@ -19,15 +19,15 @@ DB_ENV=${DB_ENV:-${ENV:-development}}
 echo "当前环境: $DB_ENV"
 
 echo "检查数据库初始化状态..."
-MIGRATION_TABLE_COUNT=$(mariadb -h"${DB_HOST}" -u"${DB_USER}" --password="${DB_PASS}" --skip-ssl "${DB_NAME}" -Ns -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_NAME}' AND table_name = 'migrations';")
+MIGRATION_TABLE_COUNT=$(mariadb -h"${DB_HOST}" -u"${DB_USER}" --password="${DB_PASSWORD}" --skip-ssl "${DB_DBNAME}" -Ns -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = '${DB_DBNAME}' AND table_name = 'migrations';")
 
 if [ "$MIGRATION_TABLE_COUNT" -eq 0 ]; then
     echo "数据库未初始化或迁移表不存在，开始执行迁移..."
-    go run cmd/tools/db/main.go -env="$DB_ENV" -direction=up
+    go run cmd/tools/db/migrate.go -env="$DB_ENV" -direction=up
     echo "数据库迁移完成!"
 else
     echo "数据库已初始化，检查是否有新的迁移..."
-    go run cmd/tools/db/main.go -env="$DB_ENV" -direction=up
+    go run cmd/tools/db/migrate.go -env="$DB_ENV" -direction=up
 fi
 
 # 3. 启动主程序

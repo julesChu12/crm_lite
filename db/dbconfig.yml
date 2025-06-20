@@ -1,6 +1,6 @@
 development:
   dialect: mysql
-  datasource: ${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_DBNAME}?parseTime=true
   dir: db/migrations
   table: migrations
 
@@ -12,6 +12,6 @@ test:
 
 production:
   dialect: mysql
-  datasource: ${DB_USER}:${DB_PASS}@tcp(${DB_HOST}:${DB_PORT})/${DB_NAME}?parseTime=true
+  datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_DBNAME}?parseTime=true
   dir: db/migrations
   table: migrations
