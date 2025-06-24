@@ -57,13 +57,26 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 
 	fmt.Printf("Password verification successful!\n")
 
-	// 3. 生成JWT
-	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username)
+	// 3. 查询用户角色
+	var roles []string
+	q := s.userQuery
+	err = q.Role.WithContext(ctx).
+		Select(q.Role.Name).
+		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
+		Where(q.AdminUserRole.AdminUserID.Eq(user.UUID)).
+		Scan(&roles)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles: %w", err)
+	}
+
+	// 4. 生成JWT
+	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. 返回响应
+	// 5. 返回响应
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -134,4 +147,73 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 	}
 
 	return s.userQuery.AdminUser.WithContext(ctx).Save(user)
+}
+
+// GetProfile 获取当前登录用户的个人资料
+func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserResponse, error) {
+	// 1. 查询用户基本信息
+	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("database query error: %w", err)
+	}
+
+	// 2. 查询用户角色
+	var roles []string
+	q := s.userQuery
+	err = q.Role.WithContext(ctx).
+		Select(q.Role.Name).
+		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
+		Where(q.AdminUserRole.AdminUserID.Eq(user.UUID)).
+		Scan(&roles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles: %w", err)
+	}
+
+	// 3. 组装 DTO
+	return &dto.UserResponse{
+		UUID:      user.UUID,
+		Username:  user.Username,
+		Email:     user.Email,
+		RealName:  user.RealName,
+		Phone:     user.Phone,
+		Avatar:    user.Avatar,
+		IsActive:  user.IsActive,
+		Roles:     roles,
+		CreatedAt: utils.FormatTime(user.CreatedAt),
+	}, nil
+}
+
+// ChangePassword 修改密码
+func (s *AuthService) ChangePassword(ctx context.Context, userID string, req *dto.ChangePasswordRequest) error {
+	// 1. 查询用户
+	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
+	if err != nil {
+		return ErrUserNotFound
+	}
+
+	// 2. 验证旧密码
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
+		return ErrInvalidPassword
+	}
+
+	// 3. 哈希新密码并更新
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	result, err := s.userQuery.AdminUser.WithContext(ctx).
+		Where(s.userQuery.AdminUser.UUID.Eq(userID)).
+		Update(s.userQuery.AdminUser.PasswordHash, string(hashed))
+
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return ErrUserNotFound
+	}
+	return nil
 }

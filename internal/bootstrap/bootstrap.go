@@ -37,6 +37,12 @@ func Bootstrap() (*resource.Manager, func(), error) {
 		return nil, nil, fmt.Errorf("failed to register cache resource: %w", err)
 	}
 
+	// - Casbin 权限
+	casbinResource := resource.NewCasbinResource(resManager, opts.Auth.RbacOptions)
+	if err := resManager.Register(resource.CasbinServiceKey, casbinResource); err != nil {
+		return nil, nil, fmt.Errorf("failed to register casbin resource: %w", err)
+	}
+
 	// ... 未来可以在这里注册更多的资源, e.g., Message Queue, Tracer ...
 
 	// 5. 初始化所有已注册的资源
@@ -56,7 +62,7 @@ func Bootstrap() (*resource.Manager, func(), error) {
 	log.Info("All resources initialized successfully")
 
 	// 6. 初始化超级管理员与 Casbin
-	if err := initSuperAdmin(dbResource.DB); err != nil {
+	if err := initSuperAdmin(resManager); err != nil {
 		log.Error("Failed to init super admin", zap.Error(err))
 	}
 

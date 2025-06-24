@@ -11,5 +11,16 @@ type LoginResponse struct {
 	AccessToken  string `json:"access_token"`  // 访问令牌
 	RefreshToken string `json:"refresh_token"` // 刷新令牌
 	TokenType    string `json:"token_type"`    // 令牌类型, 通常是 "Bearer"
-	ExpiresIn    int64  `json:"expires_in"`    // 访问令牌的有效期（秒）
+	ExpiresIn    int    `json:"expires_in"`    // access_token 的有效期（秒）
+}
+
+// RefreshTokenRequest 刷新令牌请求体
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+// ChangePasswordRequest 修改密码请求体
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
 }

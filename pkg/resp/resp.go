@@ -24,6 +24,7 @@ const (
 	CodeSuccess       = 0
 	CodeInvalidParam  = 4001
 	CodeUnauthorized  = 4010
+	CodeForbidden     = 4030
 	CodeNotFound      = 4040
 	CodeInternalError = 5000
 )

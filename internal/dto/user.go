@@ -26,3 +26,22 @@ type UpdateUserRequest struct {
 	Phone    string `json:"phone,omitempty"`
 	Avatar   string `json:"avatar,omitempty"`
 }
+
+// GetUserRequest 通过 URI 获取用户信息的请求
+type GetUserRequest struct {
+	UUID string `uri:"uuid" binding:"required,uuid"`
+}
+
+// UserResponse 返回给客户端的用户信息
+// 不应包含密码等敏感数据
+type UserResponse struct {
+	UUID      string   `json:"uuid"`
+	Username  string   `json:"username"`
+	Email     string   `json:"email"`
+	RealName  string   `json:"real_name"`
+	Phone     string   `json:"phone,omitempty"`
+	Avatar    string   `json:"avatar,omitempty"`
+	IsActive  bool     `json:"is_active"`
+	Roles     []string `json:"roles"`
+	CreatedAt string   `json:"created_at"`
+}

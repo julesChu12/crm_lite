@@ -61,7 +61,7 @@ auth:
     access_token_expire: 15m
     refresh_token_expire: 72h
   rbac:
-    modelFile: "config/model.conf"
+    modelFile: "internal/bootstrap/model.conf"
   BCryptCost: 10
   superAdmin:
     username: "admin"

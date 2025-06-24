@@ -10,19 +10,21 @@ import (
 
 // CustomClaims 定义了自定义的 JWT Claims，包含了用户ID和角色等信息
 type CustomClaims struct {
-	UserID   string `json:"user_id"` // 修改为 string 类型以支持 UUID
-	Username string `json:"username"`
+	UserID   string   `json:"user_id"` // 修改为 string 类型以支持 UUID
+	Username string   `json:"username"`
+	Roles    []string `json:"roles"`
 	jwt.RegisteredClaims
 }
 
 // GenerateTokens 生成 Access Token 和 Refresh Token
-func GenerateTokens(userID string, username string) (accessToken string, refreshToken string, err error) {
+func GenerateTokens(userID string, username string, roles []string) (accessToken string, refreshToken string, err error) {
 	opts := config.GetInstance().Auth.JWTOptions
 
 	// 生成 Access Token
 	accessClaims := CustomClaims{
 		UserID:   userID,
 		Username: username,
+		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(opts.AccessTokenExpire)),
 			Issuer:    opts.Issuer,
@@ -37,6 +39,7 @@ func GenerateTokens(userID string, username string) (accessToken string, refresh
 	refreshClaims := CustomClaims{
 		UserID:   userID,
 		Username: username,
+		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(opts.RefreshTokenExpire)),
 			Issuer:    opts.Issuer,

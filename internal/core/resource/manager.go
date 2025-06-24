@@ -14,9 +14,10 @@ import (
 type ServiceKey string
 
 const (
-	DBServiceKey    ServiceKey = "db"
-	CacheServiceKey ServiceKey = "cache"
-	ESServiceKey    ServiceKey = "es"
+	DBServiceKey     ServiceKey = "db"
+	CacheServiceKey  ServiceKey = "cache"
+	CasbinServiceKey ServiceKey = "casbin"
+	ESServiceKey     ServiceKey = "es"
 )
 
 // Resource 抽象所有可托管资源

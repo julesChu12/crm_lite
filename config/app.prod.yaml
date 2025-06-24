@@ -66,9 +66,10 @@ auth:
     access_token_expire: 3600s     # 访问令牌过期时间 (1小时)
     refresh_token_expire: 3600s    # 刷新令牌过期时间 (建议设置更长时间)
   rbac:
-    modelFile: "config/rbac_model.conf"  # Casbin RBAC 模型文件路径
+    modelFile: "internal/bootstrap/model.conf"
   oauthEnabled: false              # 是否启用第三方 OAuth 登录 (如微信、钉钉等)
-  BCryptCost: 10                   # 密码加密强度: 10-12 适合生产环境
+  BCryptCost: 12                   # 密码加密强度: 10-12 适合生产环境
+  superAdmin:
 
 # ==================== 性能监控配置 ====================
 pprofOn: true                      # 是否启用 pprof 性能分析，生产环境建议关闭
