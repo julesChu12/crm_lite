@@ -5,9 +5,9 @@ import (
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
+	"crm_lite/pkg/utils"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,14 +17,8 @@ type AuthController struct {
 }
 
 func NewAuthController(resManager *resource.Manager) *AuthController {
-	// 从资源管理器获取数据库连接
-	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
-	if err != nil {
-		panic("Failed to get database resource: " + err.Error())
-	}
-
 	return &AuthController{
-		authService: service.NewAuthService(dbResource.DB),
+		authService: service.NewAuthService(resManager),
 	}
 }
 
@@ -151,18 +145,119 @@ func (ac *AuthController) ChangePassword(c *gin.Context) {
 
 // --- 以下为待实现功能 ---
 
+// Logout godoc
+// @Summary      用户登出
+// @Description  将当前用户的JWT加入黑名单以实现登出
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  resp.Response
+// @Failure      401  {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /auth/logout [post]
 func (ac *AuthController) Logout(c *gin.Context) {
-	resp.Success(c, "logout success (no-op on server)")
+	// 从中间件获取解析后的 claims
+	claims, exists := c.Get("claims")
+	if !exists {
+		resp.Error(c, resp.CodeUnauthorized, "invalid token claims")
+		return
+	}
+
+	// 调用服务层将 token 加入黑名单
+	// 注意: claims 需要断言为正确的类型
+	err := ac.authService.Logout(c.Request.Context(), claims.(*utils.CustomClaims))
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+	resp.Success(c, gin.H{"message": "logout success"})
 }
 
+// RefreshToken godoc
+// @Summary      刷新令牌
+// @Description  使用有效的刷新令牌获取新的访问令牌
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        refresh_token  body      dto.RefreshTokenRequest   true  "刷新令牌"
+// @Success      200            {object}  resp.Response{data=dto.LoginResponse}
+// @Failure      400            {object}  resp.Response
+// @Failure      401            {object}  resp.Response
+// @Router       /auth/refresh [post]
 func (ac *AuthController) RefreshToken(c *gin.Context) {
-	resp.Error(c, http.StatusNotImplemented, "not implemented yet")
+	var req dto.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+
+	response, err := ac.authService.RefreshToken(c.Request.Context(), &req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidToken) {
+			resp.Error(c, resp.CodeUnauthorized, "invalid or expired refresh token")
+		} else {
+			resp.SystemError(c, err)
+		}
+		return
+	}
+	resp.Success(c, response)
 }
 
+// ForgotPassword godoc
+// @Summary      忘记密码
+// @Description  用户提交邮箱，系统发送重置密码链接/令牌
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        email  body      dto.ForgotPasswordRequest  true  "用户邮箱"
+// @Success      200    {object}  resp.Response
+// @Failure      400    {object}  resp.Response
+// @Failure      404    {object}  resp.Response
+// @Router       /auth/forgot-password [post]
 func (ac *AuthController) ForgotPassword(c *gin.Context) {
-	resp.Error(c, http.StatusNotImplemented, "not implemented yet")
+	var req dto.ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+	err := ac.authService.ForgotPassword(c.Request.Context(), &req)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			// 为安全起见，不明确提示用户是否存在，统一返回成功
+			resp.Success(c, gin.H{"message": "if the user exists, a password reset link has been sent to the email"})
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
+	resp.Success(c, gin.H{"message": "if the user exists, a password reset link has been sent to the email"})
 }
 
+// ResetPassword godoc
+// @Summary      重置密码
+// @Description  使用令牌和新密码来重置用户密码
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      dto.ResetPasswordRequest   true  "重置密码凭证"
+// @Success      200          {object}  resp.Response
+// @Failure      400          {object}  resp.Response
+// @Failure      401          {object}  resp.Response
+// @Router       /auth/reset-password [post]
 func (ac *AuthController) ResetPassword(c *gin.Context) {
-	resp.Error(c, http.StatusNotImplemented, "not implemented yet")
+	var req dto.ResetPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+	err := ac.authService.ResetPassword(c.Request.Context(), &req)
+	if err != nil {
+		if errors.Is(err, service.ErrInvalidToken) {
+			resp.Error(c, resp.CodeUnauthorized, "invalid or expired reset token")
+		} else {
+			resp.SystemError(c, err)
+		}
+		return
+	}
+	resp.Success(c, gin.H{"message": "password has been reset successfully"})
 }

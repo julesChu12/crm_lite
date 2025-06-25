@@ -5,6 +5,7 @@ import (
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
+	"errors"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -44,24 +45,52 @@ func (s *RoleService) ListRoles(ctx context.Context) ([]*dto.RoleResponse, error
 	return res, nil
 }
 
-func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUpdateRequest) error {
+func (s *RoleService) GetRoleByID(ctx context.Context, id string) (*dto.RoleResponse, error) {
+	role, err := s.q.Role.WithContext(ctx).Where(s.q.Role.ID.Eq(id)).First()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrRoleNotFound
+		}
+		return nil, err
+	}
+	return s.toDTO(role), nil
+}
+
+func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUpdateRequest) (*dto.RoleResponse, error) {
 	r := s.q.Role
-	updates := map[string]interface{}{
-		"display_name": req.DisplayName,
-		"description":  req.Description,
+	updates := make(map[string]interface{})
+	if req.DisplayName != "" {
+		updates["display_name"] = req.DisplayName
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
 	}
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
 	}
 
-	_, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Updates(updates)
-	return err
+	result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Updates(updates)
+	if err != nil {
+		return nil, err
+	}
+	if result.RowsAffected == 0 {
+		return nil, ErrRoleNotFound
+	}
+
+	// 返回更新后的角色信息
+	return s.GetRoleByID(ctx, id)
 }
 
 func (s *RoleService) DeleteRole(ctx context.Context, id string) error {
 	r := s.q.Role
-	_, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Delete()
-	return err
+	result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Delete()
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return ErrRoleNotFound
+	}
+	return nil
 }
 
 func (s *RoleService) toDTO(role *model.Role) *dto.RoleResponse {

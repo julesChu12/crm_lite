@@ -45,3 +45,42 @@ type UserResponse struct {
 	Roles     []string `json:"roles"`
 	CreatedAt string   `json:"created_at"`
 }
+
+// --- Admin-facing DTOs for User Management ---
+
+// AdminCreateUserRequest 管理员创建用户请求体
+type AdminCreateUserRequest struct {
+	Username string   `json:"username" binding:"required"`
+	Password string   `json:"password" binding:"required,min=6"`
+	Email    string   `json:"email"    binding:"required,email"`
+	RealName string   `json:"real_name"`
+	Phone    string   `json:"phone"`
+	Avatar   string   `json:"avatar"`
+	IsActive *bool    `json:"is_active"` // 使用指针以区分 "未提供" 和 "设置为false"
+	RoleIDs  []string `json:"role_ids"`  // 关联的角色ID列表
+}
+
+// AdminUpdateUserRequest 管理员更新用户请求体
+type AdminUpdateUserRequest struct {
+	Email    string   `json:"email,omitempty"`
+	RealName string   `json:"real_name,omitempty"`
+	Phone    string   `json:"phone,omitempty"`
+	Avatar   string   `json:"avatar,omitempty"`
+	IsActive *bool    `json:"is_active"`
+	RoleIDs  []string `json:"role_ids"`
+}
+
+// UserListRequest 查询用户列表的请求参数
+type UserListRequest struct {
+	Username string `form:"username"`  // 按用户名模糊搜索
+	Email    string `form:"email"`     // 按邮箱搜索
+	IsActive *bool  `form:"is_active"` // 按状态筛选
+	Page     int    `form:"page,default=1"`
+	PageSize int    `form:"page_size,default=10"`
+}
+
+// UserListResponse 用户列表响应
+type UserListResponse struct {
+	Total int64           `json:"total"`
+	Users []*UserResponse `json:"users"`
+}

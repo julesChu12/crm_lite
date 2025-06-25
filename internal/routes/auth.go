@@ -21,7 +21,7 @@ func registerAuthRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
 		auth.POST("/reset-password", authController.ResetPassword)
 
 		// 保护路由，需要 JWT 认证
-		authed := auth.Group("").Use(middleware.JWTAuthMiddleware())
+		authed := auth.Group("").Use(middleware.JWTAuthMiddleware(resManager))
 		{
 			authed.POST("/logout", authController.Logout)
 			authed.GET("/profile", authController.GetProfile)

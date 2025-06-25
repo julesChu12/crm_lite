@@ -2,38 +2,181 @@ package service
 
 import (
 	"context"
+	"crm_lite/internal/core/config"
+	"crm_lite/internal/core/logger"
+	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"crm_lite/pkg/utils"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrInvalidPassword   = errors.New("invalid password")
-	ErrUserAlreadyExists = errors.New("user already exists")
-)
-
 type AuthService struct {
-	userQuery *query.Query
+	q        *query.Query
+	resource *resource.Manager
+	opts     *config.Options
 }
 
-func NewAuthService(db *gorm.DB) *AuthService {
-	return &AuthService{
-		userQuery: query.Use(db),
+func NewAuthService(resManager *resource.Manager) *AuthService {
+	// 从资源管理器获取数据库连接
+	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for AuthService: " + err.Error())
 	}
+
+	return &AuthService{
+		q:        query.Use(dbResource.DB),
+		resource: resManager,
+		opts:     config.GetInstance(),
+	}
+}
+
+// Logout 将JWT加入黑名单
+func (s *AuthService) Logout(ctx context.Context, claims *utils.CustomClaims) error {
+	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
+	if err != nil {
+		return fmt.Errorf("failed to get cache resource: %w", err)
+	}
+
+	// 计算剩余过期时间
+	expiresAt := claims.ExpiresAt.Time
+	ttl := time.Until(expiresAt)
+
+	// 如果 token 已经过期，则无需操作
+	if ttl <= 0 {
+		return nil
+	}
+
+	// JTI（JWT ID）是令牌的唯一标识符
+	// 我们用 "jti:" 作为前缀，便于管理
+	err = cache.Client.Set(ctx, "jti:"+claims.ID, "blacklisted", ttl).Err()
+	if err != nil {
+		return fmt.Errorf("failed to add token to blacklist: %w", err)
+	}
+	return nil
+}
+
+// RefreshToken 刷新令牌
+func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.LoginResponse, error) {
+	// 1. 解析 Refresh Token
+	claims, err := utils.ParseToken(req.RefreshToken)
+	if err != nil {
+		return nil, ErrInvalidToken
+	}
+
+	// 2. 检查黑名单（如果需要，登出时也可以将 RefreshToken 加入黑名单）
+	// 此处简化，不检查 refreshToken 的黑名单
+
+	// 3. 验证用户是否存在
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(claims.UserID)).First()
+	if err != nil {
+		return nil, ErrUserNotFound
+	}
+
+	// 4. 生成新的 Access Token 和 Refresh Token
+	// 为安全起见，通常刷新操作也会轮换 Refresh Token
+	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, claims.Roles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
+	}
+
+	// 5. 返回响应
+	return &dto.LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		TokenType:    "Bearer",
+		ExpiresIn:    int(s.opts.Auth.JWTOptions.AccessTokenExpire.Seconds()),
+	}, nil
+}
+
+// ForgotPassword 处理忘记密码请求
+func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswordRequest) error {
+	log := logger.GetGlobalLogger()
+	// 1. 查找用户
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Email.Eq(req.Email)).First()
+	if err != nil {
+		// 即使找不到用户，也返回 nil，避免泄露用户信息
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Warn("Password reset requested for non-existent email", zap.String("email", req.Email))
+			return nil
+		}
+		return err
+	}
+
+	// 2. 生成一个安全的重置令牌
+	resetToken := uuid.New().String()
+	cacheKey := "reset_token:" + resetToken
+
+	// 3. 将令牌存入 Redis，并设置一个较短的过期时间（例如 15 分钟）
+	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
+	if err != nil {
+		return fmt.Errorf("failed to get cache resource: %w", err)
+	}
+	ttl := 15 * time.Minute
+	err = cache.Client.Set(ctx, cacheKey, user.UUID, ttl).Err()
+	if err != nil {
+		return fmt.Errorf("failed to store reset token: %w", err)
+	}
+
+	// 4. 发送邮件（此处用日志模拟）
+	// 在真实项目中，这里会调用邮件服务
+	log.Info("Password reset token generated",
+		zap.String("email", req.Email),
+		zap.String("token", resetToken),
+	)
+
+	return nil
+}
+
+// ResetPassword 使用令牌重置密码
+func (s *AuthService) ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error {
+	// 1. 验证重置令牌
+	cacheKey := "reset_token:" + req.Token
+	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
+	if err != nil {
+		return fmt.Errorf("failed to get cache resource: %w", err)
+	}
+
+	userID, err := cache.Client.Get(ctx, cacheKey).Result()
+	if err != nil {
+		return ErrInvalidToken // 令牌不存在或已过期
+	}
+
+	// 2. 哈希新密码
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("failed to hash new password: %w", err)
+	}
+
+	// 3. 更新数据库中的密码
+	result, err := s.q.AdminUser.WithContext(ctx).
+		Where(s.q.AdminUser.UUID.Eq(userID)).
+		Update(s.q.AdminUser.PasswordHash, string(hashed))
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return ErrUserNotFound
+	}
+
+	// 4. 删除已使用的令牌
+	_ = cache.Client.Del(ctx, cacheKey).Err()
+
+	return nil
 }
 
 // Login 处理用户登录逻辑
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
 	// 1. 根据用户名查找用户
-	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.Username.Eq(req.Username)).First()
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Username.Eq(req.Username)).First()
 	if err != nil {
 		fmt.Printf("User not found: %v\n", err)
 		return nil, ErrUserNotFound
@@ -59,7 +202,7 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 
 	// 3. 查询用户角色
 	var roles []string
-	q := s.userQuery
+	q := s.q
 	err = q.Role.WithContext(ctx).
 		Select(q.Role.Name).
 		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
@@ -81,14 +224,14 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    3600, // 应当从配置中读取
+		ExpiresIn:    int(s.opts.Auth.JWTOptions.AccessTokenExpire.Seconds()),
 	}, nil
 }
 
 // Register 用户注册
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) error {
 	// 1. 检查用户名是否存在
-	_, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.Username.Eq(req.Username)).First()
+	_, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Username.Eq(req.Username)).First()
 	if err == nil {
 		return ErrUserAlreadyExists
 	}
@@ -112,7 +255,7 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		IsActive:     true,
 	}
 
-	if err := s.userQuery.AdminUser.WithContext(ctx).Create(user); err != nil {
+	if err := s.q.AdminUser.WithContext(ctx).Create(user); err != nil {
 		return err
 	}
 	return nil
@@ -127,7 +270,7 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 	}
 
 	// 2. 查询用户
-	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrUserNotFound
@@ -146,13 +289,13 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 		user.Avatar = req.Avatar
 	}
 
-	return s.userQuery.AdminUser.WithContext(ctx).Save(user)
+	return s.q.AdminUser.WithContext(ctx).Save(user)
 }
 
 // GetProfile 获取当前登录用户的个人资料
 func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserResponse, error) {
 	// 1. 查询用户基本信息
-	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
@@ -162,7 +305,7 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserR
 
 	// 2. 查询用户角色
 	var roles []string
-	q := s.userQuery
+	q := s.q
 	err = q.Role.WithContext(ctx).
 		Select(q.Role.Name).
 		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
@@ -189,7 +332,7 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserR
 // ChangePassword 修改密码
 func (s *AuthService) ChangePassword(ctx context.Context, userID string, req *dto.ChangePasswordRequest) error {
 	// 1. 查询用户
-	user, err := s.userQuery.AdminUser.WithContext(ctx).Where(s.userQuery.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
 	if err != nil {
 		return ErrUserNotFound
 	}
@@ -205,9 +348,9 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID string, req *dt
 		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 
-	result, err := s.userQuery.AdminUser.WithContext(ctx).
-		Where(s.userQuery.AdminUser.UUID.Eq(userID)).
-		Update(s.userQuery.AdminUser.PasswordHash, string(hashed))
+	result, err := s.q.AdminUser.WithContext(ctx).
+		Where(s.q.AdminUser.UUID.Eq(userID)).
+		Update(s.q.AdminUser.PasswordHash, string(hashed))
 
 	if err != nil {
 		return err

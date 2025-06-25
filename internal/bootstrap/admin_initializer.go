@@ -5,7 +5,7 @@ import (
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/logger"
 	"crm_lite/internal/core/resource"
-	dao_model "crm_lite/internal/dao/model"
+	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"errors"
 
@@ -67,7 +67,7 @@ func initSuperAdmin(rm *resource.Manager) error {
 			log.Error("Failed to hash password for super admin", zap.Error(err))
 			return err
 		}
-		admin = &dao_model.AdminUser{
+		admin = &model.AdminUser{
 			UUID:         uuid.New().String(),
 			Username:     adminCfg.Username,
 			PasswordHash: string(hashed),

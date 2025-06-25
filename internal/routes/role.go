@@ -7,15 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerRoleRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
-	dbRes, _ := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
-	rc := controller.NewRoleController(dbRes.DB)
+func registerRoleRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
+	roleController := controller.NewRoleController(resManager)
 
 	roles := rg.Group("/roles")
 	{
-		roles.POST("", rc.CreateRole)
-		roles.GET("", rc.ListRoles)
-		roles.PUT("/:id", rc.UpdateRole)
-		roles.DELETE("/:id", rc.DeleteRole)
+		roles.POST("", roleController.CreateRole)
+		roles.GET("", roleController.ListRoles)
+		roles.GET("/:id", roleController.GetRoleByID)
+		roles.PUT("/:id", roleController.UpdateRole)
+		roles.DELETE("/:id", roleController.DeleteRole)
 	}
 }

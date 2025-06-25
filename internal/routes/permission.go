@@ -16,4 +16,13 @@ func registerPermissionRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
 		permissions.DELETE("", pc.RemovePermission)
 		permissions.GET("/:role", pc.ListPermissionsByRole)
 	}
+
+	// 用户-角色管理路由 (Casbin g policies)
+	userRoles := rg.Group("/user-roles")
+	{
+		userRoles.POST("/assign", pc.AssignRoleToUser)
+		userRoles.POST("/remove", pc.RemoveRoleFromUser)
+		userRoles.GET("/users/:role", pc.GetUsersForRole)
+		userRoles.GET("/roles/:user_id", pc.GetRolesForUser)
+	}
 }

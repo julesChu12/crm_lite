@@ -1,15 +1,17 @@
 package middleware
 
 import (
+	"crm_lite/internal/core/resource"
 	"crm_lite/pkg/resp"
 	"crm_lite/pkg/utils"
+	"fmt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 // JWTAuthMiddleware 验证 JWT 并将用户信息注入到上下文
-func JWTAuthMiddleware() gin.HandlerFunc {
+func JWTAuthMiddleware(resManager *resource.Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -31,6 +33,23 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
+		// 检查黑名单
+		cache, err := resource.Get[*resource.CacheResource](resManager, resource.CacheServiceKey)
+		if err != nil {
+			resp.SystemError(c, fmt.Errorf("failed to get cache resource for auth: %w", err))
+			c.Abort()
+			return
+		}
+		isBlacklisted, _ := cache.Client.Exists(c.Request.Context(), "jti:"+claims.ID).Result()
+		if isBlacklisted > 0 {
+			resp.Error(c, resp.CodeUnauthorized, "token has been invalidated")
+			c.Abort()
+			return
+		}
+
+		// 将 claims 注入到 context，便于后续 handler（如 Logout）使用
+		c.Set("claims", claims)
 
 		// 将用户信息注入到 context
 		ctx := utils.WithUser(c.Request.Context(), claims.UserID, claims.Username)

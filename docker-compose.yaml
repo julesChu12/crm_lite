@@ -9,6 +9,7 @@ services:
       MARIADB_DATABASE: ${DB_DBNAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
+      TZ: 'Asia/Shanghai'
     volumes:
       - ./tmp/mariadb_data:/var/lib/mysql
     restart: always
@@ -34,6 +35,7 @@ services:
     environment:
       - PMA_HOST=mariadb
       - PMA_PORT=3306
+      - TZ=Asia/Shanghai
     restart: always
     networks:
       - crm-network
@@ -55,6 +57,7 @@ services:
       - .env
     environment:
       - ENV=development
+      - TZ=Asia/Shanghai
     restart: always
     networks:
       - crm-network

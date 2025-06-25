@@ -22,10 +22,13 @@ type Response struct {
 // 业务码常量
 const (
 	CodeSuccess       = 0
+	CodeCreated       = 201
+	CodeNoContent     = 204
 	CodeInvalidParam  = 4001
 	CodeUnauthorized  = 4010
 	CodeForbidden     = 4030
 	CodeNotFound      = 4040
+	CodeConflict      = 4090 // 资源冲突，例如用户已存在
 	CodeInternalError = 5000
 )
 
@@ -38,9 +41,38 @@ func Success(c *gin.Context, data interface{}) {
 	})
 }
 
+// SuccessWithCode 成功返回，但使用指定的HTTP状态码
+func SuccessWithCode(c *gin.Context, httpCode int, data interface{}) {
+	// 对于 204 No Content，不应有响应体
+	if httpCode == http.StatusNoContent {
+		c.Status(httpCode)
+		return
+	}
+	c.JSON(httpCode, Response{
+		Code:    CodeSuccess,
+		Message: "success",
+		Data:    data,
+	})
+}
+
 // Error 统一错误返回，允许自定义业务码和信息
 func Error(c *gin.Context, code int, msg string) {
-	c.JSON(http.StatusOK, Response{
+	httpCode := http.StatusOK
+	// 根据业务码决定HTTP状态码
+	switch code {
+	case CodeConflict:
+		httpCode = http.StatusConflict
+	case CodeNotFound:
+		httpCode = http.StatusNotFound
+	case CodeUnauthorized:
+		httpCode = http.StatusUnauthorized
+	case CodeForbidden:
+		httpCode = http.StatusForbidden
+	case CodeInvalidParam:
+		httpCode = http.StatusBadRequest
+	}
+
+	c.JSON(httpCode, Response{
 		Code:    code,
 		Message: msg,
 	})

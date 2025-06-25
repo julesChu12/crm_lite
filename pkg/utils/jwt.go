@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 // CustomClaims 定义了自定义的 JWT Claims，包含了用户ID和角色等信息
@@ -26,6 +27,7 @@ func GenerateTokens(userID string, username string, roles []string) (accessToken
 		Username: username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(), // JTI, JWT ID
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(opts.AccessTokenExpire)),
 			Issuer:    opts.Issuer,
 		},
@@ -41,6 +43,7 @@ func GenerateTokens(userID string, username string, roles []string) (accessToken
 		Username: username,
 		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.New().String(), // JTI, JWT ID
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(opts.RefreshTokenExpire)),
 			Issuer:    opts.Issuer,
 		},

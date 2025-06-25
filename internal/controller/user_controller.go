@@ -1,56 +1,173 @@
 package controller
 
 import (
+	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
+// UserController 负责处理用户管理相关的HTTP请求
 type UserController struct {
 	userService *service.UserService
 }
 
-func NewUserController(db *gorm.DB) *UserController {
+// NewUserController 创建一个新的 UserController
+func NewUserController(resManager *resource.Manager) *UserController {
+	// 从资源管理器获取数据库连接等，初始化 UserService
+	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		// 在系统启动时，如果依赖不满足，直接 panic
+		panic("Failed to get database resource for UserController: " + err.Error())
+	}
+
 	return &UserController{
-		userService: service.NewUserService(db),
+		userService: service.NewUserService(dbResource.DB),
 	}
 }
 
-// GetUser godoc
-// @Summary      获取单个用户信息
-// @Description  根据 UUID 获取用户的详细信息
-// @Tags         User
+// CreateUser godoc
+// @Summary      管理员创建用户
+// @Description  由管理员创建一个新的用户账号并可以指定角色
+// @Tags         Users
 // @Accept       json
 // @Produce      json
-// @Param        uuid   path      string  true  "User UUID"
-// @Success      200  {object}  resp.Response{data=dto.UserResponse}
-// @Failure      400  {object}  resp.Response
-// @Failure      404  {object}  resp.Response
-// @Failure      500  {object}  resp.Response
-// @Router       /api/v1/users/{uuid} [get]
-func (uc *UserController) GetUser(c *gin.Context) {
-	// 1. 绑定并验证 URI 参数
-	var req dto.GetUserRequest
-	if err := c.ShouldBindUri(&req); err != nil {
+// @Param        user  body      dto.AdminCreateUserRequest  true  "用户信息"
+// @Success      201   {object}  resp.Response{data=dto.UserResponse}
+// @Failure      400   {object}  resp.Response
+// @Failure      409   {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users [post]
+func (uc *UserController) CreateUser(c *gin.Context) {
+	var req dto.AdminCreateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
 
-	// 2. 调用服务层
-	user, err := uc.userService.GetUserByUUID(c.Request.Context(), req.UUID)
+	user, err := uc.userService.CreateUserByAdmin(c.Request.Context(), &req)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			resp.Error(c, resp.CodeNotFound, "user not found")
-		} else {
-			resp.Error(c, resp.CodeInternalError, "failed to get user details")
+		if errors.Is(err, service.ErrUserAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "username or email already exists")
+			return
 		}
+		resp.SystemError(c, err)
 		return
 	}
 
-	// 3. 成功返回
+	resp.SuccessWithCode(c, resp.CodeCreated, user)
+}
+
+// GetUserList godoc
+// @Summary      获取用户列表
+// @Description  分页、筛选、搜索用户列表
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        query  query     dto.UserListRequest  false  "查询参数"
+// @Success      200    {object}  resp.Response{data=dto.UserListResponse}
+// @Failure      400    {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users [get]
+func (uc *UserController) GetUserList(c *gin.Context) {
+	var req dto.UserListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+
+	result, err := uc.userService.ListUsers(c.Request.Context(), &req)
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+
+	resp.Success(c, result)
+}
+
+// GetUserByID godoc
+// @Summary      获取单个用户详情
+// @Description  根据用户UUID获取详细信息
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        uuid  path      string  true  "User UUID"
+// @Success      200   {object}  resp.Response{data=dto.UserResponse}
+// @Failure      404   {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users/{uuid} [get]
+func (uc *UserController) GetUserByID(c *gin.Context) {
+	uuid := c.Param("uuid")
+	user, err := uc.userService.GetUserByUUID(c.Request.Context(), uuid)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			resp.Error(c, resp.CodeNotFound, "user not found")
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
 	resp.Success(c, user)
+}
+
+// UpdateUser godoc
+// @Summary      管理员更新用户
+// @Description  管理员更新用户信息，包括角色等
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        uuid  path      string                      true  "User UUID"
+// @Param        user  body      dto.AdminUpdateUserRequest  true  "要更新的用户信息"
+// @Success      200   {object}  resp.Response{data=dto.UserResponse}
+// @Failure      400   {object}  resp.Response
+// @Failure      404   {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users/{uuid} [put]
+func (uc *UserController) UpdateUser(c *gin.Context) {
+	uuid := c.Param("uuid")
+	var req dto.AdminUpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+
+	user, err := uc.userService.UpdateUserByAdmin(c.Request.Context(), uuid, &req)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			resp.Error(c, resp.CodeNotFound, "user not found")
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
+	resp.Success(c, user)
+}
+
+// DeleteUser godoc
+// @Summary      删除用户
+// @Description  管理员删除一个用户
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        uuid  path      string  true  "User UUID"
+// @Success      204   {object}  nil
+// @Failure      404   {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users/{uuid} [delete]
+func (uc *UserController) DeleteUser(c *gin.Context) {
+	uuid := c.Param("uuid")
+	err := uc.userService.DeleteUser(c.Request.Context(), uuid)
+	if err != nil {
+		if errors.Is(err, service.ErrUserNotFound) {
+			// 在DELETE操作中，如果资源不存在，也可以认为是成功的（幂等性）
+			resp.SuccessWithCode(c, resp.CodeNoContent, nil)
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
+	resp.SuccessWithCode(c, resp.CodeNoContent, nil)
 }
