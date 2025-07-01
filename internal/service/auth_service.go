@@ -23,19 +23,28 @@ type AuthService struct {
 	q        *query.Query
 	resource *resource.Manager
 	opts     *config.Options
+	emailSvc *EmailService
 }
 
 func NewAuthService(resManager *resource.Manager) *AuthService {
-	// 从资源管理器获取数据库连接
-	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic("Failed to get database resource for AuthService: " + err.Error())
 	}
 
+	// 从资源管理器获取邮件配置
+	emailRes, err := resource.Get[*resource.EmailResource](resManager, resource.EmailServiceKey)
+	var emailSvc *EmailService
+	if err == nil {
+		// 如果邮件资源存在，则创建邮件服务实例
+		emailSvc = NewEmailService(emailRes.Opts)
+	}
+
 	return &AuthService{
-		q:        query.Use(dbResource.DB),
+		q:        query.Use(db.DB),
 		resource: resManager,
 		opts:     config.GetInstance(),
+		emailSvc: emailSvc,
 	}
 }
 
@@ -99,13 +108,12 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenReq
 
 // ForgotPassword 处理忘记密码请求
 func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswordRequest) error {
-	log := logger.GetGlobalLogger()
 	// 1. 查找用户
 	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Email.Eq(req.Email)).First()
 	if err != nil {
 		// 即使找不到用户，也返回 nil，避免泄露用户信息
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Warn("Password reset requested for non-existent email", zap.String("email", req.Email))
+			logger.Warn("Password reset requested for non-existent email", zap.String("email", req.Email))
 			return nil
 		}
 		return err
@@ -126,12 +134,32 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswor
 		return fmt.Errorf("failed to store reset token: %w", err)
 	}
 
-	// 4. 发送邮件（此处用日志模拟）
-	// 在真实项目中，这里会调用邮件服务
-	log.Info("Password reset token generated",
-		zap.String("email", req.Email),
-		zap.String("token", resetToken),
-	)
+	// 4. 发送邮件
+	if s.emailSvc == nil {
+		logger.Error("Email service is not configured, cannot send password reset email.")
+		// 在邮件服务未配置时，可以选择返回错误或仅记录日志
+		// 为避免影响核心功能，此处仅记录日志
+		return nil
+	}
+
+	subject := "Reset Your Password"
+	// 在真实项目中，这里应该使用 HTML 模板
+	body := fmt.Sprintf(`
+		<p>Hi,</p>
+		<p>You requested to reset your password. Please use the following token to proceed:</p>
+		<p><b>%s</b></p>
+		<p>This token is valid for 15 minutes.</p>
+		<p>If you did not request a password reset, please ignore this email.</p>
+		<p>Thanks,<br>CRM Lite Team</p>
+	`, resetToken)
+
+	if err := s.emailSvc.SendMail(req.Email, subject, body); err != nil {
+		logger.Error("Failed to send password reset email", zap.Error(err), zap.String("email", req.Email))
+		// 即使邮件发送失败，也可能不希望将错误暴露给前端，以防范邮箱探测
+		return nil
+	}
+
+	logger.Info("Password reset email sent successfully", zap.String("email", req.Email))
 
 	return nil
 }

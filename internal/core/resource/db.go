@@ -10,6 +10,8 @@ import (
 
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/logger"
+
+	"go.uber.org/zap"
 )
 
 // DBResource 封装了GORM数据库连接
@@ -67,7 +69,7 @@ func (d *DBResource) Initialize(ctx context.Context) error {
 		return fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	logger.GetGlobalLogger().SugaredLogger.Infof("Database resource initialized successfully for driver: %s", d.opts.Driver)
+	logger.Info("Database resource initialized successfully", zap.String("driver", d.opts.Driver))
 	return nil
 }
 
@@ -78,13 +80,14 @@ func (d *DBResource) Close(ctx context.Context) error {
 	}
 	sqlDB, err := d.DB.DB()
 	if err != nil {
-		return fmt.Errorf("failed to get underlying sql.DB for closing: %w", err)
+		// 如果无法获取到底层连接，可能已关闭，直接返回
+		return nil
 	}
-
 	if err := sqlDB.Close(); err != nil {
 		return fmt.Errorf("failed to close database connection: %w", err)
 	}
-	logger.GetGlobalLogger().SugaredLogger.Info("Database resource closed successfully.")
+
+	logger.Info("Database resource closed successfully.")
 	return nil
 }
 

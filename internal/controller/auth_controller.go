@@ -56,7 +56,15 @@ func (c *AuthController) Login(ctx *gin.Context) {
 }
 
 // Register 用户注册
+// @Summary      用户注册
+// @Description  使用用户名和密码进行注册
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      dto.RegisterRequest   true  "注册凭证"
+// @Success      200          {object}  resp.Response{data=dto.RegisterResponse}
 func (c *AuthController) Register(ctx *gin.Context) {
+	// todo: 防止脚本批量撞库，在注册时，需要限制注册频率，比如1分钟内只能注册10次
 	var req dto.RegisterRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		resp.Error(ctx, resp.CodeInvalidParam, "Invalid request payload")

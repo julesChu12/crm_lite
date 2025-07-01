@@ -68,6 +68,17 @@ auth:
     password: "admin123"
     email: "admin@example.com"
     role: "super_admin"
+# ==================== 邮件服务配置 (SMTP) ====================
+email:
+  host: "smtp.gmail.com"         # SMTP 服务器地址
+  port: 587                      # SMTP 端口 (587 for TLS, 465 for SSL)
+  username: "your-email@gmail.com" # 您的 Gmail 邮箱
+  # 推荐使用环境变量设置密码: export EMAIL_PASSWORD=your_gmail_app_password
+  password: "your-gmail-app-password"                   # 您的 Gmail 应用专用密码 (App Password)
+  from: "your-email@gmail.com"   # 发件人邮箱，通常与 username 相同
+  fromName: "CRM Lite Support"   # 发件人显示名称
+  useTLS: true                   # 是否强制使用 STARTTLS
+  insecureSkip: false            # 在生产环境中应始终为 false
 
 # ==================== 性能监控配置 ====================
 pprofOn: true

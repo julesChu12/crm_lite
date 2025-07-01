@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/logger"
@@ -24,7 +25,7 @@ func NewCacheResource(opts config.CacheOptions) *CacheResource {
 // Initialize 实现了Resource接口，用于初始化Redis连接
 func (c *CacheResource) Initialize(ctx context.Context) error {
 	if c.opts.Driver != "redis" {
-		logger.GetGlobalLogger().SugaredLogger.Warnf("Cache driver is '%s', skipping Redis initialization.", c.opts.Driver)
+		logger.Warn("Cache driver is not redis, skipping Redis initialization", zap.String("driver", c.opts.Driver))
 		return nil
 	}
 
@@ -48,7 +49,7 @@ func (c *CacheResource) Initialize(ctx context.Context) error {
 		return fmt.Errorf("failed to ping redis: %w", err)
 	}
 
-	logger.GetGlobalLogger().SugaredLogger.Info("Cache resource (Redis) initialized successfully.")
+	logger.Info("Cache resource (Redis) initialized successfully.")
 	return nil
 }
 
@@ -62,6 +63,6 @@ func (c *CacheResource) Close(ctx context.Context) error {
 		return fmt.Errorf("failed to close redis connection: %w", err)
 	}
 
-	logger.GetGlobalLogger().SugaredLogger.Info("Cache resource (Redis) closed successfully.")
+	logger.Info("Cache resource (Redis) closed successfully.")
 	return nil
 }

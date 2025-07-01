@@ -212,6 +212,28 @@ PROD_SSH_KEY=your-ssh-private-key
 - [营销模块设计](docs/architecture/05_module_marketing.md)
 - [通用模块设计](docs/architecture/06_module_common.md)
 
+## 项目进度
+
+- **v0.1 (已完成)**
+  - [x] 搭建项目基础框架 (Gin, Gorm, Casbin)
+  - [x] 实现用户认证与RBAC权限管理
+  - [x] 实现用户、角色、权限管理API
+  - [x] 实现客户管理核心API
+
+- **v0.2 (进行中)**
+  - [ ] **产品与订单模块**: 打通 `客户 -> 产品 -> 订单` 的核心业务流
+  - [ ] 完善产品、订单相关的 `Service` 和 `Controller`
+  - [ ] 注册新模块的API路由
+
+- **v0.3 (计划中)**
+  - [ ] **资金钱包模块**: 实现客户储值、消费与流水功能
+
+- **v0.4 (计划中)**
+  - [ ] **客户运营模块**: 实现营销活动与客户互动功能
+
+- **v0.5 (计划中)**
+  - [ ] **测试与完善**: 补充单元测试，与前端完成对接
+
 ## 许可证
 
 [MIT License](LICENSE)

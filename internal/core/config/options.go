@@ -112,6 +112,18 @@ type SuperAdminOptions struct {
 	Role     string `mapstructure:"role"`
 }
 
+// EmailOptions 邮件服务配置
+type EmailOptions struct {
+	Host         string `mapstructure:"host"`     // SMTP 服务器地址
+	Port         int    `mapstructure:"port"`     // SMTP 服务器端口
+	Username     string `mapstructure:"username"` // 邮箱账号
+	Password     string `mapstructure:"password"` // 邮箱密码或授权码
+	FromAddress  string `mapstructure:"from"`     // 发件人邮箱地址
+	FromName     string `mapstructure:"fromName"` // 发件人名称
+	UseTLS       bool   `mapstructure:"useTLS"`   // 是否使用TLS加密
+	InsecureSkip bool   `mapstructure:"insecureSkip"`
+}
+
 // AuthOptions 认证授权配置
 type AuthOptions struct {
 	JWTOptions   `mapstructure:"jwt"`  // JWT配置
@@ -119,6 +131,7 @@ type AuthOptions struct {
 	OAuthEnabled bool                  `mapstructure:"oauthEnabled"` // 是否启用OAuth
 	BCryptCost   int                   `mapstructure:"BCryptCost"`   // 密码加密成本
 	SuperAdmin   SuperAdminOptions     `mapstructure:"superAdmin"`   // 超级管理员配置
+	Email        EmailOptions          `mapstructure:"email"`        // 邮件服务配置
 }
 
 // ==================== 主配置结构体 ====================
@@ -132,6 +145,7 @@ type Options struct {
 	Database DBOptions     `mapstructure:"database"` // 数据库配置
 	Cache    CacheOptions  `mapstructure:"cache"`    // 缓存配置
 	Auth     AuthOptions   `mapstructure:"auth"`     // 认证配置
+	Email    EmailOptions  `mapstructure:"email"`    // 邮件服务配置
 	PprofOn  bool          `mapstructure:"pprofOn"`  // 性能分析开关
 }
 
@@ -264,8 +278,17 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 			Email:    o.getStringWithDefault("auth.superAdmin.email", "admin@example.com"),
 			Role:     o.getStringWithDefault("auth.superAdmin.role", "super_admin"),
 		},
+		Email: EmailOptions{
+			Host:         o.getStringWithDefault("email.host", ""),
+			Port:         o.getIntWithDefault("email.port", 587),
+			Username:     o.getStringWithDefault("email.username", ""),
+			Password:     o.getStringWithDefault("email.password", ""),
+			FromAddress:  o.getStringWithDefault("email.from", ""),
+			FromName:     o.getStringWithDefault("email.fromName", "CRM Lite"),
+			UseTLS:       o.getBoolWithDefault("email.useTLS", true),
+			InsecureSkip: o.getBoolWithDefault("email.insecureSkip", true),
+		},
 	}
-
 	// 其他配置
 	o.PprofOn = o.getBoolWithDefault("pprofOn", false)
 }
@@ -274,48 +297,48 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 
 // getStringWithDefault 获取字符串配置值，提供默认值
 func (o *Options) getStringWithDefault(key, defaultValue string) string {
-	if v := o.vp.GetString(key); v != "" {
-		return v
+	if o.vp.IsSet(key) {
+		return o.vp.GetString(key)
 	}
 	return defaultValue
 }
 
 // getIntWithDefault 获取整数配置值，提供默认值
 func (o *Options) getIntWithDefault(key string, defaultValue int) int {
-	if v := o.vp.GetInt(key); v != 0 {
-		return v
+	if o.vp.IsSet(key) {
+		return o.vp.GetInt(key)
 	}
 	return defaultValue
 }
 
 // getInt64WithDefault 获取int64配置值，提供默认值
 func (o *Options) getInt64WithDefault(key string, defaultValue int64) int64 {
-	if v := o.vp.GetInt64(key); v != 0 {
-		return v
+	if o.vp.IsSet(key) {
+		return o.vp.GetInt64(key)
 	}
 	return defaultValue
 }
 
 // getUInt16WithDefault 获取uint16配置值，提供默认值
 func (o *Options) getUInt16WithDefault(key string, defaultValue uint16) uint16 {
-	if v := o.vp.GetUint16(key); v != 0 {
-		return v
+	if o.vp.IsSet(key) {
+		return cast.ToUint16(o.vp.Get(key))
 	}
 	return defaultValue
 }
 
 // getDurationWithDefault 获取时间配置值，提供默认值
 func (o *Options) getDurationWithDefault(key string, defaultValue time.Duration) time.Duration {
-	if v := o.vp.GetDuration(key); v != 0 {
-		return v
+	if o.vp.IsSet(key) {
+		return o.vp.GetDuration(key)
 	}
 	return defaultValue
 }
 
 // getBoolWithDefault 获取布尔配置值，提供默认值
 func (o *Options) getBoolWithDefault(key string, defaultValue bool) bool {
-	if objV := o.vp.Get(key); objV != nil {
-		return cast.ToBool(objV)
+	if o.vp.IsSet(key) {
+		return o.vp.GetBool(key)
 	}
 	return defaultValue
 }

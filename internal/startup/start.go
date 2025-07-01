@@ -19,12 +19,11 @@ import (
 
 // Start 启动HTTP服务器并设置优雅关闭
 func Start(router *gin.Engine, cleanup func()) {
-	log := logger.GetGlobalLogger()
 	opts := config.GetInstance()
 
 	// 写入PID文件
 	if err := process.WritePIDFile(opts.Server.PidFile); err != nil {
-		log.Fatal("Failed to write PID file", zap.Error(err))
+		logger.Fatal("Failed to write PID file", zap.Error(err))
 	}
 
 	// 1. 创建并启动HTTP服务器
@@ -34,9 +33,9 @@ func Start(router *gin.Engine, cleanup func()) {
 	}
 
 	go func() {
-		log.Info("Server is starting...", zap.String("address", server.Addr))
+		logger.GetGlobalLogger().Raw().Info("Server is starting...", zap.String("address", server.Addr))
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatal("Failed to start server", zap.Error(err))
+			logger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
 
@@ -44,7 +43,7 @@ func Start(router *gin.Engine, cleanup func()) {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	log.Info("Server is shutting down...")
+	logger.Info("Server is shutting down...")
 
 	// 在程序退出时清理PID文件
 	process.CleanupPIDFile(opts.Server.PidFile)
@@ -59,8 +58,8 @@ func Start(router *gin.Engine, cleanup func()) {
 	defer cancel()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown:", zap.Error(err))
+		logger.Fatal("Server forced to shutdown:", zap.Error(err))
 	}
 
-	log.Info("Server exited properly")
+	logger.Info("Server exited properly")
 }

@@ -30,11 +30,12 @@ func TestGlobalLogger(t *testing.T) {
 
 	// 断言
 	assert.NotNil(t, logger, "全局logger不应为nil")
-	assert.NotNil(t, logger.Logger, "内部的zap.Logger不应为nil")
-	assert.NotNil(t, logger.SugaredLogger, "内部的zap.SugaredLogger不应为nil")
+	assert.NotNil(t, logger.rawLogger, "内部的原始 zap.Logger 不应为nil")
+	assert.NotNil(t, logger.defaultLogger, "内部的默认 zap.Logger 不应为nil")
+	assert.NotNil(t, logger.sugaredLogger, "内部的zap.SugaredLogger不应为nil")
 
 	// 尝试记录一条日志
-	logger.SugaredLogger.Info("这是一条测试日志")
+	Info("这是一条测试日志")
 
 	// 验证日志文件是否被创建
 	// 注意：由于日志是异步写入的，这里不直接断言文件内容，

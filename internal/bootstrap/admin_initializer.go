@@ -17,7 +17,6 @@ import (
 
 // initSuperAdmin 确保系统启动时存在一个超级管理员账号，并给其授予角色
 func initSuperAdmin(rm *resource.Manager) error {
-	log := logger.GetGlobalLogger()
 	opts := config.GetInstance()
 
 	// 1. 获取数据库连接
@@ -52,7 +51,7 @@ func initSuperAdmin(rm *resource.Manager) error {
 
 	admin, err := q.AdminUser.WithContext(ctx).Where(q.AdminUser.Username.Eq(adminCfg.Username)).First()
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		log.Error("Failed to query super admin", zap.Error(err))
+		logger.Error("Failed to query super admin", zap.Error(err))
 		return err
 	}
 
@@ -64,7 +63,7 @@ func initSuperAdmin(rm *resource.Manager) error {
 		}
 		hashed, err := bcrypt.GenerateFromPassword([]byte(adminCfg.Password), cost)
 		if err != nil {
-			log.Error("Failed to hash password for super admin", zap.Error(err))
+			logger.Error("Failed to hash password for super admin", zap.Error(err))
 			return err
 		}
 		admin = &model.AdminUser{
@@ -76,12 +75,12 @@ func initSuperAdmin(rm *resource.Manager) error {
 			IsActive:     true,
 		}
 		if err := q.AdminUser.WithContext(ctx).Create(admin); err != nil {
-			log.Error("Failed to create super admin", zap.Error(err))
+			logger.Error("Failed to create super admin", zap.Error(err))
 			return err
 		}
-		log.Info("Super admin account created", zap.String("username", adminCfg.Username))
+		logger.Info("Super admin account created", zap.String("username", adminCfg.Username))
 	} else {
-		log.Info("Super admin account already exists", zap.String("username", admin.Username))
+		logger.Info("Super admin account already exists", zap.String("username", admin.Username))
 	}
 
 	// 5. 给予角色（Grouping policy）
@@ -96,7 +95,7 @@ func initSuperAdmin(rm *resource.Manager) error {
 		if err := enforcer.SavePolicy(); err != nil {
 			return err
 		}
-		log.Info("Granted role to super admin", zap.String("role", adminCfg.Role))
+		logger.Info("Granted role to super admin", zap.String("role", adminCfg.Role))
 	}
 
 	return nil

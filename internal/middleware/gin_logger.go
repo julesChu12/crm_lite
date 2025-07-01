@@ -31,9 +31,11 @@ func GinLogger() gin.HandlerFunc {
 
 		// 请求处理完毕后记录日志
 		cost := time.Since(start)
-		log := logger.GetGlobalLogger()
 
-		log.Info(path,
+		// 直接使用 Raw logger，它的调用深度对中间件场景是正确的
+		middlewareLogger := logger.GetGlobalLogger().Raw()
+
+		middlewareLogger.Info(path,
 			zap.Int("status", c.Writer.Status()),
 			zap.String("method", c.Request.Method),
 			zap.String("path", path),

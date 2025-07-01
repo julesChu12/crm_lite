@@ -22,7 +22,6 @@ func Bootstrap() (*resource.Manager, func(), error) {
 
 	// 3. 初始化全局 Logger (这是第一步，因为所有后续步骤都可能需要日志)
 	logger.InitGlobalLogger(&opts.Logger)
-	log := logger.GetGlobalLogger()
 
 	// 4. 创建并注册资源
 	// - 数据库
@@ -43,36 +42,42 @@ func Bootstrap() (*resource.Manager, func(), error) {
 		return nil, nil, fmt.Errorf("failed to register casbin resource: %w", err)
 	}
 
+	// - 邮件服务
+	emailResource := resource.NewEmailResource(opts.Email)
+	if err := resManager.Register(resource.EmailServiceKey, emailResource); err != nil {
+		return nil, nil, fmt.Errorf("failed to register email resource: %w", err)
+	}
+
 	// ... 未来可以在这里注册更多的资源, e.g., Message Queue, Tracer ...
 
 	// 5. 初始化所有已注册的资源
-	log.Info("Starting to initialize all resources...")
+	logger.Info("Starting to initialize all resources...")
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	if err := resManager.InitAll(ctx); err != nil {
 		// 如果初始化失败，尝试关闭已经初始化的资源
-		log.Error("Failed to initialize resources, attempting cleanup...", zap.Error(err))
+		logger.Error("Failed to initialize resources, attempting cleanup...", zap.Error(err))
 		if closeErr := resManager.CloseAll(context.Background()); closeErr != nil {
-			log.Error("Failed to cleanup resources after initialization failure", zap.Error(closeErr))
+			logger.Error("Failed to cleanup resources after initialization failure", zap.Error(closeErr))
 		}
 		return nil, nil, err
 	}
 
-	log.Info("All resources initialized successfully")
+	logger.Info("All resources initialized successfully")
 
 	// 6. 初始化超级管理员与 Casbin
 	if err := initSuperAdmin(resManager); err != nil {
-		log.Error("Failed to init super admin", zap.Error(err))
+		logger.Error("Failed to init super admin", zap.Error(err))
 	}
 
 	// 7. 创建并返回一个优雅关闭的函数
 	cleanup := func() {
-		log.Info("Starting to close all resources...")
+		logger.Info("Starting to close all resources...")
 		if err := resManager.CloseAll(context.Background()); err != nil {
-			log.Error("Failed to close resources gracefully", zap.Error(err))
+			logger.Error("Failed to close resources gracefully", zap.Error(err))
 		} else {
-			log.Info("All resources closed successfully")
+			logger.Info("All resources closed successfully")
 		}
 	}
 

@@ -1,14 +1,11 @@
 package process
 
 import (
-	"crm_lite/internal/core/logger"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"go.uber.org/zap"
 )
 
 const (
@@ -73,11 +70,7 @@ func RemovePIDFile(pidFile string) error {
 // CleanupPIDFile 清理 PID 文件并记录日志
 func CleanupPIDFile(pidFile string) {
 	if err := RemovePIDFile(pidFile); err != nil {
-		// 如果有日志实例，记录错误
-		if log := logger.GetGlobalLogger(); log != nil {
-			log.Error("Failed to remove PID file", zap.Error(err))
-		} else {
-			fmt.Printf("Warning: Failed to remove PID file: %v\n", err)
-		}
+		// 使用标准输出记录错误，保持 pkg 包的独立性
+		fmt.Printf("Warning: Failed to remove PID file: %v\n", err)
 	}
 }

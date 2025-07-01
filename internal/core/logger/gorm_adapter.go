@@ -17,9 +17,13 @@ type GormLoggerAdapter struct {
 
 // NewGormLoggerAdapter 创建一个新的GORM日志适配器
 func NewGormLoggerAdapter() gormlogger.Interface {
+	// 为GORM创建专门的logger，调整调用深度以显示实际的调用位置
+	// 注意：这里我们使用 Raw() 获取原始 logger，因为我们需要完全控制 CallerSkip
+	gormLogger := GetGlobalLogger().Raw().WithOptions(zap.AddCallerSkip(4))
+
 	return &GormLoggerAdapter{
-		ZapLogger: GetGlobalLogger().Logger, // 使用全局logger
-		LogLevel:  gormlogger.Warn,          // 默认日志级别
+		ZapLogger: gormLogger,
+		LogLevel:  gormlogger.Warn, // 默认日志级别
 	}
 }
 
