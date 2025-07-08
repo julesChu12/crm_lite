@@ -30,6 +30,12 @@ else
     go run cmd/tools/db/migrate.go -env="$ENV" -direction=up
 fi
 
-# 3. 启动主程序
+# 3. 运行 API 资源发现工具，确保 Casbin 权限资源是最新的
+echo "正在发现并注册 API 资源..."
+# 注意: 此工具会自动加载 .env 文件和对应环境的配置，无需额外传递参数
+go run cmd/tools/permission/discover.go
+echo "API 资源注册完成!"
+
+# 4. 启动主程序
 echo "启动 CRM 应用..."
 exec "$@" 

@@ -12,14 +12,11 @@ func registerAuthRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
 	authController := controller.NewAuthController(resManager)
 	auth := rg.Group("/auth")
 	{
-		// 公开路由 - 会被中间件白名单放行
 		auth.POST("/login", authController.Login)
 		auth.POST("/register", authController.Register)
 		auth.POST("/refresh", authController.RefreshToken)
 		auth.POST("/forgot-password", authController.ForgotPassword)
 		auth.POST("/reset-password", authController.ResetPassword)
-
-		// 保护路由 - 会经过JWT和Casbin中间件的验证
 		auth.POST("/logout", authController.Logout)
 		auth.GET("/profile", authController.GetProfile)
 		auth.PUT("/profile", authController.UpdateProfile)
