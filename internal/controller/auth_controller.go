@@ -62,7 +62,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        credentials  body      dto.RegisterRequest   true  "注册凭证"
-// @Success      200          {object}  resp.Response{data=dto.RegisterResponse}
+// @Success      200          {object}  resp.Response
 func (c *AuthController) Register(ctx *gin.Context) {
 	// todo: 防止脚本批量撞库，在注册时，需要限制注册频率，比如1分钟内只能注册10次
 	var req dto.RegisterRequest

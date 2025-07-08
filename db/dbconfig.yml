@@ -1,4 +1,4 @@
-development:
+dev:
   dialect: mysql
   datasource: ${DB_USER}:${DB_PASSWORD}@tcp(${DB_HOST}:${DB_PORT})/${DB_DBNAME}?parseTime=true
   dir: db/migrations

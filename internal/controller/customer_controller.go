@@ -18,6 +18,17 @@ func NewCustomerController(db *gorm.DB) *CustomerController {
 	return &CustomerController{customerService: service.NewCustomerService(db)}
 }
 
+// CreateCustomer
+// @Summary      Create a new customer
+// @Description  Add a new customer to the database
+// @Tags         Customers
+// @Accept       json
+// @Produce      json
+// @Param        customer  body      dto.CustomerCreateRequest  true  "Customer Create Request"
+// @Success      200      {object}  resp.Response{data=dto.CustomerResponse}
+// @Failure      400      {object}  resp.Response
+// @Failure      500      {object}  resp.Response
+// @Router       /customers [post]
 func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	var req dto.CustomerCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -32,6 +43,14 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 	resp.Success(c, customer)
 }
 
+// ListCustomers
+// @Summary      List all customers
+// @Description  Get a list of all customers
+// @Tags         Customers
+// @Produce      json
+// @Success      200  {object}  resp.Response{data=[]dto.CustomerResponse}
+// @Failure      500  {object}  resp.Response
+// @Router       /customers [get]
 func (cc *CustomerController) ListCustomers(c *gin.Context) {
 	customers, err := cc.customerService.ListCustomers(c.Request.Context())
 	if err != nil {
@@ -41,6 +60,16 @@ func (cc *CustomerController) ListCustomers(c *gin.Context) {
 	resp.Success(c, customers)
 }
 
+// GetCustomer
+// @Summary      Get a single customer
+// @Description  Get a single customer by its UUID
+// @Tags         Customers
+// @Produce      json
+// @Param        id   path      string  true  "Customer ID"
+// @Success      200  {object}  resp.Response{data=dto.CustomerResponse}
+// @Failure      404  {object}  resp.Response
+// @Failure      500  {object}  resp.Response
+// @Router       /customers/{id} [get]
 func (cc *CustomerController) GetCustomer(c *gin.Context) {
 	id := c.Param("id")
 	customer, err := cc.customerService.GetCustomerByID(c.Request.Context(), id)
@@ -55,6 +84,18 @@ func (cc *CustomerController) GetCustomer(c *gin.Context) {
 	resp.Success(c, customer)
 }
 
+// UpdateCustomer
+// @Summary      Update a customer
+// @Description  Update an existing customer's details
+// @Tags         Customers
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                     true  "Customer ID"
+// @Param        customer body      dto.CustomerUpdateRequest  true  "Customer Update Request"
+// @Success      200      {object}  resp.Response
+// @Failure      400      {object}  resp.Response
+// @Failure      500      {object}  resp.Response
+// @Router       /customers/{id} [put]
 func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	id := c.Param("id")
 	var req dto.CustomerUpdateRequest
@@ -69,6 +110,15 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	resp.Success(c, nil)
 }
 
+// DeleteCustomer
+// @Summary      Delete a customer
+// @Description  Delete a customer by its UUID
+// @Tags         Customers
+// @Produce      json
+// @Param        id   path      string  true  "Customer ID"
+// @Success      200  {object}  resp.Response
+// @Failure      500  {object}  resp.Response
+// @Router       /customers/{id} [delete]
 func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	id := c.Param("id")
 	if err := cc.customerService.DeleteCustomer(c.Request.Context(), id); err != nil {

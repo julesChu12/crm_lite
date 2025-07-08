@@ -27,18 +27,31 @@ func (s *PermissionService) AddPermission(ctx context.Context, req *dto.Permissi
 	if err != nil {
 		return fmt.Errorf("failed to add permission policy: %w", err)
 	}
-	// 在分布式场景或需要立即生效时，需要调用 SavePolicy()
-	// enforcer.SavePolicy()
+	// 将策略变更保存到数据库
+	if err := s.enforcer.SavePolicy(); err != nil {
+		// 如果保存失败，最好撤销刚才的内存修改
+		_, _ = s.enforcer.RemovePolicy(req.Role, req.Path, req.Method)
+		return fmt.Errorf("failed to save permission policy: %w", err)
+	}
 	return nil
 }
 
 // RemovePermission 移除权限
 func (s *PermissionService) RemovePermission(ctx context.Context, req *dto.PermissionRequest) error {
-	_, err := s.enforcer.RemovePolicy(req.Role, req.Path, req.Method)
+	removed, err := s.enforcer.RemovePolicy(req.Role, req.Path, req.Method)
 	if err != nil {
 		return fmt.Errorf("failed to remove permission policy: %w", err)
 	}
-	// enforcer.SavePolicy()
+	if !removed {
+		return fmt.Errorf("permission policy not found, cannot remove")
+	}
+
+	// 将策略变更保存到数据库
+	if err := s.enforcer.SavePolicy(); err != nil {
+		// 如果保存失败，最好撤销刚才的内存修改
+		_, _ = s.enforcer.AddPolicy(req.Role, req.Path, req.Method)
+		return fmt.Errorf("failed to save permission policy: %w", err)
+	}
 	return nil
 }
 
@@ -58,14 +71,27 @@ func (s *PermissionService) AssignRoleToUser(ctx context.Context, req *dto.UserR
 	if err != nil {
 		return fmt.Errorf("failed to add grouping policy: %w", err)
 	}
+	// 将策略变更保存到数据库
+	if err := s.enforcer.SavePolicy(); err != nil {
+		_, _ = s.enforcer.RemoveGroupingPolicy(req.UserID, req.Role)
+		return fmt.Errorf("failed to save grouping policy: %w", err)
+	}
 	return nil
 }
 
 // RemoveRoleFromUser 移除用户的角色
 func (s *PermissionService) RemoveRoleFromUser(ctx context.Context, req *dto.UserRoleRequest) error {
-	_, err := s.enforcer.RemoveGroupingPolicy(req.UserID, req.Role)
+	removed, err := s.enforcer.RemoveGroupingPolicy(req.UserID, req.Role)
 	if err != nil {
 		return fmt.Errorf("failed to remove grouping policy: %w", err)
+	}
+	if !removed {
+		return fmt.Errorf("user role assignment not found, cannot remove")
+	}
+	// 将策略变更保存到数据库
+	if err := s.enforcer.SavePolicy(); err != nil {
+		_, _ = s.enforcer.AddGroupingPolicy(req.UserID, req.Role)
+		return fmt.Errorf("failed to save grouping policy: %w", err)
 	}
 	return nil
 }

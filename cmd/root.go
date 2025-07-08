@@ -37,7 +37,7 @@ func initConfig() {
 	// 只有当 --config flag 未被设置时，我们才进行自动查找
 	if configFile == "" {
 		// 1. 尝试从约定的容器路径加载
-		env := strings.ToLower(os.Getenv("APP_ENV"))
+		env := strings.ToLower(os.Getenv("ENV"))
 		if env == "" {
 			env = "dev" // 默认环境
 		}

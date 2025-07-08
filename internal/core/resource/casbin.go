@@ -31,9 +31,11 @@ func (r *CasbinResource) Initialize(ctx context.Context) error {
 		return fmt.Errorf("casbin resource depends on db resource, but failed to get it: %w", err)
 	}
 
-	adapter, err := gormadapter.NewAdapterByDB(dbRes.DB)
+	// 使用自定义表名 "casbin_rules" 创建 GORM Casbin Adapter
+	// 这是为了匹配我们在数据库迁移文件中定义的表名
+	adapter, err := gormadapter.NewAdapterByDBWithCustomTable(dbRes.DB, &gormadapter.CasbinRule{}, "casbin_rules")
 	if err != nil {
-		return fmt.Errorf("failed to create casbin gorm adapter: %w", err)
+		return fmt.Errorf("failed to create casbin gorm adapter with custom table: %w", err)
 	}
 
 	enforcer, err := casbin.NewEnforcer(r.conf.ModelFile, adapter)

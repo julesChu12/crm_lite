@@ -23,26 +23,25 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 	// 2. 注册通用中间件
 	router.Use(middleware.GinLogger(), gin.Recovery())
 
-	// 3. 创建 /api/v1 路由组
-	apiV1 := router.Group("/api/v1")
-	{
-		// 3.1 注册公共路由 (无需登录)
-		registerAuthRoutes(apiV1, resManager) // 登录、注册等接口
+	// 3. 初始化需要 state 的中间件
+	jwtMiddleware := middleware.NewJWTAuthMiddleware(resManager)
+	casbinMiddleware := middleware.NewCasbinMiddleware(resManager)
 
-		// 3.2 注册受保护的路由 (需要登录和权限验证)
-		// 注意：中间件是应用在子分组上的，而不是整个 apiV1
-		adminGroup := apiV1.Group("")
-		adminGroup.Use(middleware.JWTAuthMiddleware(resManager), middleware.CasbinMiddleware(resManager))
-		{
-			registerUserRoutes(adminGroup, resManager)
-			registerRoleRoutes(adminGroup, resManager)
-			registerPermissionRoutes(adminGroup, resManager)
-			registerCustomerRoutes(adminGroup, resManager)
-			// 未来新的受保护路由也在这里注册...
-		}
+	// 4. 创建 /api/v1 路由组并应用安全中间件
+	apiV1 := router.Group("/api/v1")
+	apiV1.Use(jwtMiddleware.Check, casbinMiddleware.Check)
+	{
+		// 所有 v1 路由都在这里注册。
+		// 中间件内部的白名单会负责放行登录、注册等公开路由。
+		registerAuthRoutes(apiV1, resManager)
+		registerUserRoutes(apiV1, resManager)
+		registerRoleRoutes(apiV1, resManager)
+		registerPermissionRoutes(apiV1, resManager)
+		registerCustomerRoutes(apiV1, resManager)
+		// 未来新的 v1 路由也在这里注册...
 	}
 
-	// 4. 设置一些通用路由
+	// 5. 设置一些通用路由
 	// 健康检查
 	router.GET("/health", func(c *gin.Context) {
 		resp.Success(c, "ok")

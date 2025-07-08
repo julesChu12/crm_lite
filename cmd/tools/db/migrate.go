@@ -44,7 +44,7 @@ func main() {
 	var steps int
 	var direction string
 
-	flag.StringVar(&env, "env", "development", "环境名，对应 dbconfig.yml")
+	flag.StringVar(&env, "env", "dev", "环境名，对应 dbconfig.yml")
 	flag.StringVar(&direction, "direction", "up", "迁移方向 up/down")
 	flag.IntVar(&steps, "steps", 0, "执行多少步（0=全部）")
 	flag.Parse()
@@ -77,4 +77,20 @@ func main() {
 		log.Fatalf("迁移失败: %v", err)
 	}
 	fmt.Printf("迁移完成，执行了 %d 步\n", n)
+	// 输出本次一共创建了那些tables
+	if n > 0 {
+		rows, err := db.Query("SHOW TABLES")
+		if err != nil {
+			log.Fatalf("查询表失败: %v", err)
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var tableName string
+			err := rows.Scan(&tableName)
+			if err != nil {
+				log.Fatalf("扫描表名失败: %v", err)
+			}
+			fmt.Println("创建的表: ", tableName)
+		}
+	}
 }
