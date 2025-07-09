@@ -27,9 +27,9 @@ func newOrderItem(db *gorm.DB, opts ...gen.DOOption) orderItem {
 
 	tableName := _orderItem.orderItemDo.TableName()
 	_orderItem.ALL = field.NewAsterisk(tableName)
-	_orderItem.ID = field.NewString(tableName, "id")
-	_orderItem.OrderID = field.NewString(tableName, "order_id")
-	_orderItem.ProductID = field.NewString(tableName, "product_id")
+	_orderItem.ID = field.NewInt64(tableName, "id")
+	_orderItem.OrderID = field.NewInt64(tableName, "order_id")
+	_orderItem.ProductID = field.NewInt64(tableName, "product_id")
 	_orderItem.ProductName = field.NewString(tableName, "product_name")
 	_orderItem.Quantity = field.NewInt32(tableName, "quantity")
 	_orderItem.UnitPrice = field.NewFloat64(tableName, "unit_price")
@@ -46,9 +46,9 @@ type orderItem struct {
 	orderItemDo
 
 	ALL            field.Asterisk
-	ID             field.String
-	OrderID        field.String
-	ProductID      field.String
+	ID             field.Int64
+	OrderID        field.Int64
+	ProductID      field.Int64
 	ProductName    field.String
 	Quantity       field.Int32
 	UnitPrice      field.Float64
@@ -71,9 +71,9 @@ func (o orderItem) As(alias string) *orderItem {
 
 func (o *orderItem) updateTableName(table string) *orderItem {
 	o.ALL = field.NewAsterisk(table)
-	o.ID = field.NewString(table, "id")
-	o.OrderID = field.NewString(table, "order_id")
-	o.ProductID = field.NewString(table, "product_id")
+	o.ID = field.NewInt64(table, "id")
+	o.OrderID = field.NewInt64(table, "order_id")
+	o.ProductID = field.NewInt64(table, "product_id")
 	o.ProductName = field.NewString(table, "product_name")
 	o.Quantity = field.NewInt32(table, "quantity")
 	o.UnitPrice = field.NewFloat64(table, "unit_price")

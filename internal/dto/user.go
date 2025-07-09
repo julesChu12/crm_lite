@@ -50,24 +50,24 @@ type UserResponse struct {
 
 // AdminCreateUserRequest 管理员创建用户请求体
 type AdminCreateUserRequest struct {
-	Username string   `json:"username" binding:"required"`
-	Password string   `json:"password" binding:"required,min=6"`
-	Email    string   `json:"email"    binding:"required,email"`
-	RealName string   `json:"real_name"`
-	Phone    string   `json:"phone"`
-	Avatar   string   `json:"avatar"`
-	IsActive *bool    `json:"is_active"` // 使用指针以区分 "未提供" 和 "设置为false"
-	RoleIDs  []string `json:"role_ids"`  // 关联的角色ID列表
+	Username string  `json:"username" binding:"required"`
+	Password string  `json:"password" binding:"required,min=6"`
+	Email    string  `json:"email"    binding:"required,email"`
+	RealName string  `json:"real_name"`
+	Phone    string  `json:"phone"`
+	Avatar   string  `json:"avatar"`
+	IsActive *bool   `json:"is_active"` // 使用指针以区分 "未提供" 和 "设置为false"
+	RoleIDs  []int64 `json:"role_ids"`  // 关联的角色ID列表
 }
 
 // AdminUpdateUserRequest 管理员更新用户请求体
 type AdminUpdateUserRequest struct {
-	Email    string   `json:"email,omitempty"`
-	RealName string   `json:"real_name,omitempty"`
-	Phone    string   `json:"phone,omitempty"`
-	Avatar   string   `json:"avatar,omitempty"`
-	IsActive *bool    `json:"is_active"`
-	RoleIDs  []string `json:"role_ids"`
+	Email    string  `json:"email,omitempty"`
+	RealName string  `json:"real_name,omitempty"`
+	Phone    string  `json:"phone,omitempty"`
+	Avatar   string  `json:"avatar,omitempty"`
+	IsActive *bool   `json:"is_active"`
+	RoleIDs  []int64 `json:"role_ids"`
 }
 
 // UserListRequest 查询用户列表的请求参数

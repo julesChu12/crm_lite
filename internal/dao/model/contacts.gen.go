@@ -14,8 +14,8 @@ const TableNameContact = "contacts"
 
 // Contact mapped from table <contacts>
 type Contact struct {
-	ID         string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	CustomerID string         `gorm:"column:customer_id;type:varchar(36);not null;index:idx_contacts_customer_id,priority:1" json:"customer_id"`
+	ID         int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	CustomerID int64          `gorm:"column:customer_id;type:bigint(20);not null;index:idx_contacts_customer_id,priority:1" json:"customer_id"`
 	Name       string         `gorm:"column:name;type:varchar(100);not null" json:"name"`
 	Phone      string         `gorm:"column:phone;type:varchar(20);index:idx_contacts_phone,priority:1" json:"phone"`
 	Email      string         `gorm:"column:email;type:varchar(100);index:idx_contacts_email,priority:1" json:"email"`

@@ -12,9 +12,9 @@ const TableNameAdminUserRole = "admin_user_roles"
 
 // AdminUserRole mapped from table <admin_user_roles>
 type AdminUserRole struct {
-	ID          string    `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	AdminUserID string    `gorm:"column:admin_user_id;type:varchar(36);not null;uniqueIndex:admin_user_id,priority:1;index:idx_admin_user_roles_admin_user_id,priority:1" json:"admin_user_id"`
-	RoleID      string    `gorm:"column:role_id;type:varchar(36);not null;uniqueIndex:admin_user_id,priority:2;index:idx_admin_user_roles_role_id,priority:1" json:"role_id"`
+	ID          int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	AdminUserID int64     `gorm:"column:admin_user_id;type:bigint(20);not null;uniqueIndex:admin_user_id,priority:1;index:idx_admin_user_roles_admin_user_id,priority:1" json:"admin_user_id"`
+	RoleID      int64     `gorm:"column:role_id;type:bigint(20);not null;uniqueIndex:admin_user_id,priority:2;index:idx_admin_user_roles_role_id,priority:1" json:"role_id"`
 	CreatedAt   time.Time `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
 }
 

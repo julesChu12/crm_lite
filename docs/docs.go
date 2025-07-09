@@ -1513,7 +1513,7 @@ const docTemplate = `{
                     "description": "关联的角色ID列表",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "type": "integer"
                     }
                 },
                 "username": {
@@ -1542,7 +1542,7 @@ const docTemplate = `{
                 "role_ids": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "type": "integer"
                     }
                 }
             }
@@ -1575,7 +1575,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
@@ -1751,7 +1751,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "integer"
                 },
                 "is_active": {
                     "type": "boolean"

@@ -27,8 +27,8 @@ func newContact(db *gorm.DB, opts ...gen.DOOption) contact {
 
 	tableName := _contact.contactDo.TableName()
 	_contact.ALL = field.NewAsterisk(tableName)
-	_contact.ID = field.NewString(tableName, "id")
-	_contact.CustomerID = field.NewString(tableName, "customer_id")
+	_contact.ID = field.NewInt64(tableName, "id")
+	_contact.CustomerID = field.NewInt64(tableName, "customer_id")
 	_contact.Name = field.NewString(tableName, "name")
 	_contact.Phone = field.NewString(tableName, "phone")
 	_contact.Email = field.NewString(tableName, "email")
@@ -48,8 +48,8 @@ type contact struct {
 	contactDo
 
 	ALL        field.Asterisk
-	ID         field.String
-	CustomerID field.String
+	ID         field.Int64
+	CustomerID field.Int64
 	Name       field.String
 	Phone      field.String
 	Email      field.String
@@ -75,8 +75,8 @@ func (c contact) As(alias string) *contact {
 
 func (c *contact) updateTableName(table string) *contact {
 	c.ALL = field.NewAsterisk(table)
-	c.ID = field.NewString(table, "id")
-	c.CustomerID = field.NewString(table, "customer_id")
+	c.ID = field.NewInt64(table, "id")
+	c.CustomerID = field.NewInt64(table, "customer_id")
 	c.Name = field.NewString(table, "name")
 	c.Phone = field.NewString(table, "phone")
 	c.Email = field.NewString(table, "email")

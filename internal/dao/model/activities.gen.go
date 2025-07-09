@@ -14,9 +14,9 @@ const TableNameActivity = "activities"
 
 // Activity mapped from table <activities>
 type Activity struct {
-	ID          string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	CustomerID  string         `gorm:"column:customer_id;type:varchar(36);not null;index:idx_activities_customer_id,priority:1" json:"customer_id"`
-	ContactID   string         `gorm:"column:contact_id;type:varchar(36);index:idx_activities_contact_id,priority:1;comment:具体联系人" json:"contact_id"`                                                    // 具体联系人
+	ID          int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	CustomerID  int64          `gorm:"column:customer_id;type:bigint(20);not null;index:idx_activities_customer_id,priority:1" json:"customer_id"`
+	ContactID   int64          `gorm:"column:contact_id;type:bigint(20);index:idx_activities_contact_id,priority:1;comment:具体联系人" json:"contact_id"`                                                     // 具体联系人
 	Type        string         `gorm:"column:type;type:varchar(20);not null;index:idx_activities_type,priority:1;comment:活动类型: call, meeting, email, visit, follow_up, complaint, feedback" json:"type"` // 活动类型: call, meeting, email, visit, follow_up, complaint, feedback
 	Title       string         `gorm:"column:title;type:varchar(200);not null" json:"title"`
 	Content     string         `gorm:"column:content;type:text" json:"content"`
@@ -24,8 +24,8 @@ type Activity struct {
 	Priority    string         `gorm:"column:priority;type:varchar(10);index:idx_activities_priority,priority:1;default:medium;comment:优先级: low, medium, high, urgent" json:"priority"`              // 优先级: low, medium, high, urgent
 	ScheduledAt time.Time      `gorm:"column:scheduled_at;type:datetime(6);index:idx_activities_scheduled_at,priority:1" json:"scheduled_at"`
 	CompletedAt time.Time      `gorm:"column:completed_at;type:datetime(6)" json:"completed_at"`
-	AssignedTo  string         `gorm:"column:assigned_to;type:varchar(36);index:idx_activities_assigned_to,priority:1;comment:负责人" json:"assigned_to"` // 负责人
-	CreatedBy   string         `gorm:"column:created_by;type:varchar(36);index:idx_activities_created_by,priority:1;comment:创建人" json:"created_by"`    // 创建人
+	AssignedTo  int64          `gorm:"column:assigned_to;type:bigint(20);index:idx_activities_assigned_to,priority:1;comment:负责人" json:"assigned_to"` // 负责人
+	CreatedBy   int64          `gorm:"column:created_by;type:bigint(20);index:idx_activities_created_by,priority:1;comment:创建人" json:"created_by"`    // 创建人
 	CreatedAt   time.Time      `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
 	UpdatedAt   time.Time      `gorm:"column:updated_at;type:timestamp;default:current_timestamp()" json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `gorm:"column:deleted_at;type:datetime(6);index:idx_activities_deleted_at,priority:1" json:"deleted_at"`

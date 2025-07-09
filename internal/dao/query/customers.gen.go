@@ -27,7 +27,7 @@ func newCustomer(db *gorm.DB, opts ...gen.DOOption) customer {
 
 	tableName := _customer.customerDo.TableName()
 	_customer.ALL = field.NewAsterisk(tableName)
-	_customer.ID = field.NewString(tableName, "id")
+	_customer.ID = field.NewInt64(tableName, "id")
 	_customer.Name = field.NewString(tableName, "name")
 	_customer.Phone = field.NewString(tableName, "phone")
 	_customer.Email = field.NewString(tableName, "email")
@@ -37,7 +37,7 @@ func newCustomer(db *gorm.DB, opts ...gen.DOOption) customer {
 	_customer.Tags = field.NewString(tableName, "tags")
 	_customer.Note = field.NewString(tableName, "note")
 	_customer.Source = field.NewString(tableName, "source")
-	_customer.AssignedTo = field.NewString(tableName, "assigned_to")
+	_customer.AssignedTo = field.NewInt64(tableName, "assigned_to")
 	_customer.CreatedAt = field.NewTime(tableName, "created_at")
 	_customer.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_customer.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -51,7 +51,7 @@ type customer struct {
 	customerDo
 
 	ALL        field.Asterisk
-	ID         field.String
+	ID         field.Int64
 	Name       field.String
 	Phone      field.String
 	Email      field.String
@@ -61,7 +61,7 @@ type customer struct {
 	Tags       field.String
 	Note       field.String
 	Source     field.String // 客户来源：manual, referral, marketing, etc.
-	AssignedTo field.String // 分配给哪个员工
+	AssignedTo field.Int64  // 分配给哪个员工
 	CreatedAt  field.Time
 	UpdatedAt  field.Time
 	DeletedAt  field.Field
@@ -81,7 +81,7 @@ func (c customer) As(alias string) *customer {
 
 func (c *customer) updateTableName(table string) *customer {
 	c.ALL = field.NewAsterisk(table)
-	c.ID = field.NewString(table, "id")
+	c.ID = field.NewInt64(table, "id")
 	c.Name = field.NewString(table, "name")
 	c.Phone = field.NewString(table, "phone")
 	c.Email = field.NewString(table, "email")
@@ -91,7 +91,7 @@ func (c *customer) updateTableName(table string) *customer {
 	c.Tags = field.NewString(table, "tags")
 	c.Note = field.NewString(table, "note")
 	c.Source = field.NewString(table, "source")
-	c.AssignedTo = field.NewString(table, "assigned_to")
+	c.AssignedTo = field.NewInt64(table, "assigned_to")
 	c.CreatedAt = field.NewTime(table, "created_at")
 	c.UpdatedAt = field.NewTime(table, "updated_at")
 	c.DeletedAt = field.NewField(table, "deleted_at")

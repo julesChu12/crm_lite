@@ -27,9 +27,9 @@ func newActivity(db *gorm.DB, opts ...gen.DOOption) activity {
 
 	tableName := _activity.activityDo.TableName()
 	_activity.ALL = field.NewAsterisk(tableName)
-	_activity.ID = field.NewString(tableName, "id")
-	_activity.CustomerID = field.NewString(tableName, "customer_id")
-	_activity.ContactID = field.NewString(tableName, "contact_id")
+	_activity.ID = field.NewInt64(tableName, "id")
+	_activity.CustomerID = field.NewInt64(tableName, "customer_id")
+	_activity.ContactID = field.NewInt64(tableName, "contact_id")
 	_activity.Type = field.NewString(tableName, "type")
 	_activity.Title = field.NewString(tableName, "title")
 	_activity.Content = field.NewString(tableName, "content")
@@ -37,8 +37,8 @@ func newActivity(db *gorm.DB, opts ...gen.DOOption) activity {
 	_activity.Priority = field.NewString(tableName, "priority")
 	_activity.ScheduledAt = field.NewTime(tableName, "scheduled_at")
 	_activity.CompletedAt = field.NewTime(tableName, "completed_at")
-	_activity.AssignedTo = field.NewString(tableName, "assigned_to")
-	_activity.CreatedBy = field.NewString(tableName, "created_by")
+	_activity.AssignedTo = field.NewInt64(tableName, "assigned_to")
+	_activity.CreatedBy = field.NewInt64(tableName, "created_by")
 	_activity.CreatedAt = field.NewTime(tableName, "created_at")
 	_activity.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_activity.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -52,9 +52,9 @@ type activity struct {
 	activityDo
 
 	ALL         field.Asterisk
-	ID          field.String
-	CustomerID  field.String
-	ContactID   field.String // 具体联系人
+	ID          field.Int64
+	CustomerID  field.Int64
+	ContactID   field.Int64  // 具体联系人
 	Type        field.String // 活动类型: call, meeting, email, visit, follow_up, complaint, feedback
 	Title       field.String
 	Content     field.String
@@ -62,8 +62,8 @@ type activity struct {
 	Priority    field.String // 优先级: low, medium, high, urgent
 	ScheduledAt field.Time
 	CompletedAt field.Time
-	AssignedTo  field.String // 负责人
-	CreatedBy   field.String // 创建人
+	AssignedTo  field.Int64 // 负责人
+	CreatedBy   field.Int64 // 创建人
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
 	DeletedAt   field.Field
@@ -83,9 +83,9 @@ func (a activity) As(alias string) *activity {
 
 func (a *activity) updateTableName(table string) *activity {
 	a.ALL = field.NewAsterisk(table)
-	a.ID = field.NewString(table, "id")
-	a.CustomerID = field.NewString(table, "customer_id")
-	a.ContactID = field.NewString(table, "contact_id")
+	a.ID = field.NewInt64(table, "id")
+	a.CustomerID = field.NewInt64(table, "customer_id")
+	a.ContactID = field.NewInt64(table, "contact_id")
 	a.Type = field.NewString(table, "type")
 	a.Title = field.NewString(table, "title")
 	a.Content = field.NewString(table, "content")
@@ -93,8 +93,8 @@ func (a *activity) updateTableName(table string) *activity {
 	a.Priority = field.NewString(table, "priority")
 	a.ScheduledAt = field.NewTime(table, "scheduled_at")
 	a.CompletedAt = field.NewTime(table, "completed_at")
-	a.AssignedTo = field.NewString(table, "assigned_to")
-	a.CreatedBy = field.NewString(table, "created_by")
+	a.AssignedTo = field.NewInt64(table, "assigned_to")
+	a.CreatedBy = field.NewInt64(table, "created_by")
 	a.CreatedAt = field.NewTime(table, "created_at")
 	a.UpdatedAt = field.NewTime(table, "updated_at")
 	a.DeletedAt = field.NewField(table, "deleted_at")

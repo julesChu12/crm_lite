@@ -12,8 +12,8 @@ const TableNameWallet = "wallets"
 
 // Wallet mapped from table <wallets>
 type Wallet struct {
-	ID             string    `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	CustomerID     string    `gorm:"column:customer_id;type:varchar(36);not null;uniqueIndex:customer_id,priority:1" json:"customer_id"`
+	ID             int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	CustomerID     int64     `gorm:"column:customer_id;type:bigint(20);not null;uniqueIndex:customer_id,priority:1" json:"customer_id"`
 	Type           string    `gorm:"column:type;type:varchar(20);uniqueIndex:customer_id,priority:2;default:balance;comment:钱包类型: balance, points, coupon, deposit" json:"type"` // 钱包类型: balance, points, coupon, deposit
 	Balance        float64   `gorm:"column:balance;type:decimal(10,2);not null;index:idx_wallets_balance,priority:1;default:0.00" json:"balance"`
 	FrozenBalance  float64   `gorm:"column:frozen_balance;type:decimal(10,2);default:0.00;comment:冻结金额" json:"frozen_balance"`   // 冻结金额

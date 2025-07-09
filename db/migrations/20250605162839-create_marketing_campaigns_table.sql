@@ -1,12 +1,12 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS marketing_campaigns (
-    id VARCHAR(36) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(200) NOT NULL,
     type VARCHAR(20) NOT NULL COMMENT '营销类型: sms, email, push_notification, wechat, call',
     status VARCHAR(20) DEFAULT 'draft' COMMENT '状态: draft, scheduled, active, paused, completed, archived',
     target_tags JSON COMMENT '目标客户标签',
-    target_segment_id VARCHAR(36) COMMENT '目标客户分群ID（如果有客户分群功能）',
-    content_template_id VARCHAR(36) COMMENT '内容模板ID（如果有模板功能）',
+    target_segment_id BIGINT COMMENT '目标客户分群ID（如果有客户分群功能）',
+    content_template_id BIGINT COMMENT '内容模板ID（如果有模板功能）',
     content TEXT NOT NULL COMMENT '活动具体内容或模板变量的JSON数据',
     start_time DATETIME(6) NULL,
     end_time DATETIME(6) NULL,
@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS marketing_campaigns (
     sent_count INTEGER DEFAULT 0 COMMENT '已发送数量',
     success_count INTEGER DEFAULT 0 COMMENT '成功数量',
     click_count INTEGER DEFAULT 0 COMMENT '点击数量',
-    created_by VARCHAR(36) COMMENT '创建人',
-    updated_by VARCHAR(36) COMMENT '更新人',
+    created_by BIGINT COMMENT '创建人',
+    updated_by BIGINT COMMENT '更新人',
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME(6) NULL

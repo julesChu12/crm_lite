@@ -1,8 +1,8 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS activities (
-    id VARCHAR(36) PRIMARY KEY,
-    customer_id VARCHAR(36) NOT NULL,
-    contact_id VARCHAR(36) COMMENT '具体联系人',
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    customer_id BIGINT NOT NULL,
+    contact_id BIGINT COMMENT '具体联系人',
     type VARCHAR(20) NOT NULL COMMENT '活动类型: call, meeting, email, visit, follow_up, complaint, feedback',
     title VARCHAR(200) NOT NULL,
     content TEXT,
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS activities (
     priority VARCHAR(10) DEFAULT 'medium' COMMENT '优先级: low, medium, high, urgent',
     scheduled_at DATETIME(6) NULL,
     completed_at DATETIME(6) NULL,
-    assigned_to VARCHAR(36) COMMENT '负责人',
-    created_by VARCHAR(36) COMMENT '创建人',
+    assigned_to BIGINT COMMENT '负责人',
+    created_by BIGINT COMMENT '创建人',
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME(6) NULL

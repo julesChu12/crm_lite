@@ -27,9 +27,9 @@ func newAdminUserRole(db *gorm.DB, opts ...gen.DOOption) adminUserRole {
 
 	tableName := _adminUserRole.adminUserRoleDo.TableName()
 	_adminUserRole.ALL = field.NewAsterisk(tableName)
-	_adminUserRole.ID = field.NewString(tableName, "id")
-	_adminUserRole.AdminUserID = field.NewString(tableName, "admin_user_id")
-	_adminUserRole.RoleID = field.NewString(tableName, "role_id")
+	_adminUserRole.ID = field.NewInt64(tableName, "id")
+	_adminUserRole.AdminUserID = field.NewInt64(tableName, "admin_user_id")
+	_adminUserRole.RoleID = field.NewInt64(tableName, "role_id")
 	_adminUserRole.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_adminUserRole.fillFieldMap()
@@ -41,9 +41,9 @@ type adminUserRole struct {
 	adminUserRoleDo
 
 	ALL         field.Asterisk
-	ID          field.String
-	AdminUserID field.String
-	RoleID      field.String
+	ID          field.Int64
+	AdminUserID field.Int64
+	RoleID      field.Int64
 	CreatedAt   field.Time
 
 	fieldMap map[string]field.Expr
@@ -61,9 +61,9 @@ func (a adminUserRole) As(alias string) *adminUserRole {
 
 func (a *adminUserRole) updateTableName(table string) *adminUserRole {
 	a.ALL = field.NewAsterisk(table)
-	a.ID = field.NewString(table, "id")
-	a.AdminUserID = field.NewString(table, "admin_user_id")
-	a.RoleID = field.NewString(table, "role_id")
+	a.ID = field.NewInt64(table, "id")
+	a.AdminUserID = field.NewInt64(table, "admin_user_id")
+	a.RoleID = field.NewInt64(table, "role_id")
 	a.CreatedAt = field.NewTime(table, "created_at")
 
 	a.fillFieldMap()

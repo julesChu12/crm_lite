@@ -14,7 +14,7 @@ const TableNameRole = "roles"
 
 // Role mapped from table <roles>
 type Role struct {
-	ID          string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
+	ID          int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
 	Name        string         `gorm:"column:name;type:varchar(50);not null;uniqueIndex:name,priority:1" json:"name"`
 	DisplayName string         `gorm:"column:display_name;type:varchar(100);not null" json:"display_name"`
 	Description string         `gorm:"column:description;type:text" json:"description"`

@@ -14,7 +14,7 @@ const TableNameProduct = "products"
 
 // Product mapped from table <products>
 type Product struct {
-	ID            string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
+	ID            int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
 	Name          string         `gorm:"column:name;type:varchar(100);not null;index:idx_products_name,priority:1" json:"name"`
 	Description   string         `gorm:"column:description;type:text" json:"description"`
 	Type          string         `gorm:"column:type;type:varchar(20);index:idx_products_type,priority:1;default:product;comment:类型: product, service" json:"type"` // 类型: product, service

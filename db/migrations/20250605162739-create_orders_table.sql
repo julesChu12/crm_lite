@@ -1,9 +1,9 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS orders (
-  id               VARCHAR(36) PRIMARY KEY,
+  id               BIGINT AUTO_INCREMENT PRIMARY KEY,
   order_no         VARCHAR(50) NOT NULL,
-  customer_id      VARCHAR(36) NOT NULL,
-  contact_id       VARCHAR(36),
+  customer_id      BIGINT NOT NULL,
+  contact_id       BIGINT,
   order_date       DATETIME(6) NOT NULL,
   status           VARCHAR(20) NOT NULL DEFAULT 'draft' COMMENT '订单状态: draft, pending, confirmed, processing, shipped, completed, cancelled, refunded',
   payment_status   VARCHAR(20) NOT NULL DEFAULT 'unpaid' COMMENT '支付状态: unpaid, paid, partially_paid, refunded, pending',
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS orders (
   final_amount     DECIMAL(12,2)     NOT NULL,
   payment_method   VARCHAR(20) COMMENT '支付方式: online, offline_transfer, cash_on_delivery, wallet_balance',
   remark           TEXT,
-  assigned_to      VARCHAR(36),
-  created_by       VARCHAR(36),
+  assigned_to      BIGINT,
+  created_by       BIGINT,
   created_at       TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at       TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   deleted_at       DATETIME(6) NULL,
@@ -21,9 +21,9 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE TABLE IF NOT EXISTS order_items (
-  id             VARCHAR(36) PRIMARY KEY,
-  order_id       VARCHAR(36) NOT NULL,
-  product_id     VARCHAR(36) NOT NULL,
+  id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+  order_id       BIGINT NOT NULL,
+  product_id     BIGINT NOT NULL,
   product_name   VARCHAR(100) NOT NULL,
   quantity       INT            NOT NULL DEFAULT 1,
   unit_price     DECIMAL(12,2)  NOT NULL,

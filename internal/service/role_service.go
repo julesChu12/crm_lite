@@ -7,8 +7,8 @@ import (
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"errors"
+	"strconv"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -42,7 +42,6 @@ func (s *RoleService) CreateRole(ctx context.Context, req *dto.RoleCreateRequest
 	}
 
 	role := &model.Role{
-		ID:          uuid.New().String(),
 		Name:        req.Name,
 		DisplayName: req.DisplayName,
 		Description: req.Description,
@@ -67,7 +66,11 @@ func (s *RoleService) ListRoles(ctx context.Context) ([]*dto.RoleResponse, error
 }
 
 func (s *RoleService) GetRoleByID(ctx context.Context, id string) (*dto.RoleResponse, error) {
-	role, err := s.q.Role.WithContext(ctx).Where(s.q.Role.ID.Eq(id)).First()
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return nil, ErrRoleNotFound
+	}
+	role, err := s.q.Role.WithContext(ctx).Where(s.q.Role.ID.Eq(idNum)).First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrRoleNotFound
@@ -78,13 +81,17 @@ func (s *RoleService) GetRoleByID(ctx context.Context, id string) (*dto.RoleResp
 }
 
 func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUpdateRequest) (*dto.RoleResponse, error) {
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return nil, ErrRoleNotFound
+	}
 	r := s.q.Role
 	updates := make(map[string]interface{})
 
 	// 检查 display_name 是否需要更新以及唯一性（虽然数据库中没有强制唯一约束，但业务上建议保持唯一）
 	if req.DisplayName != "" {
 		// 检查 display_name 是否已存在（排除当前角色）
-		count, err := r.WithContext(ctx).Where(r.DisplayName.Eq(req.DisplayName), r.ID.Neq(id)).Count()
+		count, err := r.WithContext(ctx).Where(r.DisplayName.Eq(req.DisplayName), r.ID.Neq(idNum)).Count()
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +109,7 @@ func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUp
 	}
 
 	if len(updates) > 0 {
-		result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Updates(updates)
+		result, err := r.WithContext(ctx).Where(r.ID.Eq(idNum)).Updates(updates)
 		if err != nil {
 			return nil, err
 		}
@@ -116,8 +123,12 @@ func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUp
 }
 
 func (s *RoleService) DeleteRole(ctx context.Context, id string) error {
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return ErrRoleNotFound
+	}
 	r := s.q.Role
-	result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Delete()
+	result, err := r.WithContext(ctx).Where(r.ID.Eq(idNum)).Delete()
 	if err != nil {
 		return err
 	}

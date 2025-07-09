@@ -27,7 +27,7 @@ func newProduct(db *gorm.DB, opts ...gen.DOOption) product {
 
 	tableName := _product.productDo.TableName()
 	_product.ALL = field.NewAsterisk(tableName)
-	_product.ID = field.NewString(tableName, "id")
+	_product.ID = field.NewInt64(tableName, "id")
 	_product.Name = field.NewString(tableName, "name")
 	_product.Description = field.NewString(tableName, "description")
 	_product.Type = field.NewString(tableName, "type")
@@ -51,7 +51,7 @@ type product struct {
 	productDo
 
 	ALL           field.Asterisk
-	ID            field.String
+	ID            field.Int64
 	Name          field.String
 	Description   field.String
 	Type          field.String // 类型: product, service
@@ -81,7 +81,7 @@ func (p product) As(alias string) *product {
 
 func (p *product) updateTableName(table string) *product {
 	p.ALL = field.NewAsterisk(table)
-	p.ID = field.NewString(table, "id")
+	p.ID = field.NewInt64(table, "id")
 	p.Name = field.NewString(table, "name")
 	p.Description = field.NewString(table, "description")
 	p.Type = field.NewString(table, "type")

@@ -19,7 +19,7 @@ definitions:
       role_ids:
         description: 关联的角色ID列表
         items:
-          type: string
+          type: integer
         type: array
       username:
         type: string
@@ -42,7 +42,7 @@ definitions:
         type: string
       role_ids:
         items:
-          type: string
+          type: integer
         type: array
     type: object
   dto.CustomerCreateRequest:
@@ -64,7 +64,7 @@ definitions:
       email:
         type: string
       id:
-        type: string
+        type: integer
       name:
         type: string
       phone:
@@ -184,7 +184,7 @@ definitions:
       display_name:
         type: string
       id:
-        type: string
+        type: integer
       is_active:
         type: boolean
       name:

@@ -27,8 +27,8 @@ func newWallet(db *gorm.DB, opts ...gen.DOOption) wallet {
 
 	tableName := _wallet.walletDo.TableName()
 	_wallet.ALL = field.NewAsterisk(tableName)
-	_wallet.ID = field.NewString(tableName, "id")
-	_wallet.CustomerID = field.NewString(tableName, "customer_id")
+	_wallet.ID = field.NewInt64(tableName, "id")
+	_wallet.CustomerID = field.NewInt64(tableName, "customer_id")
 	_wallet.Type = field.NewString(tableName, "type")
 	_wallet.Balance = field.NewFloat64(tableName, "balance")
 	_wallet.FrozenBalance = field.NewFloat64(tableName, "frozen_balance")
@@ -46,8 +46,8 @@ type wallet struct {
 	walletDo
 
 	ALL            field.Asterisk
-	ID             field.String
-	CustomerID     field.String
+	ID             field.Int64
+	CustomerID     field.Int64
 	Type           field.String // 钱包类型: balance, points, coupon, deposit
 	Balance        field.Float64
 	FrozenBalance  field.Float64 // 冻结金额
@@ -71,8 +71,8 @@ func (w wallet) As(alias string) *wallet {
 
 func (w *wallet) updateTableName(table string) *wallet {
 	w.ALL = field.NewAsterisk(table)
-	w.ID = field.NewString(table, "id")
-	w.CustomerID = field.NewString(table, "customer_id")
+	w.ID = field.NewInt64(table, "id")
+	w.CustomerID = field.NewInt64(table, "customer_id")
 	w.Type = field.NewString(table, "type")
 	w.Balance = field.NewFloat64(table, "balance")
 	w.FrozenBalance = field.NewFloat64(table, "frozen_balance")

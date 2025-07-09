@@ -14,7 +14,7 @@ const TableNameCustomer = "customers"
 
 // Customer mapped from table <customers>
 type Customer struct {
-	ID         string         `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
+	ID         int64          `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
 	Name       string         `gorm:"column:name;type:varchar(100);not null" json:"name"`
 	Phone      string         `gorm:"column:phone;type:varchar(20);not null;uniqueIndex:phone,priority:1" json:"phone"`
 	Email      string         `gorm:"column:email;type:varchar(100);index:idx_customers_email,priority:1" json:"email"`
@@ -23,8 +23,8 @@ type Customer struct {
 	Level      string         `gorm:"column:level;type:varchar(20);index:idx_customers_level,priority:1;default:普通;comment:客户等级: 普通, 银牌, 金牌, 铂金" json:"level"` // 客户等级: 普通, 银牌, 金牌, 铂金
 	Tags       string         `gorm:"column:tags;type:longtext" json:"tags"`
 	Note       string         `gorm:"column:note;type:text" json:"note"`
-	Source     string         `gorm:"column:source;type:varchar(50);default:manual;comment:客户来源：manual, referral, marketing, etc." json:"source"`        // 客户来源：manual, referral, marketing, etc.
-	AssignedTo string         `gorm:"column:assigned_to;type:varchar(36);index:idx_customers_assigned_to,priority:1;comment:分配给哪个员工" json:"assigned_to"` // 分配给哪个员工
+	Source     string         `gorm:"column:source;type:varchar(50);default:manual;comment:客户来源：manual, referral, marketing, etc." json:"source"`       // 客户来源：manual, referral, marketing, etc.
+	AssignedTo int64          `gorm:"column:assigned_to;type:bigint(20);index:idx_customers_assigned_to,priority:1;comment:分配给哪个员工" json:"assigned_to"` // 分配给哪个员工
 	CreatedAt  time.Time      `gorm:"column:created_at;type:timestamp;index:idx_customers_created_at,priority:1;default:current_timestamp()" json:"created_at"`
 	UpdatedAt  time.Time      `gorm:"column:updated_at;type:timestamp;default:current_timestamp()" json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"column:deleted_at;type:datetime(6);index:idx_customers_deleted_at,priority:1" json:"deleted_at"`

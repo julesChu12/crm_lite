@@ -12,10 +12,10 @@ const TableNameMarketingRecord = "marketing_records"
 
 // MarketingRecord mapped from table <marketing_records>
 type MarketingRecord struct {
-	ID           string    `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	CampaignID   string    `gorm:"column:campaign_id;type:varchar(36);not null;index:idx_marketing_records_campaign_id,priority:1" json:"campaign_id"`
-	CustomerID   string    `gorm:"column:customer_id;type:varchar(36);not null;index:idx_marketing_records_customer_id,priority:1" json:"customer_id"`
-	ContactID    string    `gorm:"column:contact_id;type:varchar(36);index:idx_marketing_records_contact_id,priority:1" json:"contact_id"`
+	ID           int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	CampaignID   int64     `gorm:"column:campaign_id;type:bigint(20);not null;index:idx_marketing_records_campaign_id,priority:1" json:"campaign_id"`
+	CustomerID   int64     `gorm:"column:customer_id;type:bigint(20);not null;index:idx_marketing_records_customer_id,priority:1" json:"customer_id"`
+	ContactID    int64     `gorm:"column:contact_id;type:bigint(20);index:idx_marketing_records_contact_id,priority:1" json:"contact_id"`
 	Channel      string    `gorm:"column:channel;type:varchar(20);not null;index:idx_marketing_records_channel,priority:1;comment:触达渠道" json:"channel"`                                                                             // 触达渠道
 	Status       string    `gorm:"column:status;type:varchar(20);index:idx_marketing_records_status,priority:1;default:pending;comment:状态: pending, sent, delivered, failed, opened, clicked, replied, unsubscribed" json:"status"` // 状态: pending, sent, delivered, failed, opened, clicked, replied, unsubscribed
 	ErrorMessage string    `gorm:"column:error_message;type:text;comment:发送失败时的错误信息" json:"error_message"`                                                                                                                          // 发送失败时的错误信息

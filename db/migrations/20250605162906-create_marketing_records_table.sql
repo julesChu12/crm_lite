@@ -1,9 +1,9 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS marketing_records (
-    id VARCHAR(36) PRIMARY KEY,
-    campaign_id VARCHAR(36) NOT NULL,
-    customer_id VARCHAR(36) NOT NULL,
-    contact_id VARCHAR(36),
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    campaign_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL,
+    contact_id BIGINT,
     channel VARCHAR(20) NOT NULL COMMENT '触达渠道',
     status VARCHAR(20) DEFAULT 'pending' COMMENT '状态: pending, sent, delivered, failed, opened, clicked, replied, unsubscribed',
     error_message TEXT COMMENT '发送失败时的错误信息',

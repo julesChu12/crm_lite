@@ -27,10 +27,10 @@ func newOrder(db *gorm.DB, opts ...gen.DOOption) order {
 
 	tableName := _order.orderDo.TableName()
 	_order.ALL = field.NewAsterisk(tableName)
-	_order.ID = field.NewString(tableName, "id")
+	_order.ID = field.NewInt64(tableName, "id")
 	_order.OrderNo = field.NewString(tableName, "order_no")
-	_order.CustomerID = field.NewString(tableName, "customer_id")
-	_order.ContactID = field.NewString(tableName, "contact_id")
+	_order.CustomerID = field.NewInt64(tableName, "customer_id")
+	_order.ContactID = field.NewInt64(tableName, "contact_id")
 	_order.OrderDate = field.NewTime(tableName, "order_date")
 	_order.Status = field.NewString(tableName, "status")
 	_order.PaymentStatus = field.NewString(tableName, "payment_status")
@@ -39,8 +39,8 @@ func newOrder(db *gorm.DB, opts ...gen.DOOption) order {
 	_order.FinalAmount = field.NewFloat64(tableName, "final_amount")
 	_order.PaymentMethod = field.NewString(tableName, "payment_method")
 	_order.Remark = field.NewString(tableName, "remark")
-	_order.AssignedTo = field.NewString(tableName, "assigned_to")
-	_order.CreatedBy = field.NewString(tableName, "created_by")
+	_order.AssignedTo = field.NewInt64(tableName, "assigned_to")
+	_order.CreatedBy = field.NewInt64(tableName, "created_by")
 	_order.CreatedAt = field.NewTime(tableName, "created_at")
 	_order.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_order.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -54,10 +54,10 @@ type order struct {
 	orderDo
 
 	ALL            field.Asterisk
-	ID             field.String
+	ID             field.Int64
 	OrderNo        field.String
-	CustomerID     field.String
-	ContactID      field.String
+	CustomerID     field.Int64
+	ContactID      field.Int64
 	OrderDate      field.Time
 	Status         field.String // 订单状态: draft, pending, confirmed, processing, shipped, completed, cancelled, refunded
 	PaymentStatus  field.String // 支付状态: unpaid, paid, partially_paid, refunded, pending
@@ -66,8 +66,8 @@ type order struct {
 	FinalAmount    field.Float64
 	PaymentMethod  field.String // 支付方式: online, offline_transfer, cash_on_delivery, wallet_balance
 	Remark         field.String
-	AssignedTo     field.String
-	CreatedBy      field.String
+	AssignedTo     field.Int64
+	CreatedBy      field.Int64
 	CreatedAt      field.Time
 	UpdatedAt      field.Time
 	DeletedAt      field.Field
@@ -87,10 +87,10 @@ func (o order) As(alias string) *order {
 
 func (o *order) updateTableName(table string) *order {
 	o.ALL = field.NewAsterisk(table)
-	o.ID = field.NewString(table, "id")
+	o.ID = field.NewInt64(table, "id")
 	o.OrderNo = field.NewString(table, "order_no")
-	o.CustomerID = field.NewString(table, "customer_id")
-	o.ContactID = field.NewString(table, "contact_id")
+	o.CustomerID = field.NewInt64(table, "customer_id")
+	o.ContactID = field.NewInt64(table, "contact_id")
 	o.OrderDate = field.NewTime(table, "order_date")
 	o.Status = field.NewString(table, "status")
 	o.PaymentStatus = field.NewString(table, "payment_status")
@@ -99,8 +99,8 @@ func (o *order) updateTableName(table string) *order {
 	o.FinalAmount = field.NewFloat64(table, "final_amount")
 	o.PaymentMethod = field.NewString(table, "payment_method")
 	o.Remark = field.NewString(table, "remark")
-	o.AssignedTo = field.NewString(table, "assigned_to")
-	o.CreatedBy = field.NewString(table, "created_by")
+	o.AssignedTo = field.NewInt64(table, "assigned_to")
+	o.CreatedBy = field.NewInt64(table, "created_by")
 	o.CreatedAt = field.NewTime(table, "created_at")
 	o.UpdatedAt = field.NewTime(table, "updated_at")
 	o.DeletedAt = field.NewField(table, "deleted_at")

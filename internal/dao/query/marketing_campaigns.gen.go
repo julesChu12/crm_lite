@@ -27,13 +27,13 @@ func newMarketingCampaign(db *gorm.DB, opts ...gen.DOOption) marketingCampaign {
 
 	tableName := _marketingCampaign.marketingCampaignDo.TableName()
 	_marketingCampaign.ALL = field.NewAsterisk(tableName)
-	_marketingCampaign.ID = field.NewString(tableName, "id")
+	_marketingCampaign.ID = field.NewInt64(tableName, "id")
 	_marketingCampaign.Name = field.NewString(tableName, "name")
 	_marketingCampaign.Type = field.NewString(tableName, "type")
 	_marketingCampaign.Status = field.NewString(tableName, "status")
 	_marketingCampaign.TargetTags = field.NewString(tableName, "target_tags")
-	_marketingCampaign.TargetSegmentID = field.NewString(tableName, "target_segment_id")
-	_marketingCampaign.ContentTemplateID = field.NewString(tableName, "content_template_id")
+	_marketingCampaign.TargetSegmentID = field.NewInt64(tableName, "target_segment_id")
+	_marketingCampaign.ContentTemplateID = field.NewInt64(tableName, "content_template_id")
 	_marketingCampaign.Content = field.NewString(tableName, "content")
 	_marketingCampaign.StartTime = field.NewTime(tableName, "start_time")
 	_marketingCampaign.EndTime = field.NewTime(tableName, "end_time")
@@ -43,8 +43,8 @@ func newMarketingCampaign(db *gorm.DB, opts ...gen.DOOption) marketingCampaign {
 	_marketingCampaign.SentCount = field.NewInt32(tableName, "sent_count")
 	_marketingCampaign.SuccessCount = field.NewInt32(tableName, "success_count")
 	_marketingCampaign.ClickCount = field.NewInt32(tableName, "click_count")
-	_marketingCampaign.CreatedBy = field.NewString(tableName, "created_by")
-	_marketingCampaign.UpdatedBy = field.NewString(tableName, "updated_by")
+	_marketingCampaign.CreatedBy = field.NewInt64(tableName, "created_by")
+	_marketingCampaign.UpdatedBy = field.NewInt64(tableName, "updated_by")
 	_marketingCampaign.CreatedAt = field.NewTime(tableName, "created_at")
 	_marketingCampaign.UpdatedAt = field.NewTime(tableName, "updated_at")
 	_marketingCampaign.DeletedAt = field.NewField(tableName, "deleted_at")
@@ -58,24 +58,24 @@ type marketingCampaign struct {
 	marketingCampaignDo
 
 	ALL               field.Asterisk
-	ID                field.String
+	ID                field.Int64
 	Name              field.String
 	Type              field.String // 营销类型: sms, email, push_notification, wechat, call
 	Status            field.String // 状态: draft, scheduled, active, paused, completed, archived
 	TargetTags        field.String // 目标客户标签
-	TargetSegmentID   field.String // 目标客户分群ID（如果有客户分群功能）
-	ContentTemplateID field.String // 内容模板ID（如果有模板功能）
+	TargetSegmentID   field.Int64  // 目标客户分群ID（如果有客户分群功能）
+	ContentTemplateID field.Int64  // 内容模板ID（如果有模板功能）
 	Content           field.String // 活动具体内容或模板变量的JSON数据
 	StartTime         field.Time
 	EndTime           field.Time
 	ActualStartTime   field.Time
 	ActualEndTime     field.Time
-	TargetCount       field.Int32  // 目标客户数量
-	SentCount         field.Int32  // 已发送数量
-	SuccessCount      field.Int32  // 成功数量
-	ClickCount        field.Int32  // 点击数量
-	CreatedBy         field.String // 创建人
-	UpdatedBy         field.String // 更新人
+	TargetCount       field.Int32 // 目标客户数量
+	SentCount         field.Int32 // 已发送数量
+	SuccessCount      field.Int32 // 成功数量
+	ClickCount        field.Int32 // 点击数量
+	CreatedBy         field.Int64 // 创建人
+	UpdatedBy         field.Int64 // 更新人
 	CreatedAt         field.Time
 	UpdatedAt         field.Time
 	DeletedAt         field.Field
@@ -95,13 +95,13 @@ func (m marketingCampaign) As(alias string) *marketingCampaign {
 
 func (m *marketingCampaign) updateTableName(table string) *marketingCampaign {
 	m.ALL = field.NewAsterisk(table)
-	m.ID = field.NewString(table, "id")
+	m.ID = field.NewInt64(table, "id")
 	m.Name = field.NewString(table, "name")
 	m.Type = field.NewString(table, "type")
 	m.Status = field.NewString(table, "status")
 	m.TargetTags = field.NewString(table, "target_tags")
-	m.TargetSegmentID = field.NewString(table, "target_segment_id")
-	m.ContentTemplateID = field.NewString(table, "content_template_id")
+	m.TargetSegmentID = field.NewInt64(table, "target_segment_id")
+	m.ContentTemplateID = field.NewInt64(table, "content_template_id")
 	m.Content = field.NewString(table, "content")
 	m.StartTime = field.NewTime(table, "start_time")
 	m.EndTime = field.NewTime(table, "end_time")
@@ -111,8 +111,8 @@ func (m *marketingCampaign) updateTableName(table string) *marketingCampaign {
 	m.SentCount = field.NewInt32(table, "sent_count")
 	m.SuccessCount = field.NewInt32(table, "success_count")
 	m.ClickCount = field.NewInt32(table, "click_count")
-	m.CreatedBy = field.NewString(table, "created_by")
-	m.UpdatedBy = field.NewString(table, "updated_by")
+	m.CreatedBy = field.NewInt64(table, "created_by")
+	m.UpdatedBy = field.NewInt64(table, "updated_by")
 	m.CreatedAt = field.NewTime(table, "created_at")
 	m.UpdatedAt = field.NewTime(table, "updated_at")
 	m.DeletedAt = field.NewField(table, "deleted_at")

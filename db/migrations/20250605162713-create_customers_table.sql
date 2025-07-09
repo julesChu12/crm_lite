@@ -1,6 +1,6 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS customers (
-    id VARCHAR(36) PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(100),
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS customers (
     tags JSON,
     note TEXT,
     source VARCHAR(50) DEFAULT 'manual' COMMENT '客户来源：manual, referral, marketing, etc.',
-    assigned_to VARCHAR(36) COMMENT '分配给哪个员工',
+    assigned_to BIGINT COMMENT '分配给哪个员工',
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted_at DATETIME(6) NULL,

@@ -48,7 +48,7 @@ func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.User
 	err = s.q.Role.WithContext(ctx).
 		Select(s.q.Role.Name).
 		LeftJoin(s.q.AdminUserRole, s.q.AdminUserRole.RoleID.EqCol(s.q.Role.ID)).
-		Where(s.q.AdminUserRole.AdminUserID.Eq(user.UUID)).
+		Where(s.q.AdminUserRole.AdminUserID.Eq(user.ID)).
 		Scan(&roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user roles: %w", err)
@@ -120,13 +120,12 @@ func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreat
 
 		// 关联角色
 		if len(req.RoleIDs) > 0 {
-			roles := make([]*model.AdminUserRole, len(req.RoleIDs))
-			for i, roleID := range req.RoleIDs {
-				roles[i] = &model.AdminUserRole{
-					ID:          uuid.New().String(),
-					AdminUserID: newUser.UUID,
+			roles := make([]*model.AdminUserRole, 0, len(req.RoleIDs))
+			for _, roleID := range req.RoleIDs {
+				roles = append(roles, &model.AdminUserRole{
+					AdminUserID: newUser.ID,
 					RoleID:      roleID,
-				}
+				})
 			}
 			if err := tx.AdminUserRole.WithContext(ctx).Create(roles...); err != nil {
 				return err

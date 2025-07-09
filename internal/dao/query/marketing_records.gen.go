@@ -27,10 +27,10 @@ func newMarketingRecord(db *gorm.DB, opts ...gen.DOOption) marketingRecord {
 
 	tableName := _marketingRecord.marketingRecordDo.TableName()
 	_marketingRecord.ALL = field.NewAsterisk(tableName)
-	_marketingRecord.ID = field.NewString(tableName, "id")
-	_marketingRecord.CampaignID = field.NewString(tableName, "campaign_id")
-	_marketingRecord.CustomerID = field.NewString(tableName, "customer_id")
-	_marketingRecord.ContactID = field.NewString(tableName, "contact_id")
+	_marketingRecord.ID = field.NewInt64(tableName, "id")
+	_marketingRecord.CampaignID = field.NewInt64(tableName, "campaign_id")
+	_marketingRecord.CustomerID = field.NewInt64(tableName, "customer_id")
+	_marketingRecord.ContactID = field.NewInt64(tableName, "contact_id")
 	_marketingRecord.Channel = field.NewString(tableName, "channel")
 	_marketingRecord.Status = field.NewString(tableName, "status")
 	_marketingRecord.ErrorMessage = field.NewString(tableName, "error_message")
@@ -51,10 +51,10 @@ type marketingRecord struct {
 	marketingRecordDo
 
 	ALL          field.Asterisk
-	ID           field.String
-	CampaignID   field.String
-	CustomerID   field.String
-	ContactID    field.String
+	ID           field.Int64
+	CampaignID   field.Int64
+	CustomerID   field.Int64
+	ContactID    field.Int64
 	Channel      field.String // 触达渠道
 	Status       field.String // 状态: pending, sent, delivered, failed, opened, clicked, replied, unsubscribed
 	ErrorMessage field.String // 发送失败时的错误信息
@@ -81,10 +81,10 @@ func (m marketingRecord) As(alias string) *marketingRecord {
 
 func (m *marketingRecord) updateTableName(table string) *marketingRecord {
 	m.ALL = field.NewAsterisk(table)
-	m.ID = field.NewString(table, "id")
-	m.CampaignID = field.NewString(table, "campaign_id")
-	m.CustomerID = field.NewString(table, "customer_id")
-	m.ContactID = field.NewString(table, "contact_id")
+	m.ID = field.NewInt64(table, "id")
+	m.CampaignID = field.NewInt64(table, "campaign_id")
+	m.CustomerID = field.NewInt64(table, "customer_id")
+	m.ContactID = field.NewInt64(table, "contact_id")
 	m.Channel = field.NewString(table, "channel")
 	m.Status = field.NewString(table, "status")
 	m.ErrorMessage = field.NewString(table, "error_message")

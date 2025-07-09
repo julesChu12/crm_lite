@@ -12,9 +12,9 @@ const TableNameOrderItem = "order_items"
 
 // OrderItem mapped from table <order_items>
 type OrderItem struct {
-	ID             string    `gorm:"column:id;type:varchar(36);primaryKey" json:"id"`
-	OrderID        string    `gorm:"column:order_id;type:varchar(36);not null;index:idx_items_order,priority:1" json:"order_id"`
-	ProductID      string    `gorm:"column:product_id;type:varchar(36);not null" json:"product_id"`
+	ID             int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	OrderID        int64     `gorm:"column:order_id;type:bigint(20);not null;index:idx_items_order,priority:1" json:"order_id"`
+	ProductID      int64     `gorm:"column:product_id;type:bigint(20);not null" json:"product_id"`
 	ProductName    string    `gorm:"column:product_name;type:varchar(100);not null" json:"product_name"`
 	Quantity       int32     `gorm:"column:quantity;type:int(11);not null;default:1" json:"quantity"`
 	UnitPrice      float64   `gorm:"column:unit_price;type:decimal(12,2);not null" json:"unit_price"`

@@ -7,8 +7,8 @@ import (
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"errors"
+	"strconv"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -45,7 +45,6 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 	}
 
 	customer := &model.Customer{
-		ID:    uuid.New().String(),
 		Name:  req.Name,
 		Phone: req.Phone,
 		Email: req.Email,
@@ -61,7 +60,11 @@ func (s *CustomerService) ListCustomers(ctx context.Context) ([]*model.Customer,
 
 // GetCustomerByID 获取单个客户
 func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*model.Customer, error) {
-	customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(id)).First()
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return nil, ErrCustomerNotFound
+	}
+	customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum)).First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrCustomerNotFound
@@ -73,10 +76,15 @@ func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*mode
 
 // UpdateCustomer 更新客户
 func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dto.CustomerUpdateRequest) error {
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return ErrCustomerNotFound
+	}
+
 	// 检查 phone 唯一性（排除当前客户和软删除的记录）
 	if req.Phone != "" {
 		count, err := s.q.Customer.WithContext(ctx).
-			Where(s.q.Customer.Phone.Eq(req.Phone), s.q.Customer.ID.Neq(id)).
+			Where(s.q.Customer.Phone.Eq(req.Phone), s.q.Customer.ID.Neq(idNum)).
 			Where(s.q.Customer.DeletedAt.IsNull()).
 			Count()
 		if err != nil {
@@ -86,8 +94,7 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 			return ErrPhoneAlreadyExists
 		}
 	}
-
-	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(id)).Updates(model.Customer{
+	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum)).Updates(model.Customer{
 		Name:  req.Name,
 		Phone: req.Phone,
 		Email: req.Email,
@@ -103,7 +110,11 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 
 // DeleteCustomer 删除客户
 func (s *CustomerService) DeleteCustomer(ctx context.Context, id string) error {
-	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(id)).Delete()
+	idNum, errConv := strconv.ParseInt(id, 10, 64)
+	if errConv != nil {
+		return ErrCustomerNotFound
+	}
+	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum)).Delete()
 	if err != nil {
 		return err
 	}

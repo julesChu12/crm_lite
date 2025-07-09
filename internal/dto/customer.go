@@ -18,7 +18,7 @@ type CustomerUpdateRequest struct {
 
 // CustomerResponse 客户信息响应体
 type CustomerResponse struct {
-	ID        string    `json:"id"`
+	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	Phone     string    `json:"phone"`
 	Email     string    `json:"email"`

@@ -27,16 +27,16 @@ func newWalletTransaction(db *gorm.DB, opts ...gen.DOOption) walletTransaction {
 
 	tableName := _walletTransaction.walletTransactionDo.TableName()
 	_walletTransaction.ALL = field.NewAsterisk(tableName)
-	_walletTransaction.ID = field.NewString(tableName, "id")
-	_walletTransaction.WalletID = field.NewString(tableName, "wallet_id")
+	_walletTransaction.ID = field.NewInt64(tableName, "id")
+	_walletTransaction.WalletID = field.NewInt64(tableName, "wallet_id")
 	_walletTransaction.Type = field.NewString(tableName, "type")
 	_walletTransaction.Amount = field.NewFloat64(tableName, "amount")
 	_walletTransaction.BalanceBefore = field.NewFloat64(tableName, "balance_before")
 	_walletTransaction.BalanceAfter = field.NewFloat64(tableName, "balance_after")
 	_walletTransaction.Source = field.NewString(tableName, "source")
-	_walletTransaction.RelatedID = field.NewString(tableName, "related_id")
+	_walletTransaction.RelatedID = field.NewInt64(tableName, "related_id")
 	_walletTransaction.Remark = field.NewString(tableName, "remark")
-	_walletTransaction.OperatorID = field.NewString(tableName, "operator_id")
+	_walletTransaction.OperatorID = field.NewInt64(tableName, "operator_id")
 	_walletTransaction.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_walletTransaction.fillFieldMap()
@@ -48,16 +48,16 @@ type walletTransaction struct {
 	walletTransactionDo
 
 	ALL           field.Asterisk
-	ID            field.String
-	WalletID      field.String
+	ID            field.Int64
+	WalletID      field.Int64
 	Type          field.String  // 交易类型: recharge, consume, refund, freeze, unfreeze, correction
 	Amount        field.Float64 // 正数表示增加，负数表示减少
 	BalanceBefore field.Float64 // 交易前余额
 	BalanceAfter  field.Float64 // 交易后余额
 	Source        field.String  // 交易来源：manual, order, refund, system等
-	RelatedID     field.String  // 关联ID（如订单ID、退款ID等）
+	RelatedID     field.Int64   // 关联ID（如订单ID、退款ID等）
 	Remark        field.String
-	OperatorID    field.String // 操作人员
+	OperatorID    field.Int64 // 操作人员
 	CreatedAt     field.Time
 
 	fieldMap map[string]field.Expr
@@ -75,16 +75,16 @@ func (w walletTransaction) As(alias string) *walletTransaction {
 
 func (w *walletTransaction) updateTableName(table string) *walletTransaction {
 	w.ALL = field.NewAsterisk(table)
-	w.ID = field.NewString(table, "id")
-	w.WalletID = field.NewString(table, "wallet_id")
+	w.ID = field.NewInt64(table, "id")
+	w.WalletID = field.NewInt64(table, "wallet_id")
 	w.Type = field.NewString(table, "type")
 	w.Amount = field.NewFloat64(table, "amount")
 	w.BalanceBefore = field.NewFloat64(table, "balance_before")
 	w.BalanceAfter = field.NewFloat64(table, "balance_after")
 	w.Source = field.NewString(table, "source")
-	w.RelatedID = field.NewString(table, "related_id")
+	w.RelatedID = field.NewInt64(table, "related_id")
 	w.Remark = field.NewString(table, "remark")
-	w.OperatorID = field.NewString(table, "operator_id")
+	w.OperatorID = field.NewInt64(table, "operator_id")
 	w.CreatedAt = field.NewTime(table, "created_at")
 
 	w.fillFieldMap()

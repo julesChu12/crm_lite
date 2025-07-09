@@ -1,8 +1,8 @@
 -- +migrate Up
 CREATE TABLE IF NOT EXISTS admin_user_roles (
-    id VARCHAR(36) PRIMARY KEY,
-    admin_user_id VARCHAR(36) NOT NULL,
-    role_id VARCHAR(36) NOT NULL,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    admin_user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY (admin_user_id, role_id)
 );
