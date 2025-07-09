@@ -1,0 +1,10 @@
+{
+    "go.buildFlags": ["-tags=integration"],
+    "gopls": {
+        "build.buildFlags": ["-tags=integration"]
+    },
+    "terminal.integrated.fontSize": 16,
+    "go.toolsEnvVars": {
+        "PATH": "/opt/homebrew/bin:${env:PATH}"
+    }
+} 

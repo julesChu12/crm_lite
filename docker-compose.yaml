@@ -47,6 +47,7 @@ services:
     container_name: crm-app
     ports:
       - "8080:8080"
+      - "2345:2345" 
     volumes:
       - ./:/app
     command: air
@@ -58,6 +59,10 @@ services:
     environment:
       - ENV=dev
       - TZ=Asia/Shanghai
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
     restart: always
     networks:
       - crm-network

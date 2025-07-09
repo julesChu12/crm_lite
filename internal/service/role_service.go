@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
@@ -12,14 +13,34 @@ import (
 )
 
 type RoleService struct {
-	q *query.Query
+	q        *query.Query
+	resource *resource.Manager
 }
 
-func NewRoleService(db *gorm.DB) *RoleService {
-	return &RoleService{q: query.Use(db)}
+func NewRoleService(resManager *resource.Manager) *RoleService {
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for RoleService: " + err.Error())
+	}
+	return &RoleService{
+		q:        query.Use(db.DB),
+		resource: resManager,
+	}
 }
 
 func (s *RoleService) CreateRole(ctx context.Context, req *dto.RoleCreateRequest) (*dto.RoleResponse, error) {
+	// 检查 name 唯一性（排除软删除的记录）
+	count, err := s.q.Role.WithContext(ctx).
+		Where(s.q.Role.Name.Eq(req.Name)).
+		Where(s.q.Role.DeletedAt.IsNull()).
+		Count()
+	if err != nil {
+		return nil, err
+	}
+	if count > 0 {
+		return nil, ErrRoleNameAlreadyExists
+	}
+
 	role := &model.Role{
 		ID:          uuid.New().String(),
 		Name:        req.Name,
@@ -59,9 +80,20 @@ func (s *RoleService) GetRoleByID(ctx context.Context, id string) (*dto.RoleResp
 func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUpdateRequest) (*dto.RoleResponse, error) {
 	r := s.q.Role
 	updates := make(map[string]interface{})
+
+	// 检查 display_name 是否需要更新以及唯一性（虽然数据库中没有强制唯一约束，但业务上建议保持唯一）
 	if req.DisplayName != "" {
+		// 检查 display_name 是否已存在（排除当前角色）
+		count, err := r.WithContext(ctx).Where(r.DisplayName.Eq(req.DisplayName), r.ID.Neq(id)).Count()
+		if err != nil {
+			return nil, err
+		}
+		if count > 0 {
+			return nil, ErrRoleNameAlreadyExists
+		}
 		updates["display_name"] = req.DisplayName
 	}
+
 	if req.Description != "" {
 		updates["description"] = req.Description
 	}
@@ -69,12 +101,14 @@ func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUp
 		updates["is_active"] = *req.IsActive
 	}
 
-	result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Updates(updates)
-	if err != nil {
-		return nil, err
-	}
-	if result.RowsAffected == 0 {
-		return nil, ErrRoleNotFound
+	if len(updates) > 0 {
+		result, err := r.WithContext(ctx).Where(r.ID.Eq(id)).Updates(updates)
+		if err != nil {
+			return nil, err
+		}
+		if result.RowsAffected == 0 {
+			return nil, ErrRoleNotFound
+		}
 	}
 
 	// 返回更新后的角色信息

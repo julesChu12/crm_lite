@@ -15,11 +15,7 @@ type RoleController struct {
 }
 
 func NewRoleController(resManager *resource.Manager) *RoleController {
-	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
-	if err != nil {
-		panic("Failed to get database resource for RoleController: " + err.Error())
-	}
-	return &RoleController{roleService: service.NewRoleService(dbResource.DB)}
+	return &RoleController{roleService: service.NewRoleService(resManager)}
 }
 
 // CreateRole godoc
@@ -41,7 +37,10 @@ func (rc *RoleController) CreateRole(c *gin.Context) {
 	}
 	role, err := rc.roleService.CreateRole(c.Request.Context(), &req)
 	if err != nil {
-		// 这里可以根据 service 层返回的更具体的错误进行处理，例如角色名冲突
+		if errors.Is(err, service.ErrRoleNameAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "role name already exists")
+			return
+		}
 		resp.SystemError(c, err)
 		return
 	}
@@ -115,6 +114,10 @@ func (rc *RoleController) UpdateRole(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrRoleNotFound) {
 			resp.Error(c, resp.CodeNotFound, "role not found")
+			return
+		}
+		if errors.Is(err, service.ErrRoleNameAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "role name already exists")
 			return
 		}
 		resp.SystemError(c, err)

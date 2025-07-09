@@ -17,15 +17,8 @@ type UserController struct {
 
 // NewUserController 创建一个新的 UserController
 func NewUserController(resManager *resource.Manager) *UserController {
-	// 从资源管理器获取数据库连接等，初始化 UserService
-	dbResource, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
-	if err != nil {
-		// 在系统启动时，如果依赖不满足，直接 panic
-		panic("Failed to get database resource for UserController: " + err.Error())
-	}
-
 	return &UserController{
-		userService: service.NewUserService(dbResource.DB),
+		userService: service.NewUserService(resManager),
 	}
 }
 
@@ -51,7 +44,15 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 	user, err := uc.userService.CreateUserByAdmin(c.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrUserAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "username or email already exists")
+			resp.Error(c, resp.CodeConflict, "username already exists")
+			return
+		}
+		if errors.Is(err, service.ErrEmailAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "email already exists")
+			return
+		}
+		if errors.Is(err, service.ErrPhoneAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "phone number already exists")
 			return
 		}
 		resp.SystemError(c, err)
@@ -138,6 +139,14 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
 			resp.Error(c, resp.CodeNotFound, "user not found")
+			return
+		}
+		if errors.Is(err, service.ErrEmailAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "email already exists")
+			return
+		}
+		if errors.Is(err, service.ErrPhoneAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "phone number already exists")
 			return
 		}
 		resp.SystemError(c, err)

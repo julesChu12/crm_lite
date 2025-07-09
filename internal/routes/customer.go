@@ -9,8 +9,7 @@ import (
 
 // registerCustomerRoutes 注册客户模块路由
 func registerCustomerRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
-	dbRes, _ := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
-	customerController := controller.NewCustomerController(dbRes.DB)
+	customerController := controller.NewCustomerController(rm)
 
 	customers := rg.Group("/customers")
 	{

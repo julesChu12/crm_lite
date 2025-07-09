@@ -36,6 +36,19 @@ echo "正在发现并注册 API 资源..."
 go run cmd/tools/permission/discover.go
 echo "API 资源注册完成!"
 
-# 4. 启动主程序
-echo "启动 CRM 应用..."
-exec "$@" 
+# 4. 启动主程序 (air or other commands)
+# 使用 trap 捕获退出信号，以便优雅地关闭子进程
+trap 'kill -TERM $child_pid 2>/dev/null' EXIT
+
+echo "启动 CRM 应用 (air)..."
+# 在后台运行 air，并将其 PID 存储在文件中
+"$@" &
+child_pid=$!
+echo "$child_pid" > /tmp/air.pid
+
+# 用一个无限循环代替 `wait` 命令，以确保容器本身不会因为 air 进程被终止而退出。
+# 这使得 debug-toggle.sh 可以自由地管理 air 和 dlv 子进程。
+echo "Entrypoint is now in a holding loop, allowing for process toggling."
+while true; do
+  sleep 86400
+done 

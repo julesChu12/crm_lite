@@ -1,27 +1,32 @@
 # Dockerfile.dev
 FROM golang:1.24-alpine
 
-# 安装 mysql-client 用于数据库连接检测
-RUN apk add --no-cache mysql-client
+# 设置 ARG 以便在构建时可以覆盖 GOPROXY
+ARG GOPROXY_ARG=https://goproxy.cn,direct
+
+# 一次性更新源、安装依赖并清理缓存，减少层数
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache mysql-client
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
+# 利用 Docker 的层缓存机制，仅在 go.mod/go.sum 变化时才重新下载依赖
+COPY go.mod go.sum ./
+ENV GOPROXY=${GOPROXY_ARG}
 RUN go mod download
 
-# 安装 air 热加载工具
+# 分开安装 Go 工具，因为它们不属于同一模块
 RUN go install github.com/air-verse/air@v1.62.0
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
 
-ENV PATH="/go/bin:$PATH"
-
-# 复制 entrypoint 脚本
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh && \
+# 一次性复制所有脚本，并设置权限，
+COPY docker-entrypoint.sh debug-toggle.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/debug-toggle.sh && \
     sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 
 # 将剩余代码和 air 配置挂载进来，由 compose 完成，不 COPY 源码
 # docker-compose.yaml 挂载本地 ./ 到容器 /app
-EXPOSE 8080
+EXPOSE 8080 2345
+
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["air"]

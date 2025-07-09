@@ -23,13 +23,9 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 	// 2. 注册通用中间件
 	router.Use(middleware.GinLogger(), gin.Recovery())
 
-	// 3. 初始化需要 state 的中间件
-	jwtMiddleware := middleware.NewJWTAuthMiddleware(resManager)
-	casbinMiddleware := middleware.NewCasbinMiddleware(resManager)
-
-	// 4. 创建 /api/v1 路由组并应用安全中间件
+	// 3. 创建 /api/v1 路由组并应用安全中间件
 	apiV1 := router.Group("/api/v1")
-	apiV1.Use(jwtMiddleware.Check, casbinMiddleware.Check)
+	apiV1.Use(middleware.NewJWTAuthMiddleware(resManager), middleware.NewCasbinMiddleware(resManager))
 	{
 		// 所有 v1 路由都在这里注册。
 		// 中间件内部的白名单会负责放行登录、注册等公开路由。

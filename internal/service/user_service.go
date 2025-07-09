@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"crm_lite/pkg/utils"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -15,12 +17,18 @@ import (
 )
 
 type UserService struct {
-	q *query.Query
+	q        *query.Query
+	resource *resource.Manager // 添加 resource manager
 }
 
-func NewUserService(db *gorm.DB) *UserService {
+func NewUserService(resManager *resource.Manager) *UserService {
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for UserService: " + err.Error())
+	}
 	return &UserService{
-		q: query.Use(db),
+		q:        query.Use(db.DB),
+		resource: resManager, // 初始化 resource manager
 	}
 }
 
@@ -62,10 +70,24 @@ func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.User
 
 // CreateUserByAdmin 管理员创建用户
 func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreateUserRequest) (*dto.UserResponse, error) {
-	// 1. 检查用户名或邮箱是否已存在
-	user, _ := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Username.Eq(req.Username)).Or(s.q.AdminUser.Email.Eq(req.Email)).First()
-	if user != nil {
-		return nil, ErrUserAlreadyExists
+	// 1. 检查用户名、邮箱或手机号是否已存在（排除软删除的记录）
+	var existingUser *model.AdminUser
+	existingUser, _ = s.q.AdminUser.WithContext(ctx).
+		Where(s.q.AdminUser.Username.Eq(req.Username)).
+		Or(s.q.AdminUser.Email.Eq(req.Email)).
+		Or(s.q.AdminUser.Phone.Eq(req.Phone)).
+		Where(s.q.AdminUser.DeletedAt.IsNull()).
+		First()
+	if existingUser != nil {
+		if existingUser.Username == req.Username {
+			return nil, ErrUserAlreadyExists
+		}
+		if existingUser.Email == req.Email {
+			return nil, ErrEmailAlreadyExists
+		}
+		if existingUser.Phone == req.Phone {
+			return nil, ErrPhoneAlreadyExists
+		}
 	}
 
 	// 2. 哈希密码
@@ -187,29 +209,75 @@ func (s *UserService) UpdateUserByAdmin(ctx context.Context, uuid_str string, re
 			updates["is_active"] = *req.IsActive
 		}
 
+		// 2. 检查 email 和 phone 的唯一性（排除软删除的记录）
+		if req.Email != "" {
+			count, err := tx.AdminUser.WithContext(ctx).
+				Where(tx.AdminUser.Email.Eq(req.Email), tx.AdminUser.UUID.Neq(uuid_str)).
+				Where(tx.AdminUser.DeletedAt.IsNull()).
+				Count()
+			if err != nil {
+				return err
+			}
+			if count > 0 {
+				return ErrEmailAlreadyExists
+			}
+			updates["email"] = req.Email
+		}
+		if req.Phone != "" {
+			count, err := tx.AdminUser.WithContext(ctx).
+				Where(tx.AdminUser.Phone.Eq(req.Phone), tx.AdminUser.UUID.Neq(uuid_str)).
+				Where(tx.AdminUser.DeletedAt.IsNull()).
+				Count()
+			if err != nil {
+				return err
+			}
+			if count > 0 {
+				return ErrPhoneAlreadyExists
+			}
+			updates["phone"] = req.Phone
+		}
+
 		if len(updates) > 0 {
 			if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Updates(updates); err != nil {
 				return err
 			}
 		}
 
-		// 2. 更新角色关联
-		// 先删除旧的关联
-		if _, err := tx.AdminUserRole.WithContext(ctx).Where(tx.AdminUserRole.AdminUserID.Eq(uuid_str)).Delete(); err != nil {
-			return err
+		// 2. 更新角色关联 - 改为调用 Casbin
+		// 注意: Casbin 的操作不是事务性的，如果这里失败，前面的用户信息更新不会回滚。
+		// 这是一个设计权衡，或者需要引入更复杂的补偿事务逻辑（如 two-phase commit）。
+		// 当前我们接受这种权衡，因为角色分配失败的概率远低于用户信息更新失败。
+		casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+		if err != nil {
+			return fmt.Errorf("failed to get casbin resource for role update: %w", err)
 		}
-		// 再创建新的关联
+		enforcer := casbinRes.GetEnforcer()
+
+		// 先删除用户的所有旧角色
+		if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil {
+			return fmt.Errorf("failed to delete old roles for user: %w", err)
+		}
+
+		// 再添加新角色
 		if len(req.RoleIDs) > 0 {
-			roles := make([]*model.AdminUserRole, len(req.RoleIDs))
-			for i, roleID := range req.RoleIDs {
-				roles[i] = &model.AdminUserRole{
-					ID:          uuid.New().String(),
-					AdminUserID: uuid_str,
-					RoleID:      roleID,
-				}
+			// 将 role_id 转换为 role_name
+			role_models, err := s.q.Role.WithContext(ctx).Where(s.q.Role.ID.In(req.RoleIDs...)).Find()
+			if err != nil {
+				return fmt.Errorf("failed to find roles by ids: %w", err)
 			}
-			if err := tx.AdminUserRole.WithContext(ctx).Create(roles...); err != nil {
-				return err
+			if len(role_models) != len(req.RoleIDs) {
+				return ErrRoleNotFound // 如果提供的某些RoleID无效
+			}
+
+			var roles_to_add []string
+			for _, r_model := range role_models {
+				roles_to_add = append(roles_to_add, r_model.Name)
+			}
+
+			if len(roles_to_add) > 0 {
+				if _, err := enforcer.AddRolesForUser(uuid_str, roles_to_add); err != nil {
+					return fmt.Errorf("failed to add new roles for user: %w", err)
+				}
 			}
 		}
 
@@ -223,17 +291,33 @@ func (s *UserService) UpdateUserByAdmin(ctx context.Context, uuid_str string, re
 }
 
 // DeleteUser 删除用户
-func (s *UserService) DeleteUser(ctx context.Context, uuid string) error {
-	// 推荐使用事务确保原子性
+func (s *UserService) DeleteUser(ctx context.Context, uuid_str string) error {
+	// 在删除用户时，也应该清理其在 Casbin 中的角色和权限信息
+	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+	if err != nil {
+		return fmt.Errorf("failed to get casbin resource for user deletion: %w", err)
+	}
+	enforcer := casbinRes.GetEnforcer()
+
+	// 开启事务
 	return s.q.Transaction(func(tx *query.Query) error {
-		// 1. 删除用户与角色的关联
-		if _, err := tx.AdminUserRole.WithContext(ctx).Where(tx.AdminUserRole.AdminUserID.Eq(uuid)).Delete(); err != nil {
+		// 1. 从数据库中删除用户
+		if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Delete(); err != nil {
 			return err
 		}
-		// 2. 删除用户自身
-		if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid)).Delete(); err != nil {
-			return err
+
+		// 2. 从 Casbin 中删除该用户的所有角色关联 (g policies)
+		if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil {
+			// 注意：这里如果失败，数据库的用户记录已删除。
+			// 这是一个需要权衡的地方。可以选择忽略这个错误，或者记录日志。
+			log.Printf("Warn: failed to delete user roles from casbin for user %s, but user was deleted from db. manual cleanup may be needed. Error: %v", uuid_str, err)
 		}
+
+		// 3. (可选) 删除以该用户为主体的权限策略 (p policies)
+		// 通常用户是通过角色获得权限的，直接赋予用户的权限较少。
+		// 如果有这种场景，需要执行 enforcer.DeletePermissionsForUser(uuid_str)
+		// 当前设计中，我们假设权限都与角色挂钩，所以这一步省略。
+
 		return nil
 	})
 }

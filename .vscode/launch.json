@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug CRM Container",
+            "type": "go",
+            "request": "attach",
+            "mode": "remote",
+            "remotePath": "/app",
+            "host": "127.0.0.1",
+            "port": 2345,
+            "substitutePath": [
+                {
+                    "from": "${workspaceFolder}",
+                    "to": "/app"
+                }
+            ],
+            "preLaunchTask": "crm-start-debug",
+            "postDebugTask": "crm-stop-debug"
+        }
+    ]
+}

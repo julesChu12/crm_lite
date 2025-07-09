@@ -90,9 +90,21 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenReq
 		return nil, ErrUserNotFound
 	}
 
+	// 3.5. 重新获取用户最新角色信息
+	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
+	}
+	enforcer := casbinRes.GetEnforcer()
+
+	roles, err := enforcer.GetRolesForUser(user.UUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
+	}
+
 	// 4. 生成新的 Access Token 和 Refresh Token
 	// 为安全起见，通常刷新操作也会轮换 Refresh Token
-	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, claims.Roles)
+	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
 	}
@@ -228,17 +240,16 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 
 	fmt.Printf("Password verification successful!\n")
 
-	// 3. 查询用户角色
-	var roles []string
-	q := s.q
-	err = q.Role.WithContext(ctx).
-		Select(q.Role.Name).
-		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
-		Where(q.AdminUserRole.AdminUserID.Eq(user.UUID)).
-		Scan(&roles)
-
+	// 3. 查询用户角色 - 从 Casbin enforcer 中获取
+	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query user roles: %w", err)
+		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
+	}
+	enforcer := casbinRes.GetEnforcer()
+
+	roles, err := enforcer.GetRolesForUser(user.UUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
 	}
 
 	// 4. 生成JWT
@@ -331,16 +342,16 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserR
 		return nil, fmt.Errorf("database query error: %w", err)
 	}
 
-	// 2. 查询用户角色
-	var roles []string
-	q := s.q
-	err = q.Role.WithContext(ctx).
-		Select(q.Role.Name).
-		LeftJoin(q.AdminUserRole, q.AdminUserRole.RoleID.EqCol(q.Role.ID)).
-		Where(q.AdminUserRole.AdminUserID.Eq(user.UUID)).
-		Scan(&roles)
+	// 2. 查询用户角色 - 从 Casbin enforcer 中获取
+	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query user roles: %w", err)
+		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
+	}
+	enforcer := casbinRes.GetEnforcer()
+
+	roles, err := enforcer.GetRolesForUser(user.UUID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
 	}
 
 	// 3. 组装 DTO
