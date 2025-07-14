@@ -13,4 +13,6 @@ var (
 	ErrPhoneAlreadyExists    = errors.New("phone number already exists")
 	ErrCustomerNotFound      = errors.New("customer not found")
 	ErrRoleNameAlreadyExists = errors.New("role name already exists")
+	ErrUserRoleNotFound      = errors.New("user role assignment not found")
+	ErrPermissionNotFound    = errors.New("permission not found")
 )

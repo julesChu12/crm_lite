@@ -34,6 +34,8 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 		registerRoleRoutes(apiV1, resManager)
 		registerPermissionRoutes(apiV1, resManager)
 		registerCustomerRoutes(apiV1, resManager)
+		registerProductRoutes(apiV1, resManager)
+		registerOrderRoutes(apiV1, resManager)
 	}
 
 	// 5. 设置一些通用路由

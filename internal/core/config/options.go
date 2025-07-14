@@ -132,6 +132,7 @@ type AuthOptions struct {
 	BCryptCost   int                   `mapstructure:"BCryptCost"`   // 密码加密成本
 	SuperAdmin   SuperAdminOptions     `mapstructure:"superAdmin"`   // 超级管理员配置
 	Email        EmailOptions          `mapstructure:"email"`        // 邮件服务配置
+	DefaultRole  string                `mapstructure:"defaultRole"`  // 默认角色名称
 }
 
 // ==================== 主配置结构体 ====================
@@ -288,6 +289,7 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 			UseTLS:       o.getBoolWithDefault("email.useTLS", true),
 			InsecureSkip: o.getBoolWithDefault("email.insecureSkip", true),
 		},
+		DefaultRole: o.getStringWithDefault("auth.defaultRole", ""),
 	}
 	// 其他配置
 	o.PprofOn = o.getBoolWithDefault("pprofOn", false)

@@ -45,6 +45,15 @@ definitions:
           type: integer
         type: array
     type: object
+  dto.CustomerBatchGetRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - ids
+    type: object
   dto.CustomerCreateRequest:
     properties:
       email:
@@ -52,10 +61,19 @@ definitions:
       name:
         type: string
       phone:
+        description: 使用e164格式校验手机号
         type: string
     required:
     - name
-    - phone
+    type: object
+  dto.CustomerListResponse:
+    properties:
+      customers:
+        items:
+          $ref: '#/definitions/dto.CustomerResponse'
+        type: array
+      total:
+        type: integer
     type: object
   dto.CustomerResponse:
     properties:
@@ -115,6 +133,109 @@ definitions:
         description: 令牌类型, 通常是 "Bearer"
         type: string
     type: object
+  dto.OrderCreateRequest:
+    properties:
+      customer_id:
+        type: integer
+      items:
+        description: 订单项，至少要有一项
+        items:
+          $ref: '#/definitions/dto.OrderItemRequest'
+        minItems: 1
+        type: array
+      order_date:
+        type: string
+      remark:
+        type: string
+      status:
+        enum:
+        - draft
+        - pending
+        - confirmed
+        type: string
+    required:
+    - customer_id
+    - items
+    - order_date
+    type: object
+  dto.OrderItemRequest:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      unit_price:
+        description: 允许在下单时覆盖产品单价
+        minimum: 0
+        type: number
+    required:
+    - product_id
+    - quantity
+    - unit_price
+    type: object
+  dto.OrderItemResponse:
+    properties:
+      final_price:
+        description: 最终价格 (数量 * 单价)
+        type: number
+      id:
+        type: integer
+      product_id:
+        description: 产品ID
+        type: integer
+      quantity:
+        description: 数量
+        type: integer
+      unit_price:
+        description: 成交单价
+        type: number
+    type: object
+  dto.OrderListResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/dto.OrderResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.OrderResponse:
+    properties:
+      created_at:
+        description: 创建时间
+        type: string
+      customer_id:
+        description: 客户ID
+        type: integer
+      customer_name:
+        description: 客户名称（关联查询时填充）
+        type: string
+      final_amount:
+        description: 最终成交金额
+        type: number
+      id:
+        type: integer
+      items:
+        description: 订单项列表
+        items:
+          $ref: '#/definitions/dto.OrderItemResponse'
+        type: array
+      order_date:
+        description: 下单日期
+        type: string
+      order_no:
+        description: 订单号
+        type: string
+      remark:
+        description: 备注
+        type: string
+      status:
+        description: 订单状态
+        type: string
+      total_amount:
+        description: 订单总金额
+        type: number
+    type: object
   dto.PermissionRequest:
     properties:
       method:
@@ -127,6 +248,80 @@ definitions:
     - method
     - path
     - role
+    type: object
+  dto.ProductBatchGetRequest:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    required:
+    - ids
+    type: object
+  dto.ProductCreateRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      sku:
+        type: string
+      stock:
+        minimum: 0
+        type: integer
+    required:
+    - name
+    - price
+    - sku
+    type: object
+  dto.ProductListResponse:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/dto.ProductResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.ProductResponse:
+    properties:
+      created_at:
+        description: 创建时间
+        type: string
+      description:
+        description: 产品描述
+        type: string
+      id:
+        type: integer
+      name:
+        description: 产品名称
+        type: string
+      price:
+        description: 价格
+        type: number
+      sku:
+        description: 库存单位
+        type: string
+      stock:
+        description: 库存数量
+        type: integer
+      updated_at:
+        description: 更新时间
+        type: string
+    type: object
+  dto.ProductUpdateRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      price:
+        type: number
+      stock:
+        minimum: 0
+        type: integer
     type: object
   dto.RefreshTokenRequest:
     properties:
@@ -202,6 +397,15 @@ definitions:
         type: boolean
     required:
     - display_name
+    type: object
+  dto.UserBatchGetRequest:
+    properties:
+      uuids:
+        items:
+          type: string
+        type: array
+    required:
+    - uuids
     type: object
   dto.UserListResponse:
     properties:
@@ -452,7 +656,37 @@ paths:
       - Auth
   /customers:
     get:
-      description: Get a list of all customers
+      description: Get a list of customers with pagination, filtering, and sorting
+      parameters:
+      - description: 按邮箱精确搜索
+        in: query
+        name: email
+        type: string
+      - collectionFormat: csv
+        description: '新增: 用于根据ID批量查询'
+        in: query
+        items:
+          type: integer
+        name: ids
+        type: array
+      - description: 按姓名模糊搜索
+        in: query
+        name: name
+        type: string
+      - description: 排序字段, e.g., created_at_desc
+        in: query
+        name: order_by
+        type: string
+      - in: query
+        name: page
+        type: integer
+      - in: query
+        name: page_size
+        type: integer
+      - description: 按手机号精确搜索
+        in: query
+        name: phone
+        type: string
       produces:
       - application/json
       responses:
@@ -463,15 +697,17 @@ paths:
             - $ref: '#/definitions/resp.Response'
             - properties:
                 data:
-                  items:
-                    $ref: '#/definitions/dto.CustomerResponse'
-                  type: array
+                  $ref: '#/definitions/dto.CustomerListResponse'
               type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/resp.Response'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/resp.Response'
-      summary: List all customers
+      summary: List customers
       tags:
       - Customers
     post:
@@ -596,6 +832,132 @@ paths:
       summary: Update a customer
       tags:
       - Customers
+  /customers/batch-get:
+    post:
+      consumes:
+      - application/json
+      description: Get a list of customers by their IDs
+      parameters:
+      - description: Customer IDs
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CustomerBatchGetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.CustomerListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/resp.Response'
+      summary: Batch get customers
+      tags:
+      - Customers
+  /orders:
+    get:
+      description: 获取订单列表，支持分页和筛选
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页大小
+        in: query
+        name: page_size
+        type: integer
+      - description: 按客户 ID 筛选
+        in: query
+        name: customer_id
+        type: integer
+      - description: 按状态筛选
+        in: query
+        name: status
+        type: string
+      - description: 排序字段 (e.g., order_date_desc)
+        in: query
+        name: order_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderListResponse'
+              type: object
+      summary: 获取订单列表
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新订单及其订单项
+      parameters:
+      - description: 订单信息
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/dto.OrderCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      summary: 创建订单
+      tags:
+      - Orders
+  /orders/{id}:
+    get:
+      description: 根据 ID 获取单个订单的详细信息，包括订单项
+      parameters:
+      - description: 订单 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.OrderResponse'
+              type: object
+      summary: 获取单个订单
+      tags:
+      - Orders
   /permissions:
     delete:
       consumes:
@@ -693,6 +1055,171 @@ paths:
       summary: 获取角色的所有权限
       tags:
       - Permissions
+  /products:
+    get:
+      description: 获取产品列表，支持分页和筛选
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页大小
+        in: query
+        name: page_size
+        type: integer
+      - description: 按名称模糊搜索
+        in: query
+        name: name
+        type: string
+      - description: 按 SKU 精确搜索
+        in: query
+        name: sku
+        type: string
+      - description: 排序字段 (e.g., created_at_desc)
+        in: query
+        name: order_by
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductListResponse'
+              type: object
+      summary: 获取产品列表
+      tags:
+      - Products
+    post:
+      consumes:
+      - application/json
+      description: 创建一个新产品
+      parameters:
+      - description: 产品信息
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProductCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      summary: 创建产品
+      tags:
+      - Products
+  /products/{id}:
+    delete:
+      description: 根据 ID 删除一个产品
+      parameters:
+      - description: 产品 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: 删除产品
+      tags:
+      - Products
+    get:
+      description: 根据 ID 获取单个产品的详细信息
+      parameters:
+      - description: 产品 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      summary: 获取单个产品
+      tags:
+      - Products
+    put:
+      consumes:
+      - application/json
+      description: 更新一个现有产品
+      parameters:
+      - description: 产品 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 要更新的产品信息
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProductUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductResponse'
+              type: object
+      summary: 更新产品
+      tags:
+      - Products
+  /products/batch-get:
+    post:
+      consumes:
+      - application/json
+      description: 根据 ID 列表批量获取产品信息
+      parameters:
+      - description: 产品 ID 列表
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ProductBatchGetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ProductListResponse'
+              type: object
+      summary: 批量获取产品
+      tags:
+      - Products
   /roles:
     get:
       consumes:
@@ -980,12 +1507,10 @@ paths:
       - application/json
       description: 分页、筛选、搜索用户列表
       parameters:
-      - description: 按邮箱搜索
-        in: query
+      - in: query
         name: email
         type: string
-      - description: 按状态筛选
-        in: query
+      - in: query
         name: is_active
         type: boolean
       - in: query
@@ -994,10 +1519,15 @@ paths:
       - in: query
         name: page_size
         type: integer
-      - description: 按用户名模糊搜索
-        in: query
+      - in: query
         name: username
         type: string
+      - collectionFormat: csv
+        in: query
+        items:
+          type: string
+        name: uuids
+        type: array
       produces:
       - application/json
       responses:
@@ -1150,6 +1680,39 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: 管理员更新用户
+      tags:
+      - Users
+  /users/batch-get:
+    post:
+      consumes:
+      - application/json
+      description: 通过POST请求体中提供的UUID列表，批量获取用户信息
+      parameters:
+      - description: UUID列表
+        in: body
+        name: query
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserBatchGetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserListResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/resp.Response'
+      security:
+      - ApiKeyAuth: []
+      summary: 批量获取用户
       tags:
       - Users
 swagger: "2.0"

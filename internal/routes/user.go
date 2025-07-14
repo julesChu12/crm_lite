@@ -14,6 +14,7 @@ func registerUserRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
 	{
 		users.POST("", userController.CreateUser)
 		users.GET("", userController.GetUserList)
+		users.POST("/batch-get", userController.BatchGetUsers) // 新增路由
 		users.GET("/:uuid", userController.GetUserByID)
 		users.PUT("/:uuid", userController.UpdateUser)
 		users.DELETE("/:uuid", userController.DeleteUser)

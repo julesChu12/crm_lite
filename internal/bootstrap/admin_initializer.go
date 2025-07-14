@@ -50,53 +50,93 @@ func initSuperAdmin(rm *resource.Manager) error {
 
 	ctx := context.Background()
 
-	admin, err := q.AdminUser.WithContext(ctx).Where(q.AdminUser.Username.Eq(adminCfg.Username)).First()
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		logger.Error("Failed to query super admin", zap.Error(err))
-		return err
-	}
-
-	// 4. 如不存在则创建超级管理员用户
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		cost := opts.Auth.BCryptCost
-		if cost == 0 {
-			cost = bcrypt.DefaultCost
-		}
-		hashed, err := bcrypt.GenerateFromPassword([]byte(adminCfg.Password), cost)
-		if err != nil {
-			logger.Error("Failed to hash password for super admin", zap.Error(err))
+	// 使用事务确保所有操作的原子性
+	err = q.Transaction(func(tx *query.Query) error {
+		// 1. 查找或创建超级管理员角色
+		var role *model.Role
+		role, err := tx.Role.WithContext(ctx).Where(tx.Role.Name.Eq(adminCfg.Role)).First()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		admin = &model.AdminUser{
-			UUID:         uuid.New().String(),
-			Username:     adminCfg.Username,
-			PasswordHash: string(hashed),
-			Email:        adminCfg.Email,
-			RealName:     "SuperAdmin",
-			IsActive:     true,
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			role = &model.Role{
+				Name:        adminCfg.Role,
+				DisplayName: "超级管理员",
+				Description: "系统超级管理员",
+				IsActive:    true,
+			}
+			if err = tx.Role.WithContext(ctx).Create(role); err != nil {
+				return err
+			}
+			logger.Info("Super admin role created", zap.String("role", adminCfg.Role))
 		}
-		if err := q.AdminUser.WithContext(ctx).Create(admin); err != nil {
-			logger.Error("Failed to create super admin", zap.Error(err))
+
+		// 2. 查找或创建超级管理员用户
+		var admin *model.AdminUser
+		admin, err = tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.Username.Eq(adminCfg.Username)).First()
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return err
 		}
-		logger.Info("Super admin account created", zap.String("username", adminCfg.Username))
-	} else {
-		logger.Info("Super admin account already exists", zap.String("username", admin.Username))
-	}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			cost := opts.Auth.BCryptCost
+			if cost == 0 {
+				cost = bcrypt.DefaultCost
+			}
+			hashed, err_hash := bcrypt.GenerateFromPassword([]byte(adminCfg.Password), cost)
+			if err_hash != nil {
+				return err_hash
+			}
+			admin = &model.AdminUser{
+				UUID:         uuid.New().String(),
+				Username:     adminCfg.Username,
+				PasswordHash: string(hashed),
+				Email:        adminCfg.Email,
+				RealName:     "SuperAdmin",
+				IsActive:     true,
+			}
+			if err = tx.AdminUser.WithContext(ctx).Create(admin); err != nil {
+				return err
+			}
+			logger.Info("Super admin account created", zap.String("username", adminCfg.Username))
+		} else {
+			logger.Info("Super admin account already exists", zap.String("username", admin.Username))
+		}
 
-	// 5. 给予角色（Grouping policy）
-	has, err := enforcer.HasGroupingPolicy(admin.UUID, adminCfg.Role)
+		// 3. 关联用户和角色
+		_, err = tx.AdminUserRole.WithContext(ctx).Where(tx.AdminUserRole.AdminUserID.Eq(admin.ID), tx.AdminUserRole.RoleID.Eq(role.ID)).First()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			userRole := &model.AdminUserRole{
+				AdminUserID: admin.ID,
+				RoleID:      role.ID,
+			}
+			if err = tx.AdminUserRole.WithContext(ctx).Create(userRole); err != nil {
+				return err
+			}
+			logger.Info("Associated super admin user with role in database.")
+		}
+
+		// 4. 更新 Casbin 中的策略
+		has, err_casbin := enforcer.HasGroupingPolicy(admin.UUID, role.Name)
+		if err_casbin != nil {
+			return err_casbin
+		}
+		if !has {
+			if _, err_add := enforcer.AddGroupingPolicy(admin.UUID, role.Name); err_add != nil {
+				return err_add
+			}
+			logger.Info("Granted role to super admin in Casbin", zap.String("role", role.Name))
+		}
+		return nil
+	})
 	if err != nil {
+		logger.Error("Failed to initialize super admin", zap.Error(err))
 		return err
 	}
-	if !has {
-		if _, err := enforcer.AddGroupingPolicy(admin.UUID, adminCfg.Role); err != nil {
-			return err
-		}
-		if err := enforcer.SavePolicy(); err != nil {
-			return err
-		}
-		logger.Info("Granted role to super admin", zap.String("role", adminCfg.Role))
+
+	// 5. 初始化并同步默认角色权限
+	if err := initDefaultRole(enforcer, opts.Auth.DefaultRole); err != nil {
+		logger.Error("Failed to initialize default role", zap.Error(err))
+		return err
 	}
 
 	// 6. 为超级管理员角色同步所有API权限
@@ -105,6 +145,52 @@ func initSuperAdmin(rm *resource.Manager) error {
 		return err
 	}
 
+	return nil
+}
+
+// initDefaultRole 确保默认角色存在，并为其分配基础权限
+func initDefaultRole(enforcer *casbin.Enforcer, defaultRole string) error {
+	if defaultRole == "" {
+		logger.Warn("Default role name is not configured, skipping initialization.")
+		return nil
+	}
+
+	logger.Info("Start syncing permissions for default role...", zap.String("role", defaultRole))
+
+	// 定义默认角色需要的基础权限
+	defaultPermissions := [][]string{
+		{"/api/v1/auth/profile", "GET"},
+		{"/api/v1/auth/profile", "PUT"},
+		{"/api/v1/auth/password", "PUT"},
+		{"/api/v1/auth/logout", "POST"},
+	}
+
+	var policiesAdded bool
+	for _, p := range defaultPermissions {
+		path, method := p[0], p[1]
+		has, err := enforcer.HasPolicy(defaultRole, path, method)
+		if err != nil {
+			return err
+		}
+		if !has {
+			if _, err := enforcer.AddPolicy(defaultRole, path, method); err != nil {
+				return err
+			}
+			policiesAdded = true
+			logger.Info("Granted new permission to default role",
+				zap.String("role", defaultRole),
+				zap.String("path", path),
+				zap.String("method", method),
+			)
+		}
+	}
+
+	if policiesAdded {
+		logger.Info("New permissions granted to default role, saving policies...")
+		return enforcer.SavePolicy()
+	}
+
+	logger.Info("Default role permissions are already up to date.")
 	return nil
 }
 

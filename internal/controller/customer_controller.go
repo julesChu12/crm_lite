@@ -48,15 +48,52 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 }
 
 // ListCustomers
-// @Summary      List all customers
-// @Description  Get a list of all customers
+// @Summary      List customers
+// @Description  Get a list of customers with pagination, filtering, and sorting
 // @Tags         Customers
 // @Produce      json
-// @Success      200  {object}  resp.Response{data=[]dto.CustomerResponse}
+// @Param        query query     dto.CustomerListRequest false "Query parameters"
+// @Success      200  {object}  resp.Response{data=dto.CustomerListResponse}
+// @Failure      400  {object}  resp.Response
 // @Failure      500  {object}  resp.Response
 // @Router       /customers [get]
 func (cc *CustomerController) ListCustomers(c *gin.Context) {
-	customers, err := cc.customerService.ListCustomers(c.Request.Context())
+	var req dto.CustomerListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+	customers, err := cc.customerService.ListCustomers(c.Request.Context(), &req)
+	if err != nil {
+		resp.Error(c, resp.CodeInternalError, "failed to list customers")
+		return
+	}
+	resp.Success(c, customers)
+}
+
+// BatchGetCustomers godoc
+// @Summary      Batch get customers
+// @Description  Get a list of customers by their IDs
+// @Tags         Customers
+// @Accept       json
+// @Produce      json
+// @Param        query body      dto.CustomerBatchGetRequest true "Customer IDs"
+// @Success      200  {object}  resp.Response{data=dto.CustomerListResponse}
+// @Failure      400  {object}  resp.Response
+// @Failure      500  {object}  resp.Response
+// @Router       /customers/batch-get [post]
+func (cc *CustomerController) BatchGetCustomers(c *gin.Context) {
+	var req dto.CustomerBatchGetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+
+	serviceReq := &dto.CustomerListRequest{
+		IDs: req.IDs,
+	}
+
+	customers, err := cc.customerService.ListCustomers(c.Request.Context(), serviceReq)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to list customers")
 		return

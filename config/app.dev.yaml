@@ -49,7 +49,7 @@ cache:
     host: "redis"
     port: 6379
     password: ""
-    db: 1 # Use a different Redis DB for testing
+    db: 0 # Use a different Redis DB for testing
     poolSize: 10
     minIdleConns: 5
 
@@ -58,7 +58,7 @@ auth:
   jwt:
     secret: "test-secret-key-that-is-long-and-secure"
     issuer: "crm-lite-test"
-    access_token_expire: 15m
+    access_token_expire: 24h
     refresh_token_expire: 72h
   rbac:
     modelFile: "internal/bootstrap/model.conf"

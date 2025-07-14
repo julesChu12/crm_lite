@@ -1,239 +1,121 @@
-# CRM Lite
+# CRM Lite - 轻量级客户关系管理系统
 
-一个为理发店、洗车店等小微企业打造的轻量级客户关系管理系统。
+[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
+[![Gin](https://img.shields.io/badge/Gin-v1.9-0089D6?style=for-the-badge)](https://gin-gonic.com/)
+[![GORM](https://img.shields.io/badge/GORM-v1.25-9B4F96?style=for-the-badge)](https://gorm.io/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
 
-## 技术栈
+**CRM Lite** 是一个使用 Go 语言构建的、为小微企业（如理发店、洗车店）设计的轻量级客户关系管理 (CRM) 后端服务。它提供了一套完整的 API，用于管理客户、产品、订单等核心业务数据。
 
-- **后端**: Go + Gin + MariaDB + Redis + Cobra + Zap
-- **安全**: JWT + Casbin
-- **前端**: Vue3 + Pinia + WebSocket
-- **部署**: Docker Compose + GitHub Actions（CI）
+## ✨ 核心功能
 
-## 项目结构
+-   **身份认证与授权**: 基于 JWT 的用户认证和 Casbin 的 RBAC 权限控制。
+-   **用户与角色管理**: 支持多用户、多角色的管理体系。
+-   **客户管理**: 完整的客户信息 CRUD 和批量查询功能。
+-   **产品管理**: 管理可销售的产品或服务，包括库存。
+-   **订单管理**: 支持事务性的订单创建和丰富的查询功能。
+-   **API 文档**: 通过 Swagger (OpenAPI) 自动生成并提供交互式 API 文档。
+-   **其他模块**: 包含钱包、营销等模块的基础结构，可按需扩展。
 
-```
-.
-├── bootstrap/                 # 应用初始化
-├── cmd/                       # CLI 命令入口
-├── config/                    # 配置文件
-├── db/                        # 数据库相关
-│   └── migrations/            # 数据库迁移文件
-├── deploy/                    # 部署相关文件
-├── docs/                      # 项目文档
-│   └── architecture/          # 架构设计文档
-├── internal/                  # 内部应用逻辑
-│   ├── common/                # 通用组件
-│   ├── controller/            # 控制器
-│   ├── model/                 # 数据模型
-│   ├── service/               # 业务逻辑
-│   └── ...
-├── logs/                      # 日志文件
-├── pkg/                       # 公共库
-├── tmp/                       # 临时文件
-└── web/                       # 前端代码
-```
+## 🛠️ 技术栈
 
-## 数据库设计
+-   **后端**: Go, Gin
+-   **数据库**: GORM, MariaDB
+-   **缓存**: Redis
+-   **命令行**: Cobra
+-   **安全**: JWT, Casbin
+-   **日志**: Zap
+-   **容器化**: Docker, Docker Compose
 
-### 设计原则
-
-- **逻辑外键设计**: 使用逻辑外键而非物理外键约束，提高性能和扩展性
-- **软删除支持**: 所有核心表支持软删除，保证数据安全
-- **UUID主键**: 使用UUID作为主键，支持分布式环境
-- **索引优化**: 合理设计索引，优化查询性能
-
-### 核心表结构
-
-1. **权限管理**
-   - `casbin_rules` - Casbin权限规则
-   - `roles` - 角色表
-   - `admin_users` - 管理员用户
-   - `admin_user_roles` - 用户角色关联
-
-2. **客户管理**
-   - `customers` - 客户主档
-   - `contacts` - 联系人（一个客户可有多联系人）
-
-3. **产品订单**
-   - `products` - 产品/服务
-   - `orders` - 订单主表
-   - `order_items` - 订单明细
-
-4. **资金管理**
-   - `wallets` - 钱包/储值
-   - `wallet_transactions` - 钱包流水
-
-5. **客户运营**
-   - `activities` - 客户互动记录
-   - `marketing_campaigns` - 营销活动
-   - `marketing_records` - 营销记录
-
-### 逻辑外键关系说明
-
-由于采用逻辑外键设计，数据完整性需要在应用层保证：
-
-```
-customers.assigned_to -> admin_users.id
-contacts.customer_id -> customers.id
-orders.customer_id -> customers.id
-orders.contact_id -> contacts.id
-orders.assigned_to -> admin_users.id
-orders.created_by -> admin_users.id
-order_items.order_id -> orders.id
-order_items.product_id -> products.id
-wallets.customer_id -> customers.id
-wallet_transactions.wallet_id -> wallets.id
-wallet_transactions.operator_id -> admin_users.id
-activities.customer_id -> customers.id
-activities.contact_id -> contacts.id
-activities.assigned_to -> admin_users.id
-activities.created_by -> admin_users.id
-marketing_campaigns.created_by -> admin_users.id
-marketing_campaigns.updated_by -> admin_users.id
-marketing_records.campaign_id -> marketing_campaigns.id
-marketing_records.customer_id -> customers.id
-marketing_records.contact_id -> contacts.id
-admin_user_roles.admin_user_id -> admin_users.id
-admin_user_roles.role_id -> roles.id
-```
-
-## 快速开始
+## 🚀 快速开始
 
 ### 1. 环境准备
 
-确保已安装：
-
-- Go 1.21+
-- Docker & Docker Compose
-- MariaDB 10.8+
-- Redis 6+
-
-### 2. 启动数据库
+-   [Go](https://go.dev/doc/install) 1.24+
+-   [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
+-   [swag](https://github.com/swaggo/swag) CLI (用于生成 API 文档)
 
 ```bash
-# 启动 MariaDB 和 Redis
-docker-compose up -d mariadb redis
-
-# 可选：启动 phpMyAdmin 数据库管理工具
-docker-compose up -d phpmyadmin
+go install github.com/swaggo/swag/cmd/swag@latest
 ```
 
-### 3. 运行迁移
+### 2. 环境配置
+
+复制配置文件模板，并根据需要进行修改。
 
 ```bash
-# 运行数据库迁移
-go run main.go migrate
+cp .env.example .env
+cp config/app.test.yaml config/app.prod.yaml
 ```
 
-### 4. 启动服务
+> **注意**: `.env` 文件包含了数据库密码等敏感信息，已在 `.gitignore` 中忽略。`config/app.prod.yaml` 是生产环境的最终配置文件。
+
+### 3. 启动依赖服务
+
+使用 Docker Compose 一键启动数据库和缓存服务。
 
 ```bash
-# 启动API服务器
-go run main.go serve
+docker-compose up -d
 ```
+这将启动 MariaDB, Redis, 和一个可选的 phpMyAdmin。
 
-### 5. 访问服务
+### 4. 数据库迁移
 
-- API服务器: <http://localhost:8080>
-- phpMyAdmin数据库管理: <http://localhost:8081>
-  - 服务器: `mariadb`
-  - 用户名: `crm_user`
-  - 密码: `crm_pass`
-  - 数据库: `crm_db`
-
-## 开发指南
-
-### 可用命令
+运行 `db:migrate` 命令来初始化数据库表结构。
 
 ```bash
-# 查看帮助
-go run main.go --help
-
-# 启动服务器
-go run main.go serve
-
-# 运行数据库迁移
-go run main.go migrate
+go run main.go tools db:migrate
 ```
 
-### 数据完整性保证
+### 5. 启动应用
 
-由于使用逻辑外键，需要在应用层保证数据完整性：
+现在，可以启动 CRM Lite 的 API 服务了。
 
-1. **删除操作**: 在删除父记录前，检查是否存在子记录
-2. **插入操作**: 在插入子记录时，验证父记录是否存在
-3. **更新操作**: 在更新外键字段时，验证目标记录是否存在
-
-### 开发流程建议
-
-1. **权限表优先**: 先完善 `roles`、`admin_users`、`casbin_rules` 权限核心
-2. **最小闭环**: `customers` → `contacts` → `orders`/`products` 形成基础业务闭环
-3. **按需扩展**: 钱包、活动、营销功能可按业务需求逐步添加
-
-## 本地调试 GitHub Actions（act）
-
-本项目所有 CI/CD workflow 支持使用 [act](https://github.com/nektos/act) 进行本地调试。
-
-### 步骤
-
-1. 安装 act：
-   ```bash
-   brew install act # macOS
-   # 或参考官方文档安装
-   ```
-2. 在项目根目录新建 `.secrets` 文件，内容参考下方示例。
-3. 运行本地 workflow，例如：
-   ```bash
-   act -j deploy-production -W .github/workflows/release.yml
-   # 或
-   act -j build-dev -W .github/workflows/dev.yml
-   ```
-
-### .secrets 文件示例
-
-```
-PROD_HOST=your-production-host
-PROD_USER=your-ssh-user
-PROD_SSH_KEY=your-ssh-private-key
-# 其他 workflow 用到的 secrets 也可在此补充
+```bash
+go run main.go start
 ```
 
-> `.secrets` 文件内容需与 workflow 中用到的 `${{ secrets.XXX }}` 保持一致。
-> act 会自动加载该文件并注入到 workflow 运行环境。
+服务启动后，你可以在 `http://localhost:8080` 访问 API。
 
-## 文档
+### 6. API 文档
 
-详细的架构设计文档请查看 `docs/architecture/` 目录：
+我们使用 `swag` 根据代码注释自动生成 Swagger 文档。要查看或更新文档：
 
-- [项目结构说明](docs/architecture/01_project-structure.md)
-- [客户模块设计](docs/architecture/02_module_customer.md)
-- [订单模块设计](docs/architecture/03_module_order.md)
-- [钱包模块设计](docs/architecture/04_module_wallet.md)
-- [营销模块设计](docs/architecture/05_module_marketing.md)
-- [通用模块设计](docs/architecture/06_module_common.md)
+```bash
+# 生成/更新 docs 目录下的 swagger.json, swagger.yaml, docs.go
+swag init
 
-## 项目进度
+# 启动服务后，访问以下 URL 查看交互式 API 文档
+# http://localhost:8080/swagger/index.html
+```
 
-- **v0.1 (已完成)**
-  - [x] 搭建项目基础框架 (Gin, Gorm, Casbin)
-  - [x] 实现用户认证与RBAC权限管理
-  - [x] 实现用户、角色、权限管理API
-  - [x] 实现客户管理核心API
+## 🏗️ 项目结构
 
-- **v0.2 (进行中)**
-  - [ ] **产品与订单模块**: 打通 `客户 -> 产品 -> 订单` 的核心业务流
-  - [ ] 完善产品、订单相关的 `Service` 和 `Controller`
-  - [ ] 注册新模块的API路由
+CRM Lite 遵循了清晰的分层架构，主要的应用逻辑位于 `internal/` 目录下：
 
-- **v0.3 (计划中)**
-  - [ ] **资金钱包模块**: 实现客户储值、消费与流水功能
+```
+internal/
+├── bootstrap/     # 应用启动和初始化逻辑
+├── controller/    # HTTP 控制器，处理请求和响应
+├── core/          # 核心组件，如配置、日志、资源管理器
+├── dao/           # 数据访问对象 (DAO)，由 GORM Gen 生成
+├── dto/           # 数据传输对象 (DTO)，用于 API 的输入和输出
+├── middleware/    # Gin 中间件，如认证、日志记录
+├── policy/        # 权限策略相关，如 Casbin 白名单
+├── routes/        # API 路由注册
+└── service/       # 业务逻辑层，处理核心业务流程
+```
 
-- **v0.4 (计划中)**
-  - [ ] **客户运营模块**: 实现营销活动与客户互动功能
+## 📚 架构文档
 
-- **v0.5 (计划中)**
-  - [ ] **测试与完善**: 补充单元测试，与前端完成对接
+想深入了解每个模块的设计细节吗？请查阅我们的**架构文档**：
 
-## 许可证
+-   [**`docs/architecture/README.md`**](./docs/architecture/README.md)
 
-[MIT License](LICENSE)
+## 🤝 贡献
+
+我们欢迎任何形式的贡献！无论是提交 Issue、发起 Pull Request，还是改进文档。
+
+## 📄 许可证
+
+本项目基于 [MIT License](./LICENSE) 开源。

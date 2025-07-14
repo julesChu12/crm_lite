@@ -1,27 +1,47 @@
 package dto
 
-import "time"
-
-// CustomerCreateRequest 创建客户请求体
+// CustomerCreateRequest 创建客户的请求
 type CustomerCreateRequest struct {
 	Name  string `json:"name" binding:"required"`
-	Phone string `json:"phone" binding:"required"`
+	Phone string `json:"phone" binding:"omitempty,e164"` // 使用e164格式校验手机号
 	Email string `json:"email" binding:"omitempty,email"`
 }
 
-// CustomerUpdateRequest 更新客户请求体
+// CustomerUpdateRequest 更新客户的请求
 type CustomerUpdateRequest struct {
 	Name  string `json:"name"`
-	Phone string `json:"phone"`
+	Phone string `json:"phone" binding:"omitempty,e1y64"`
 	Email string `json:"email" binding:"omitempty,email"`
 }
 
-// CustomerResponse 客户信息响应体
+// CustomerListRequest 获取客户列表的请求参数
+type CustomerListRequest struct {
+	Page     int     `form:"page,default=1"`
+	PageSize int     `form:"page_size,default=10"`
+	Name     string  `form:"name"`     // 按姓名模糊搜索
+	Phone    string  `form:"phone"`    // 按手机号精确搜索
+	Email    string  `form:"email"`    // 按邮箱精确搜索
+	OrderBy  string  `form:"order_by"` // 排序字段, e.g., created_at_desc
+	IDs      []int64 `form:"ids"`      // 新增: 用于根据ID批量查询
+}
+
+// CustomerBatchGetRequest 批量获取客户的请求体
+type CustomerBatchGetRequest struct {
+	IDs []int64 `json:"ids" binding:"required"`
+}
+
+// CustomerResponse 单个客户的响应数据
 type CustomerResponse struct {
-	ID        int64     `json:"id"`
-	Name      string    `json:"name"`
-	Phone     string    `json:"phone"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Phone     string `json:"phone"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// CustomerListResponse 客户列表的响应
+type CustomerListResponse struct {
+	Total     int64               `json:"total"`
+	Customers []*CustomerResponse `json:"customers"`
 }

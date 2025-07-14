@@ -15,6 +15,7 @@ func registerCustomerRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
 	{
 		customers.POST("", customerController.CreateCustomer)
 		customers.GET("", customerController.ListCustomers)
+		customers.POST("/batch-get", customerController.BatchGetCustomers)
 		customers.GET("/:id", customerController.GetCustomer)
 		customers.PUT("/:id", customerController.UpdateCustomer)
 		customers.DELETE("/:id", customerController.DeleteCustomer)

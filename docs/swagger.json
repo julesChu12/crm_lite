@@ -314,14 +314,60 @@
         },
         "/customers": {
             "get": {
-                "description": "Get a list of all customers",
+                "description": "Get a list of customers with pagination, filtering, and sorting",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Customers"
                 ],
-                "summary": "List all customers",
+                "summary": "List customers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "按邮箱精确搜索",
+                        "name": "email",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "integer"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "新增: 用于根据ID批量查询",
+                        "name": "ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按姓名模糊搜索",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段, e.g., created_at_desc",
+                        "name": "order_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按手机号精确搜索",
+                        "name": "phone",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -334,14 +380,17 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/dto.CustomerResponse"
-                                            }
+                                            "$ref": "#/definitions/dto.CustomerListResponse"
                                         }
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
                         }
                     },
                     "500": {
@@ -388,6 +437,64 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/dto.CustomerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/batch-get": {
+            "post": {
+                "description": "Get a list of customers by their IDs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "Batch get customers",
+                "parameters": [
+                    {
+                        "description": "Customer IDs",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CustomerBatchGetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CustomerListResponse"
                                         }
                                     }
                                 }
@@ -541,6 +648,157 @@
                         "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders": {
+            "get": {
+                "description": "获取订单列表，支持分页和筛选",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "获取订单列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页大小",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按客户 ID 筛选",
+                        "name": "customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按状态筛选",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段 (e.g., order_date_desc)",
+                        "name": "order_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.OrderListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新订单及其订单项",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "创建订单",
+                "parameters": [
+                    {
+                        "description": "订单信息",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.OrderCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.OrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "description": "根据 ID 获取单个订单的详细信息，包括订单项",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "获取单个订单",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "订单 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.OrderResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -700,6 +958,278 @@
                         "schema": {
                             "$ref": "#/definitions/resp.Response"
                         }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "description": "获取产品列表，支持分页和筛选",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "获取产品列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页大小",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按名称模糊搜索",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按 SKU 精确搜索",
+                        "name": "sku",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段 (e.g., created_at_desc)",
+                        "name": "order_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建一个新产品",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "创建产品",
+                "parameters": [
+                    {
+                        "description": "产品信息",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/products/batch-get": {
+            "post": {
+                "description": "根据 ID 列表批量获取产品信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "批量获取产品",
+                "parameters": [
+                    {
+                        "description": "产品 ID 列表",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductBatchGetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "description": "根据 ID 获取单个产品的详细信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "获取单个产品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "产品 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "更新一个现有产品",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "更新产品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "产品 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的产品信息",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ProductUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "根据 ID 删除一个产品",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "删除产品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "产品 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
                     }
                 }
             }
@@ -1196,13 +1726,11 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "按邮箱搜索",
                         "name": "email",
                         "in": "query"
                     },
                     {
                         "type": "boolean",
-                        "description": "按状态筛选",
                         "name": "is_active",
                         "in": "query"
                     },
@@ -1218,8 +1746,16 @@
                     },
                     {
                         "type": "string",
-                        "description": "按用户名模糊搜索",
                         "name": "username",
+                        "in": "query"
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "name": "uuids",
                         "in": "query"
                     }
                 ],
@@ -1305,6 +1841,63 @@
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/batch-get": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "通过POST请求体中提供的UUID列表，批量获取用户信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "批量获取用户",
+                "parameters": [
+                    {
+                        "description": "UUID列表",
+                        "name": "query",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserBatchGetRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UserListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/resp.Response"
                         }
@@ -1541,11 +2134,24 @@
                 }
             }
         },
+        "dto.CustomerBatchGetRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "dto.CustomerCreateRequest": {
             "type": "object",
             "required": [
-                "name",
-                "phone"
+                "name"
             ],
             "properties": {
                 "email": {
@@ -1555,7 +2161,22 @@
                     "type": "string"
                 },
                 "phone": {
+                    "description": "使用e164格式校验手机号",
                     "type": "string"
+                }
+            }
+        },
+        "dto.CustomerListResponse": {
+            "type": "object",
+            "properties": {
+                "customers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.CustomerResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -1645,6 +2266,151 @@
                 }
             }
         },
+        "dto.OrderCreateRequest": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "items",
+                "order_date"
+            ],
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "items": {
+                    "description": "订单项，至少要有一项",
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderItemRequest"
+                    }
+                },
+                "order_date": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "pending",
+                        "confirmed"
+                    ]
+                }
+            }
+        },
+        "dto.OrderItemRequest": {
+            "type": "object",
+            "required": [
+                "product_id",
+                "quantity",
+                "unit_price"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "unit_price": {
+                    "description": "允许在下单时覆盖产品单价",
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
+        "dto.OrderItemResponse": {
+            "type": "object",
+            "properties": {
+                "final_price": {
+                    "description": "最终价格 (数量 * 单价)",
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "description": "产品ID",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "description": "数量",
+                    "type": "integer"
+                },
+                "unit_price": {
+                    "description": "成交单价",
+                    "type": "number"
+                }
+            }
+        },
+        "dto.OrderListResponse": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.OrderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "customer_id": {
+                    "description": "客户ID",
+                    "type": "integer"
+                },
+                "customer_name": {
+                    "description": "客户名称（关联查询时填充）",
+                    "type": "string"
+                },
+                "final_amount": {
+                    "description": "最终成交金额",
+                    "type": "number"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "items": {
+                    "description": "订单项列表",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.OrderItemResponse"
+                    }
+                },
+                "order_date": {
+                    "description": "下单日期",
+                    "type": "string"
+                },
+                "order_no": {
+                    "description": "订单号",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "订单状态",
+                    "type": "string"
+                },
+                "total_amount": {
+                    "description": "订单总金额",
+                    "type": "number"
+                }
+            }
+        },
         "dto.PermissionRequest": {
             "type": "object",
             "required": [
@@ -1661,6 +2427,114 @@
                 },
                 "role": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ProductBatchGetRequest": {
+            "type": "object",
+            "required": [
+                "ids"
+            ],
+            "properties": {
+                "ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "dto.ProductCreateRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "price",
+                "sku"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "stock": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "dto.ProductListResponse": {
+            "type": "object",
+            "properties": {
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ProductResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.ProductResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "创建时间",
+                    "type": "string"
+                },
+                "description": {
+                    "description": "产品描述",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "产品名称",
+                    "type": "string"
+                },
+                "price": {
+                    "description": "价格",
+                    "type": "number"
+                },
+                "sku": {
+                    "description": "库存单位",
+                    "type": "string"
+                },
+                "stock": {
+                    "description": "库存数量",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "description": "更新时间",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ProductUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "stock": {
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },
@@ -1771,6 +2645,20 @@
                 },
                 "is_active": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.UserBatchGetRequest": {
+            "type": "object",
+            "required": [
+                "uuids"
+            ],
+            "properties": {
+                "uuids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

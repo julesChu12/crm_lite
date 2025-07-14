@@ -5,7 +5,6 @@ tmp/
 path/
 .air.toml
 logs/
-config/app.dev.yaml
 *.pid
 *.out
 .secrets
@@ -13,7 +12,7 @@ config/app.dev.yaml
 # Temporary files and directories
 *.tmp
 build-errors.log
-
+main.bin
 # IDE and editor files
 *.swp
 *.swo

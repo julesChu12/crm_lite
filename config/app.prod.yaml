@@ -70,6 +70,12 @@ auth:
   oauthEnabled: false              # 是否启用第三方 OAuth 登录 (如微信、钉钉等)
   BCryptCost: 12                   # 密码加密强度: 10-12 适合生产环境
   superAdmin:
+    username: admin
+    password: "PLEASE_CHANGE_ME_IN_PRODUCTION"
+    email: "admin@yourdomain.com"
+    role: "super_admin"
+  # 默认角色配置
+  default_role: "authenticated_user"
 
 # ==================== 邮件服务配置 (SMTP) ====================
 email:

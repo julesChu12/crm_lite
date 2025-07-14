@@ -89,6 +89,38 @@ func (uc *UserController) GetUserList(c *gin.Context) {
 	resp.Success(c, result)
 }
 
+// BatchGetUsers godoc
+// @Summary      批量获取用户
+// @Description  通过POST请求体中提供的UUID列表，批量获取用户信息
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        query  body      dto.UserBatchGetRequest  true  "UUID列表"
+// @Success      200    {object}  resp.Response{data=dto.UserListResponse}
+// @Failure      400    {object}  resp.Response
+// @Security     ApiKeyAuth
+// @Router       /users/batch-get [post]
+func (uc *UserController) BatchGetUsers(c *gin.Context) {
+	var req dto.UserBatchGetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+
+	// 复用 UserListRequest DTO 来调用现有的服务层方法
+	serviceReq := &dto.UserListRequest{
+		UUIDs: req.UUIDs,
+	}
+
+	result, err := uc.userService.ListUsers(c.Request.Context(), serviceReq)
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+
+	resp.Success(c, result)
+}
+
 // GetUserByID godoc
 // @Summary      获取单个用户详情
 // @Description  根据用户UUID获取详细信息

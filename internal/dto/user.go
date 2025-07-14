@@ -70,16 +70,22 @@ type AdminUpdateUserRequest struct {
 	RoleIDs  []int64 `json:"role_ids"`
 }
 
-// UserListRequest 查询用户列表的请求参数
+// UserListRequest 获取用户列表的请求参数
 type UserListRequest struct {
-	Username string `form:"username"`  // 按用户名模糊搜索
-	Email    string `form:"email"`     // 按邮箱搜索
-	IsActive *bool  `form:"is_active"` // 按状态筛选
-	Page     int    `form:"page,default=1"`
-	PageSize int    `form:"page_size,default=10"`
+	Page     int      `form:"page,default=1"`
+	PageSize int      `form:"page_size,default=10"`
+	Username string   `form:"username"`
+	Email    string   `form:"email"`
+	IsActive *bool    `form:"is_active"`
+	UUIDs    []string `form:"uuids"`
 }
 
-// UserListResponse 用户列表响应
+// UserBatchGetRequest 批量获取用户的请求体
+type UserBatchGetRequest struct {
+	UUIDs []string `json:"uuids" binding:"required"`
+}
+
+// UserListResponse 用户列表的响应
 type UserListResponse struct {
 	Total int64           `json:"total"`
 	Users []*UserResponse `json:"users"`
