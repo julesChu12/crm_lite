@@ -15,4 +15,7 @@ var (
 	ErrRoleNameAlreadyExists = errors.New("role name already exists")
 	ErrUserRoleNotFound      = errors.New("user role assignment not found")
 	ErrPermissionNotFound    = errors.New("permission not found")
+	ErrWalletNotFound        = errors.New("wallet not found")
+	ErrForbidden             = errors.New("operation not permitted")
+	ErrInsufficientBalance   = errors.New("insufficient balance")
 )

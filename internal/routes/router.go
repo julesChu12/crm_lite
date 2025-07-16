@@ -24,8 +24,8 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 	router.Use(middleware.GinLogger(), gin.Recovery())
 
 	// 3. 创建 /api/v1 路由组并应用安全中间件
-	apiV1 := router.Group("/api/v1")
-	apiV1.Use(middleware.NewJWTAuthMiddleware(resManager), middleware.NewCasbinMiddleware(resManager))
+	apiV1 := router.Group("/v1")
+	apiV1.Use(middleware.NewJWTAuthMiddleware(resManager), middleware.NewCasbinMiddleware(resManager), middleware.NewSimpleCustomerAccessMiddleware(resManager))
 	{
 		// 所有 v1 路由都在这里注册。
 		// 中间件内部的白名单会负责放行登录、注册等公开路由。
@@ -34,8 +34,10 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 		registerRoleRoutes(apiV1, resManager)
 		registerPermissionRoutes(apiV1, resManager)
 		registerCustomerRoutes(apiV1, resManager)
+		RegisterContactRoutes(apiV1, resManager)
 		registerProductRoutes(apiV1, resManager)
 		registerOrderRoutes(apiV1, resManager)
+		RegisterWalletRoutes(apiV1, resManager)
 	}
 
 	// 5. 设置一些通用路由
