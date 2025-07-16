@@ -10,11 +10,11 @@ import (
 func RegisterContactRoutes(r *gin.RouterGroup, res *resource.Manager) {
 	ctl := controller.NewContactController(res)
 
-	grp := r.Group("/customers/:customer_id/contacts")
+	grp := r.Group("/customers/:id/contacts")
 	{
-		grp.GET("", ctl.List)
-		grp.POST("", ctl.Create)
-		grp.PUT(":contact_id", ctl.Update)
-		grp.DELETE(":contact_id", ctl.Delete)
+		grp.GET("", ctl.ListContacts)
+		grp.POST("", ctl.CreateContact)
+		grp.PUT("/:contact_id", ctl.UpdateContact)
+		grp.DELETE("/:contact_id", ctl.DeleteContact)
 	}
 }

@@ -14,11 +14,11 @@ func RegisterWalletRoutes(router *gin.RouterGroup, resourceManager *resource.Man
 	walletCtl := controller.NewWalletController(walletSvc)
 
 	// 创建一个 "wallets" 路由组
-	walletRoutes := router.Group("/customers/:customer_id")
+	walletRoutes := router.Group("/customers/:id")
 	{
-		// GET /v1/customers/:customer_id/wallet
+		// GET /v1/customers/:id/wallet
 		walletRoutes.GET("/wallet", walletCtl.GetWalletByCustomerID)
-		// POST /v1/customers/:customer_id/wallet/transactions
+		// POST /v1/customers/:id/wallet/transactions
 		walletRoutes.POST("/wallet/transactions", walletCtl.CreateTransaction)
 	}
 }

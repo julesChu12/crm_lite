@@ -15,12 +15,12 @@ server:
   host: "0.0.0.0"
   port: 8080
   timeout: 30s
-  pidFile: "server_test.pid"
+  pidFile: "server_dev.pid"
 
 # ==================== 日志配置 ====================
 logger:
   dir: "logs"
-  filename: "test.log"
+  filename: "dev.log"
   level: -1 # Debug level
   lineNum: true
   maxSize: 10
@@ -35,7 +35,7 @@ db:
   port: 3306                 # 数据库端口 (MySQL/MariaDB 默认 3306)
   user: "root"               # 数据库用户名
   password: "root_password"  # 数据库密码
-  dbname: "crm_lite_test"    # 数据库名称
+  dbname: "crm_lite_dev"    # 数据库名称
   sslmode: disable           # (主要用于PostgreSQL) SSL模式: disable, require, verify-ca, verify-full
   timeZone: "Asia/Shanghai"  # 数据库时区设置
   maxOpenConns: 10           # 最大活跃连接数

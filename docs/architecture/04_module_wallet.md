@@ -38,7 +38,7 @@
 
 ### 钱包接口
 
-#### GET `/api/customers/:customer_id/wallets`
+#### GET `/api/v1/customers/:id/wallet`
 
 - 描述：获取指定客户的全部钱包账户信息（一个客户可能拥有多种类型的钱包，如现金钱包、积分钱包）。
 - 请求参数：无
@@ -65,7 +65,7 @@
 }
 ```
 
-#### POST `/api/customers/:customer_id/wallets/recharge`
+#### POST `/api/v1/customers/:id/wallet/transactions`  （充值、消费等统一使用该接口）
 
 - 描述：为客户指定类型的钱包充值。
 - 请求体 (JSON)：
@@ -101,23 +101,9 @@
 }
 ```
 
-#### POST `/api/customers/:customer_id/wallets/consume`
+不再区分 `recharge`、`consume` 单独端点，全部通过上述 `POST /transactions` 接口并在请求体中指定 `type` 字段 (`recharge`, `consume`, `refund`, `correction`)。
 
-- 描述：从客户指定类型的钱包扣除消费金额。
-- 请求体 (JSON):
-
-```json
-{
-  "wallet_type": "balance", // 或 "points"
-  "amount": 50.00,
-  "source": "order:order-uuid-123",
-  "remark": "购买会员服务抵扣50元"
-}
-```
-
-- 返回：成功时返回新的交易流水记录和更新后的钱包信息。结构类似充值返回。
-
-#### GET `/api/customers/:customer_id/wallets/transactions`
+#### GET `/api/v1/customers/:id/wallet/transactions`
 
 - 描述：获取某客户特定类型钱包的交易流水，或所有类型钱包的交易流水（如果 `wallet_type` 未指定）。
 - 请求参数：

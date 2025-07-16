@@ -34,7 +34,7 @@ func NewWalletController(walletSvc *service.WalletService) *WalletController {
 // @Failure 500 {object} resp.Response "服务器内部错误"
 // @Router /v1/customers/{customer_id}/wallet [get]
 func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
-	customerIDStr := ctx.Param("customer_id")
+	customerIDStr := ctx.Param("id")
 	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
 	if err != nil {
 		resp.Error(ctx, http.StatusBadRequest, "无效的客户ID")
@@ -70,7 +70,7 @@ func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
 // @Router /v1/customers/{customer_id}/wallet/transactions [post]
 func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 	// 1. 解析参数和请求体
-	customerIDStr := ctx.Param("customer_id")
+	customerIDStr := ctx.Param("id")
 	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
 	if err != nil {
 		resp.Error(ctx, http.StatusBadRequest, "无效的客户ID")
