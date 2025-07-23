@@ -20,9 +20,21 @@ type DBResource struct {
 	opts config.DBOptions
 }
 
-// NewDBResource 创建一个新的数据库资源实例
-func NewDBResource(opts config.DBOptions) *DBResource {
-	return &DBResource{opts: opts}
+// NewDBResource 创建一个新的数据库资源实例。
+// 兼容两种入参形式：
+//  1. 生产代码使用 config.DBOptions 用于后续 Initialize()
+//  2. 单元测试可以直接注入 *gorm.DB（已初始化好的内存数据库等）
+//
+// 如果传入 *gorm.DB，则认为数据库已经初始化完毕，返回的 DBResource 直接持有该连接。
+func NewDBResource(arg interface{}) *DBResource {
+	switch v := arg.(type) {
+	case config.DBOptions:
+		return &DBResource{opts: v}
+	case *gorm.DB:
+		return &DBResource{DB: v}
+	default:
+		panic("NewDBResource: unsupported argument type")
+	}
 }
 
 // Initialize 实现了Resource接口，用于初始化数据库连接

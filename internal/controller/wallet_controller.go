@@ -14,11 +14,11 @@ import (
 
 // WalletController 负责处理钱包相关的 API 请求
 type WalletController struct {
-	walletSvc *service.WalletService
+	walletSvc service.IWalletService
 }
 
 // NewWalletController 创建一个新的 WalletController
-func NewWalletController(walletSvc *service.WalletService) *WalletController {
+func NewWalletController(walletSvc service.IWalletService) *WalletController {
 	return &WalletController{walletSvc: walletSvc}
 }
 

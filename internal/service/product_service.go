@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
@@ -15,34 +14,124 @@ import (
 )
 
 var (
-	// ErrSKUAlreadyExists 表示 SKU 已存在。
 	ErrSKUAlreadyExists = errors.New("sku already exists")
+	ErrProductNotFound  = errors.New("product not found")
 )
 
-// ProductService 封装了与产品相关的业务逻辑。
-type ProductService struct {
+// IProductRepo 定义了产品数据仓库的接口
+type IProductRepo interface {
+	FindBySKU(ctx context.Context, sku string) (*model.Product, error)
+	Create(ctx context.Context, product *model.Product) error
+	FindByID(ctx context.Context, id int64) (*model.Product, error)
+	List(ctx context.Context, req *dto.ProductListRequest) ([]*model.Product, int64, error)
+	Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error)
+	Delete(ctx context.Context, id int64) (int64, error)
+}
+
+// productRepo 实现了 IProductRepo 接口
+type productRepo struct {
 	q *query.Query
 }
 
-// NewProductService 创建一个新的 ProductService 实例。
-func NewProductService(rm *resource.Manager) *ProductService {
-	db, err := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
-	if err != nil {
-		panic("初始化 ProductService 失败，无法获取数据库资源: " + err.Error())
+// NewProductRepo 创建一个新的产品仓库实例
+func NewProductRepo(db *gorm.DB) IProductRepo {
+	return &productRepo{q: query.Use(db)}
+}
+
+func (r *productRepo) FindBySKU(ctx context.Context, sku string) (*model.Product, error) {
+	return r.q.Product.WithContext(ctx).Where(r.q.Product.Category.Eq(sku)).First()
+}
+
+func (r *productRepo) Create(ctx context.Context, product *model.Product) error {
+	return r.q.Product.WithContext(ctx).Create(product)
+}
+
+func (r *productRepo) FindByID(ctx context.Context, id int64) (*model.Product, error) {
+	return r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).First()
+}
+
+func (r *productRepo) List(ctx context.Context, req *dto.ProductListRequest) ([]*model.Product, int64, error) {
+	q := r.q.Product.WithContext(ctx)
+
+	if len(req.IDs) > 0 {
+		q = q.Where(r.q.Product.ID.In(req.IDs...))
+	} else {
+		if req.Name != "" {
+			q = q.Where(r.q.Product.Name.Like("%" + req.Name + "%"))
+		}
+		if req.SKU != "" {
+			q = q.Where(r.q.Product.Category.Eq(req.SKU))
+		}
 	}
-	return &ProductService{q: query.Use(db.DB)}
+
+	if req.OrderBy != "" {
+		parts := strings.Split(req.OrderBy, "_")
+		if len(parts) == 2 {
+			if col, ok := r.q.Product.GetFieldByName(parts[0]); ok {
+				if parts[1] == "desc" {
+					q = q.Order(col.Desc())
+				} else {
+					q = q.Order(col)
+				}
+			}
+		}
+	} else {
+		q = q.Order(r.q.Product.CreatedAt.Desc())
+	}
+
+	total, err := q.Count()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var products []*model.Product
+	if len(req.IDs) > 0 {
+		products, err = q.Find()
+	} else if req.PageSize > 0 {
+		products, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
+	} else {
+		products, err = q.Find()
+	}
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return products, total, err
+}
+
+func (r *productRepo) Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error) {
+	result, err := r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).Updates(updates)
+	return result.RowsAffected, err
+}
+
+func (r *productRepo) Delete(ctx context.Context, id int64) (int64, error) {
+	result, err := r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).Delete()
+	return result.RowsAffected, err
+}
+
+// ProductService 封装了与产品相关的业务逻辑。
+type ProductService struct {
+	repo IProductRepo
+}
+
+// NewProductService 创建一个新的 ProductService 实例。
+func NewProductService(repo IProductRepo) *ProductService {
+	return &ProductService{repo: repo}
 }
 
 // toProductResponse 将 model.Product 转换为 dto.ProductResponse。
-// 注意：此函数处理了数据库模型和 DTO 之间的字段映射（例如 Category -> SKU, StockQuantity -> Stock）。
 func (s *ProductService) toProductResponse(p *model.Product) *dto.ProductResponse {
+	if p == nil {
+		return nil
+	}
 	return &dto.ProductResponse{
 		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
 		Price:       p.Price,
-		SKU:         p.Category,           // 将数据库中的 Category 字段映射到 DTO 的 SKU 字段
-		Stock:       int(p.StockQuantity), // 将数据库中的 StockQuantity 字段映射到 DTO 的 Stock 字段
+		SKU:         p.Category,
+		Stock:       int(p.StockQuantity),
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}
@@ -50,8 +139,10 @@ func (s *ProductService) toProductResponse(p *model.Product) *dto.ProductRespons
 
 // CreateProduct 创建一个新产品。
 func (s *ProductService) CreateProduct(ctx context.Context, req *dto.ProductCreateRequest) (*dto.ProductResponse, error) {
-	// 通过 Category 字段检查 SKU 的唯一性
-	existing, _ := s.q.Product.WithContext(ctx).Where(s.q.Product.Category.Eq(req.SKU)).First()
+	existing, err := s.repo.FindBySKU(ctx, req.SKU)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, fmt.Errorf("检查SKU失败: %w", err)
+	}
 	if existing != nil {
 		return nil, ErrSKUAlreadyExists
 	}
@@ -60,11 +151,11 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *dto.ProductCrea
 		Name:          req.Name,
 		Description:   req.Description,
 		Price:         req.Price,
-		Category:      req.SKU, // 将请求中的 SKU 存入数据库的 Category 字段
+		Category:      req.SKU,
 		StockQuantity: int32(req.Stock),
 	}
 
-	if err := s.q.Product.WithContext(ctx).Create(product); err != nil {
+	if err := s.repo.Create(ctx, product); err != nil {
 		return nil, fmt.Errorf("创建产品失败: %w", err)
 	}
 	return s.toProductResponse(product), nil
@@ -77,7 +168,7 @@ func (s *ProductService) GetProductByID(ctx context.Context, idStr string) (*dto
 		return nil, ErrProductNotFound
 	}
 
-	product, err := s.q.Product.WithContext(ctx).Where(s.q.Product.ID.Eq(id)).First()
+	product, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrProductNotFound
@@ -87,52 +178,9 @@ func (s *ProductService) GetProductByID(ctx context.Context, idStr string) (*dto
 	return s.toProductResponse(product), nil
 }
 
-// ListProducts 获取产品列表，支持分页、筛选和排序。
+// ListProducts 获取产品列表。
 func (s *ProductService) ListProducts(ctx context.Context, req *dto.ProductListRequest) (*dto.ProductListResponse, error) {
-	q := s.q.Product.WithContext(ctx)
-
-	// 如果提供了 ID 列表，则优先按 ID 查询，忽略其他筛选条件
-	if len(req.IDs) > 0 {
-		q = q.Where(s.q.Product.ID.In(req.IDs...))
-	} else {
-		if req.Name != "" {
-			q = q.Where(s.q.Product.Name.Like("%" + req.Name + "%"))
-		}
-		if req.SKU != "" {
-			q = q.Where(s.q.Product.Category.Eq(req.SKU))
-		}
-	}
-
-	if req.OrderBy != "" {
-		parts := strings.Split(req.OrderBy, "_")
-		if len(parts) == 2 {
-			// 验证排序字段是否存在于模型中
-			if col, ok := s.q.Product.GetFieldByName(parts[0]); ok {
-				if parts[1] == "desc" {
-					q = q.Order(col.Desc())
-				} else {
-					q = q.Order(col)
-				}
-			}
-		}
-	} else {
-		// 默认按创建时间降序排序
-		q = q.Order(s.q.Product.CreatedAt.Desc())
-	}
-
-	total, err := q.Count()
-	if err != nil {
-		return nil, err
-	}
-
-	var products []*model.Product
-	// 如果是按 ID 列表查询，则不应用分页
-	if len(req.IDs) > 0 {
-		products, err = q.Find()
-	} else {
-		products, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
-	}
-
+	products, total, err := s.repo.List(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -155,8 +203,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, idStr string, req *d
 		return nil, ErrProductNotFound
 	}
 
-	// 验证产品是否存在
-	if _, err := s.q.Product.WithContext(ctx).Where(s.q.Product.ID.Eq(id)).First(); err != nil {
+	if _, err := s.repo.FindByID(ctx, id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrProductNotFound
 		}
@@ -178,13 +225,16 @@ func (s *ProductService) UpdateProduct(ctx context.Context, idStr string, req *d
 	}
 
 	if len(updates) > 0 {
-		if _, err := s.q.Product.WithContext(ctx).Where(s.q.Product.ID.Eq(id)).Updates(updates); err != nil {
+		if _, err := s.repo.Updates(ctx, id, updates); err != nil {
 			return nil, err
 		}
 	}
 
-	// 重新获取更新后的数据并返回
-	return s.GetProductByID(ctx, idStr)
+	updatedProduct, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, ErrProductNotFound
+	}
+	return s.toProductResponse(updatedProduct), nil
 }
 
 // DeleteProduct 删除一个产品。
@@ -194,15 +244,12 @@ func (s *ProductService) DeleteProduct(ctx context.Context, idStr string) error 
 		return ErrProductNotFound
 	}
 
-	result, err := s.q.Product.WithContext(ctx).Where(s.q.Product.ID.Eq(id)).Delete()
+	rowsAffected, err := s.repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrProductNotFound
 	}
 	return nil
 }
-
-// ErrProductNotFound 表示未找到产品。
-var ErrProductNotFound = errors.New("product not found")

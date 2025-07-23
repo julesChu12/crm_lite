@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
@@ -16,27 +15,150 @@ import (
 	"gorm.io/gorm"
 )
 
-type CustomerService struct {
-	q         *query.Query
-	resource  *resource.Manager
-	walletSvc *WalletService
+// ICustomerRepo 定义了客户数据仓库的接口
+type ICustomerRepo interface {
+	FindByPhoneUnscoped(ctx context.Context, phone string) (*model.Customer, error)
+	Update(ctx context.Context, customer *model.Customer) error
+	Create(ctx context.Context, customer *model.Customer) error
+	List(ctx context.Context, req *dto.CustomerListRequest) ([]*model.Customer, int64, error)
+	FindByID(ctx context.Context, id int64) (*model.Customer, error)
+	Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error)
+	Delete(ctx context.Context, id int64) (int64, error)
+	FindByPhoneExcludingID(ctx context.Context, phone string, id int64) (int64, error)
 }
 
-func NewCustomerService(resManager *resource.Manager) *CustomerService {
-	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
-	if err != nil {
-		panic("Failed to get database resource for CustomerService: " + err.Error())
+// customerRepo 实现了 ICustomerRepo 接口，封装了 gorm 操作
+type customerRepo struct {
+	q *query.Query
+}
+
+// NewCustomerRepo 创建一个新的 customerRepo
+func NewCustomerRepo(db *gorm.DB) ICustomerRepo {
+	return &customerRepo{
+		q: query.Use(db),
 	}
+}
+
+func (r *customerRepo) FindByPhoneUnscoped(ctx context.Context, phone string) (*model.Customer, error) {
+	return r.q.Customer.WithContext(ctx).Unscoped().Where(r.q.Customer.Phone.Eq(phone)).First()
+}
+
+func (r *customerRepo) Update(ctx context.Context, customer *model.Customer) error {
+	// 使用 map 来构建更新，这样可以更新零值字段
+	updates := map[string]interface{}{
+		"name":        customer.Name,
+		"email":       customer.Email,
+		"gender":      customer.Gender,
+		"level":       customer.Level,
+		"tags":        customer.Tags,
+		"note":        customer.Note,
+		"source":      customer.Source,
+		"assigned_to": customer.AssignedTo,
+		"birthday":    customer.Birthday,
+		"deleted_at":  nil, // 恢复记录
+	}
+	_, err := r.q.Customer.WithContext(ctx).Unscoped().Where(r.q.Customer.ID.Eq(customer.ID)).Updates(updates)
+	return err
+}
+
+func (r *customerRepo) Create(ctx context.Context, customer *model.Customer) error {
+	return r.q.Customer.WithContext(ctx).Create(customer)
+}
+
+func (r *customerRepo) List(ctx context.Context, req *dto.CustomerListRequest) ([]*model.Customer, int64, error) {
+	q := r.q.Customer.WithContext(ctx).Where(r.q.Customer.DeletedAt.IsNull())
+
+	if len(req.IDs) > 0 {
+		q = q.Where(r.q.Customer.ID.In(req.IDs...))
+	} else {
+		// 构建筛选条件
+		if req.Name != "" {
+			q = q.Where(r.q.Customer.Name.Like("%" + req.Name + "%"))
+		}
+		if req.Phone != "" {
+			q = q.Where(r.q.Customer.Phone.Eq(req.Phone))
+		}
+		if req.Email != "" {
+			q = q.Where(r.q.Customer.Email.Eq(req.Email))
+		}
+	}
+
+	// 构建排序条件
+	if req.OrderBy != "" {
+		parts := strings.Split(req.OrderBy, "_")
+		if len(parts) == 2 {
+			field := parts[0]
+			order := parts[1]
+			if col, ok := r.q.Customer.GetFieldByName(field); ok {
+				if order == "desc" {
+					q = q.Order(col.Desc())
+				} else {
+					q = q.Order(col)
+				}
+			}
+		}
+	} else {
+		// 默认按创建时间降序
+		q = q.Order(r.q.Customer.CreatedAt.Desc())
+	}
+
+	total, err := q.Count()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	var customers []*model.Customer
+	if len(req.IDs) == 0 && req.PageSize > 0 {
+		customers, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
+	} else {
+		customers, err = q.Find()
+	}
+
+	return customers, total, err
+}
+
+func (r *customerRepo) FindByID(ctx context.Context, id int64) (*model.Customer, error) {
+	return r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id), r.q.Customer.DeletedAt.IsNull()).First()
+}
+
+func (r *customerRepo) Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error) {
+	result, err := r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id)).Updates(updates)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected, nil
+}
+
+func (r *customerRepo) Delete(ctx context.Context, id int64) (int64, error) {
+	result, err := r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id)).Delete()
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected, nil
+}
+
+func (r *customerRepo) FindByPhoneExcludingID(ctx context.Context, phone string, id int64) (int64, error) {
+	return r.q.Customer.WithContext(ctx).
+		Where(r.q.Customer.Phone.Eq(phone), r.q.Customer.ID.Neq(id)).
+		Where(r.q.Customer.DeletedAt.IsNull()).
+		Count()
+}
+
+type CustomerService struct {
+	repo      ICustomerRepo
+	walletSvc IWalletService
+}
+
+func NewCustomerService(repo ICustomerRepo, walletSvc IWalletService) *CustomerService {
 	return &CustomerService{
-		q:         query.Use(db.DB),
-		resource:  resManager,
-		walletSvc: NewWalletService(resManager), // 直接实例化
+		repo:      repo,
+		walletSvc: walletSvc,
 	}
 }
 
 func (s *CustomerService) toCustomerResponse(customer *model.Customer) *dto.CustomerResponse {
 	birthday := ""
-	if !customer.Birthday.IsZero() {
+	if customer != nil && !customer.Birthday.IsZero() {
 		birthday = customer.Birthday.Format("2006-01-02")
 	}
 	return &dto.CustomerResponse{
@@ -59,67 +181,43 @@ func (s *CustomerService) toCustomerResponse(customer *model.Customer) *dto.Cust
 // CreateCustomer 创建客户
 func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerCreateRequest) (*dto.CustomerResponse, error) {
 	var customerToReturn *model.Customer
-	var isNewCreation bool
+	isNewCreation := false
 
 	if req.Phone != "" {
-		// 使用 Unscoped 查找包括软删除在内的所有记录
-		existingCustomer, err := s.q.Customer.WithContext(ctx).Unscoped().Where(s.q.Customer.Phone.Eq(req.Phone)).First()
-
-		// 如果找到了记录
+		existingCustomer, err := s.repo.FindByPhoneUnscoped(ctx, req.Phone)
 		if err == nil {
 			if existingCustomer.DeletedAt.Valid {
-				// 如果是软删除的记录，则恢复并更新它
-				updates := map[string]interface{}{
-					"name":        req.Name,
-					"email":       req.Email,
-					"gender":      req.Gender,
-					"level":       req.Level,
-					"tags":        req.Tags,
-					"note":        req.Note,
-					"source":      req.Source,
-					"assigned_to": req.AssignedTo,
-					"deleted_at":  nil, // 恢复记录
-				}
-				var birthday time.Time
-				if req.Birthday != "" {
-					birthday, err = time.Parse("2006-01-02", req.Birthday)
-					if err != nil {
-						return nil, fmt.Errorf("invalid birthday format: %w", err)
-					}
-					updates["birthday"] = birthday
-				}
-
-				if _, err := s.q.Customer.WithContext(ctx).Unscoped().Where(s.q.Customer.ID.Eq(existingCustomer.ID)).Updates(updates); err != nil {
-					return nil, err
-				}
-
-				// 手动更新结构体以用于响应
+				// 恢复并更新
 				existingCustomer.Name = req.Name
 				existingCustomer.Email = req.Email
 				existingCustomer.Gender = req.Gender
-				if req.Birthday != "" {
-					existingCustomer.Birthday = birthday
-				}
 				existingCustomer.Level = req.Level
 				existingCustomer.Tags = req.Tags
 				existingCustomer.Note = req.Note
 				existingCustomer.Source = req.Source
 				existingCustomer.AssignedTo = req.AssignedTo
-				existingCustomer.DeletedAt.Valid = false
 
+				if req.Birthday != "" {
+					birthday, err := time.Parse("2006-01-02", req.Birthday)
+					if err != nil {
+						return nil, fmt.Errorf("invalid birthday format: %w", err)
+					}
+					existingCustomer.Birthday = birthday
+				}
+
+				if err := s.repo.Update(ctx, existingCustomer); err != nil {
+					return nil, err
+				}
 				customerToReturn = existingCustomer
 			} else {
-				// 如果是活动的记录，则返回号码已存在错误
 				return nil, ErrPhoneAlreadyExists
 			}
 		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			// 如果是其他非“未找到”的错误，则直接返回
 			return nil, err
 		}
 	}
 
 	if customerToReturn == nil {
-		// 如果号码为空或记录未找到，则创建新客户
 		customer := &model.Customer{
 			Name:       req.Name,
 			Phone:      req.Phone,
@@ -131,7 +229,6 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 			Source:     req.Source,
 			AssignedTo: req.AssignedTo,
 		}
-
 		if req.Birthday != "" {
 			birthday, err := time.Parse("2006-01-02", req.Birthday)
 			if err != nil {
@@ -139,25 +236,17 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 			}
 			customer.Birthday = birthday
 		}
-
-		err := s.q.Customer.WithContext(ctx).Create(customer)
-		if err != nil {
+		if err := s.repo.Create(ctx, customer); err != nil {
 			return nil, err
 		}
 		customerToReturn = customer
 		isNewCreation = true
 	}
 
-	// 无论是新创建还是恢复，都确保钱包存在
 	if _, err := s.walletSvc.CreateWallet(ctx, customerToReturn.ID, "balance"); err != nil {
-		// 如果是新创建用户时钱包创建失败，我们可能需要考虑回滚用户创建，但这会增加复杂性。
-		// 在这里，我们暂时只记录或返回错误。
 		if isNewCreation {
-			// 对于新用户，钱包创建失败是个严重问题，可能需要返回错误
 			return nil, fmt.Errorf("failed to create wallet for new customer: %w", err)
 		}
-		// 对于已存在的用户，可能只是日志记录一下即可
-		// log.Printf("Warning: failed to ensure wallet exists for customer %d: %v", customerToReturn.ID, err)
 	}
 
 	return s.toCustomerResponse(customerToReturn), nil
@@ -165,65 +254,18 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 
 // ListCustomers 获取客户列表（可扩展分页）
 func (s *CustomerService) ListCustomers(ctx context.Context, req *dto.CustomerListRequest) (*dto.CustomerListResponse, error) {
-	q := s.q.Customer.WithContext(ctx).Where(s.q.Customer.DeletedAt.IsNull())
-
-	if len(req.IDs) > 0 {
-		q = q.Where(s.q.Customer.ID.In(req.IDs...))
-	} else {
-		// 构建筛选条件
-		if req.Name != "" {
-			q = q.Where(s.q.Customer.Name.Like("%" + req.Name + "%"))
-		}
-		if req.Phone != "" {
-			q = q.Where(s.q.Customer.Phone.Eq(req.Phone))
-		}
-		if req.Email != "" {
-			q = q.Where(s.q.Customer.Email.Eq(req.Email))
-		}
-	}
-
-	// 构建排序条件
-	if req.OrderBy != "" {
-		parts := strings.Split(req.OrderBy, "_")
-		if len(parts) == 2 {
-			field := parts[0]
-			order := parts[1]
-			if col, ok := s.q.Customer.GetFieldByName(field); ok {
-				if order == "desc" {
-					q = q.Order(col.Desc())
-				} else {
-					q = q.Order(col)
-				}
-			}
-		}
-	} else {
-		// 默认按创建时间降序
-		q = q.Order(s.q.Customer.CreatedAt.Desc())
-	}
-
-	// 获取总数
-	total, err := q.Count()
+	customers, total, err := s.repo.List(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	// 分页查询
-	var customers []*model.Customer
-	var errFind error
-	if len(req.IDs) == 0 {
-		customers, errFind = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
-	} else {
-		customers, errFind = q.Find()
-	}
-
-	if errFind != nil {
-		return nil, errFind
-	}
-
-	// 转换成 DTO
 	customerResponses := make([]*dto.CustomerResponse, 0, len(customers))
 	for _, c := range customers {
-		customerResponses = append(customerResponses, s.toCustomerResponse(c))
+		resp := s.toCustomerResponse(c)
+		if wallet, errW := s.walletSvc.GetWalletByCustomerID(ctx, c.ID); errW == nil {
+			resp.WalletBalance = wallet.Balance
+		}
+		customerResponses = append(customerResponses, resp)
 	}
 
 	return &dto.CustomerListResponse{
@@ -238,14 +280,19 @@ func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*dto.
 	if errConv != nil {
 		return nil, ErrCustomerNotFound
 	}
-	customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum), s.q.Customer.DeletedAt.IsNull()).First()
+	customer, err := s.repo.FindByID(ctx, idNum)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrCustomerNotFound
 		}
 		return nil, err
 	}
-	return s.toCustomerResponse(customer), nil
+
+	resp := s.toCustomerResponse(customer)
+	if wallet, errW := s.walletSvc.GetWalletByCustomerID(ctx, customer.ID); errW == nil {
+		resp.WalletBalance = wallet.Balance
+	}
+	return resp, nil
 }
 
 // UpdateCustomer 更新客户
@@ -255,12 +302,8 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 		return ErrCustomerNotFound
 	}
 
-	// 检查 phone 唯一性（排除当前客户和软删除的记录）
 	if req.Phone != "" {
-		count, err := s.q.Customer.WithContext(ctx).
-			Where(s.q.Customer.Phone.Eq(req.Phone), s.q.Customer.ID.Neq(idNum)).
-			Where(s.q.Customer.DeletedAt.IsNull()).
-			Count()
+		count, err := s.repo.FindByPhoneExcludingID(ctx, req.Phone, idNum)
 		if err != nil {
 			return err
 		}
@@ -269,7 +312,6 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 		}
 	}
 
-	// 使用 map 构建更新，以支持零值更新
 	updates := make(map[string]interface{})
 	if req.Name != "" {
 		updates["name"] = req.Name
@@ -307,14 +349,14 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 	}
 
 	if len(updates) == 0 {
-		return nil // 没有需要更新的字段
+		return nil
 	}
 
-	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum)).Updates(updates)
+	rowsAffected, err := s.repo.Updates(ctx, idNum, updates)
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrCustomerNotFound
 	}
 	return nil
@@ -326,11 +368,11 @@ func (s *CustomerService) DeleteCustomer(ctx context.Context, id string) error {
 	if errConv != nil {
 		return ErrCustomerNotFound
 	}
-	result, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(idNum)).Delete()
+	rowsAffected, err := s.repo.Delete(ctx, idNum)
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrCustomerNotFound
 	}
 	return nil

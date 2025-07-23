@@ -17,8 +17,16 @@ type ProductController struct {
 
 // NewProductController 创建一个新的 ProductController 实例。
 func NewProductController(rm *resource.Manager) *ProductController {
+	// 1. 从资源管理器获取数据库资源
+	db, err := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
+	if err != nil {
+		panic("初始化 ProductController 失败，无法获取数据库资源: " + err.Error())
+	}
+	// 2. 创建 repo
+	productRepo := service.NewProductRepo(db.DB)
+	// 3. 注入 repo 来创建 service
 	return &ProductController{
-		productService: service.NewProductService(rm),
+		productService: service.NewProductService(productRepo),
 	}
 }
 

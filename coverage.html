@@ -1,0 +1,3516 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>service: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">crm_lite/internal/service/auth_service.go (67.7%)</option>
+				
+				<option value="file1">crm_lite/internal/service/contact_service.go (64.2%)</option>
+				
+				<option value="file2">crm_lite/internal/service/customer_service.go (49.4%)</option>
+				
+				<option value="file3">crm_lite/internal/service/email_service.go (0.0%)</option>
+				
+				<option value="file4">crm_lite/internal/service/hierarchy_service.go (0.0%)</option>
+				
+				<option value="file5">crm_lite/internal/service/marketing_service.go (0.0%)</option>
+				
+				<option value="file6">crm_lite/internal/service/order_service.go (0.0%)</option>
+				
+				<option value="file7">crm_lite/internal/service/permission_service.go (0.0%)</option>
+				
+				<option value="file8">crm_lite/internal/service/product_service.go (12.5%)</option>
+				
+				<option value="file9">crm_lite/internal/service/role_service.go (0.0%)</option>
+				
+				<option value="file10">crm_lite/internal/service/user_service.go (0.0%)</option>
+				
+				<option value="file11">crm_lite/internal/service/wallet_service.go (18.5%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/config"
+        "crm_lite/internal/core/logger"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+        "errors"
+        "fmt"
+        "time"
+
+        "github.com/google/uuid"
+        "go.uber.org/zap"
+        "golang.org/x/crypto/bcrypt"
+        "gorm.io/gorm"
+)
+
+// IAuthRepo 定义了认证相关的数据库操作
+type IAuthRepo interface {
+        FindByUsername(ctx context.Context, username string) (*model.AdminUser, error)
+        FindByEmail(ctx context.Context, email string) (*model.AdminUser, error)
+        FindByUUID(ctx context.Context, uuid string) (*model.AdminUser, error)
+        Create(ctx context.Context, user *model.AdminUser) error
+        UpdatePassword(ctx context.Context, userID, hashedPassword string) (int64, error)
+        Save(ctx context.Context, user *model.AdminUser) error
+}
+
+// IAuthCache 定义了认证相关的缓存操作
+type IAuthCache interface {
+        SetBlacklist(ctx context.Context, jti string, ttl time.Duration) error
+        SetResetToken(ctx context.Context, token, userID string, ttl time.Duration) error
+        GetResetToken(ctx context.Context, token string) (string, error)
+        DeleteResetToken(ctx context.Context, token string) error
+}
+
+// authRepo 实现了 IAuthRepo
+type authRepo struct {
+        q *query.Query
+}
+
+func NewAuthRepo(db *gorm.DB) IAuthRepo <span class="cov0" title="0">{
+        return &amp;authRepo{q: query.Use(db)}
+}</span>
+
+func (r *authRepo) FindByUsername(ctx context.Context, username string) (*model.AdminUser, error) <span class="cov0" title="0">{
+        return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.Username.Eq(username)).First()
+}</span>
+func (r *authRepo) FindByEmail(ctx context.Context, email string) (*model.AdminUser, error) <span class="cov0" title="0">{
+        return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.Email.Eq(email)).First()
+}</span>
+func (r *authRepo) FindByUUID(ctx context.Context, uuid string) (*model.AdminUser, error) <span class="cov0" title="0">{
+        return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.UUID.Eq(uuid)).First()
+}</span>
+func (r *authRepo) Create(ctx context.Context, user *model.AdminUser) error <span class="cov0" title="0">{
+        return r.q.AdminUser.WithContext(ctx).Create(user)
+}</span>
+func (r *authRepo) UpdatePassword(ctx context.Context, userID, hashedPassword string) (int64, error) <span class="cov0" title="0">{
+        result, err := r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.UUID.Eq(userID)).Update(r.q.AdminUser.PasswordHash, hashedPassword)
+        return result.RowsAffected, err
+}</span>
+func (r *authRepo) Save(ctx context.Context, user *model.AdminUser) error <span class="cov0" title="0">{
+        return r.q.AdminUser.WithContext(ctx).Save(user)
+}</span>
+
+// authCache 实现了 IAuthCache
+type authCache struct {
+        client *resource.CacheResource
+}
+
+func NewAuthCache(client *resource.CacheResource) IAuthCache <span class="cov0" title="0">{
+        return &amp;authCache{client: client}
+}</span>
+func (c *authCache) SetBlacklist(ctx context.Context, jti string, ttl time.Duration) error <span class="cov0" title="0">{
+        return c.client.Client.Set(ctx, "jti:"+jti, "blacklisted", ttl).Err()
+}</span>
+func (c *authCache) SetResetToken(ctx context.Context, token, userID string, ttl time.Duration) error <span class="cov0" title="0">{
+        return c.client.Client.Set(ctx, "reset_token:"+token, userID, ttl).Err()
+}</span>
+func (c *authCache) GetResetToken(ctx context.Context, token string) (string, error) <span class="cov0" title="0">{
+        return c.client.Client.Get(ctx, "reset_token:"+token).Result()
+}</span>
+func (c *authCache) DeleteResetToken(ctx context.Context, token string) error <span class="cov0" title="0">{
+        return c.client.Client.Del(ctx, "reset_token:"+token).Err()
+}</span>
+
+type AuthService struct {
+        repo     IAuthRepo
+        cache    IAuthCache
+        emailSvc IEmailService // 假设 EmailService 也有一个接口
+        casbin   *resource.CasbinResource
+        opts     *config.Options
+}
+
+func NewAuthService(repo IAuthRepo, cache IAuthCache, emailSvc IEmailService, casbin *resource.CasbinResource, opts *config.Options) *AuthService <span class="cov8" title="1">{
+        return &amp;AuthService{
+                repo:     repo,
+                cache:    cache,
+                emailSvc: emailSvc,
+                casbin:   casbin,
+                opts:     opts,
+        }
+}</span>
+
+// Logout 将JWT加入黑名单
+func (s *AuthService) Logout(ctx context.Context, claims *utils.CustomClaims) error <span class="cov8" title="1">{
+        expiresAt := claims.ExpiresAt.Time
+        ttl := time.Until(expiresAt)
+        if ttl &lt;= 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">return s.cache.SetBlacklist(ctx, claims.ID, ttl)</span>
+}
+
+// RefreshToken 刷新令牌
+func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.LoginResponse, error) <span class="cov8" title="1">{
+        claims, err := utils.ParseToken(req.RefreshToken, s.opts.Auth.JWTOptions)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, ErrInvalidToken
+        }</span>
+        <span class="cov8" title="1">user, err := s.repo.FindByUUID(ctx, claims.UserID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">enforcer := s.casbin.GetEnforcer()
+        roles, err := enforcer.GetRolesForUser(user.UUID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to generate new tokens: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;dto.LoginResponse{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+                TokenType:    "Bearer",
+                ExpiresIn:    int(s.opts.Auth.JWTOptions.AccessTokenExpire.Seconds()),
+        }, nil</span>
+}
+
+// ForgotPassword 处理忘记密码请求
+func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswordRequest) error <span class="cov8" title="1">{
+        user, err := s.repo.FindByEmail(ctx, req.Email)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        logger.Warn("Password reset requested for non-existent email", zap.String("email", req.Email))
+                        return nil
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">resetToken := uuid.New().String()
+        ttl := 15 * time.Minute
+        if err := s.cache.SetResetToken(ctx, resetToken, user.UUID, ttl); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to store reset token: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">if s.emailSvc == nil </span><span class="cov0" title="0">{
+                logger.Error("Email service is not configured, cannot send password reset email.")
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">subject := "Reset Your Password"
+        body := fmt.Sprintf(`&lt;p&gt;Your password reset token is: &lt;b&gt;%s&lt;/b&gt;&lt;/p&gt;`, resetToken)
+
+        if err := s.emailSvc.SendMail(req.Email, subject, body); err != nil </span><span class="cov0" title="0">{
+                logger.Error("Failed to send password reset email", zap.Error(err), zap.String("email", req.Email))
+                return nil
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// ResetPassword 使用令牌重置密码
+func (s *AuthService) ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error <span class="cov8" title="1">{
+        userID, err := s.cache.GetResetToken(ctx, req.Token)
+        if err != nil </span><span class="cov8" title="1">{
+                return ErrInvalidToken
+        }</span>
+
+        <span class="cov8" title="1">hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to hash new password: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">rowsAffected, err := s.repo.UpdatePassword(ctx, userID, string(hashed))
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov8" title="1">{
+                return ErrUserNotFound
+        }</span>
+        <span class="cov8" title="1">_ = s.cache.DeleteResetToken(ctx, req.Token)
+        return nil</span>
+}
+
+// Login 处理用户登录逻辑
+func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) <span class="cov8" title="1">{
+        user, err := s.repo.FindByUsername(ctx, req.Username)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil </span><span class="cov8" title="1">{
+                return nil, ErrInvalidPassword
+        }</span>
+
+        <span class="cov8" title="1">enforcer := s.casbin.GetEnforcer()
+        roles, err := enforcer.GetRolesForUser(user.UUID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;dto.LoginResponse{
+                AccessToken:  accessToken,
+                RefreshToken: refreshToken,
+                TokenType:    "Bearer",
+                ExpiresIn:    int(s.opts.Auth.JWTOptions.AccessTokenExpire.Seconds()),
+        }, nil</span>
+}
+
+// Register 用户注册
+func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) error <span class="cov8" title="1">{
+        _, err := s.repo.FindByUsername(ctx, req.Username)
+        if err == nil </span><span class="cov8" title="1">{
+                return ErrUserAlreadyExists
+        }</span>
+        <span class="cov8" title="1">if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">user := &amp;model.AdminUser{
+                UUID:         uuid.New().String(),
+                Username:     req.Username,
+                Email:        req.Email,
+                PasswordHash: string(hashed),
+                RealName:     req.RealName,
+                IsActive:     true,
+        }
+
+        return s.repo.Create(ctx, user)</span>
+}
+
+// UpdateProfile 更新用户信息
+func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequest) error <span class="cov8" title="1">{
+        userID, ok := utils.GetUserID(ctx)
+        if !ok || userID == "" </span><span class="cov0" title="0">{
+                return ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">user, err := s.repo.FindByUUID(ctx, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrUserNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov8" title="1">if req.RealName != "" </span><span class="cov8" title="1">{
+                user.RealName = req.RealName
+        }</span>
+        <span class="cov8" title="1">if req.Phone != "" </span><span class="cov8" title="1">{
+                user.Phone = req.Phone
+        }</span>
+        <span class="cov8" title="1">if req.Avatar != "" </span><span class="cov8" title="1">{
+                user.Avatar = req.Avatar
+        }</span>
+
+        <span class="cov8" title="1">return s.repo.Save(ctx, user)</span>
+}
+
+// GetProfile 获取当前登录用户的个人资料
+func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserResponse, error) <span class="cov8" title="1">{
+        user, err := s.repo.FindByUUID(ctx, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrUserNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("database query error: %w", err)</span>
+        }
+
+        <span class="cov8" title="1">enforcer := s.casbin.GetEnforcer()
+        roles, err := enforcer.GetRolesForUser(user.UUID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">return &amp;dto.UserResponse{
+                UUID:      user.UUID,
+                Username:  user.Username,
+                Email:     user.Email,
+                RealName:  user.RealName,
+                Phone:     user.Phone,
+                Avatar:    user.Avatar,
+                IsActive:  user.IsActive,
+                Roles:     roles,
+                CreatedAt: utils.FormatTime(user.CreatedAt),
+        }, nil</span>
+}
+
+// ChangePassword 修改密码
+func (s *AuthService) ChangePassword(ctx context.Context, userID string, req *dto.ChangePasswordRequest) error <span class="cov8" title="1">{
+        user, err := s.repo.FindByUUID(ctx, userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrUserNotFound
+        }</span>
+
+        <span class="cov8" title="1">if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil </span><span class="cov8" title="1">{
+                return ErrInvalidPassword
+        }</span>
+
+        <span class="cov8" title="1">hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to hash new password: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">rowsAffected, err := s.repo.UpdatePassword(ctx, userID, string(hashed))
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrUserNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+        "errors"
+
+        "gorm.io/gorm"
+)
+
+type ContactService struct {
+        q *query.Query
+}
+
+func NewContactService(resManager *resource.Manager) *ContactService <span class="cov8" title="1">{
+        dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic(err)</span>
+        }
+        <span class="cov8" title="1">return &amp;ContactService{q: query.Use(dbRes.DB)}</span>
+}
+
+func (s *ContactService) toResponse(c *model.Contact) *dto.ContactResponse <span class="cov8" title="1">{
+        return &amp;dto.ContactResponse{
+                ID:         c.ID,
+                CustomerID: c.CustomerID,
+                Name:       c.Name,
+                Phone:      c.Phone,
+                Email:      c.Email,
+                Position:   c.Position,
+                IsPrimary:  c.IsPrimary,
+                Note:       c.Note,
+                CreatedAt:  utils.FormatTime(c.CreatedAt),
+                UpdatedAt:  utils.FormatTime(c.UpdatedAt),
+        }
+}</span>
+
+// List contacts for customer
+func (s *ContactService) List(ctx context.Context, customerID int64) ([]*dto.ContactResponse, error) <span class="cov8" title="1">{
+        // 先检查客户是否存在
+        if err := s.validateCustomerExists(ctx, customerID); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">contacts, err := s.q.Contact.WithContext(ctx).Where(s.q.Contact.CustomerID.Eq(customerID)).Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">res := make([]*dto.ContactResponse, 0, len(contacts))
+        for _, c := range contacts </span><span class="cov8" title="1">{
+                res = append(res, s.toResponse(c))
+        }</span>
+        <span class="cov8" title="1">return res, nil</span>
+}
+
+// GetContactByID 获取单个联系人详情
+func (s *ContactService) GetContactByID(ctx context.Context, id int64) (*dto.ContactResponse, error) <span class="cov8" title="1">{
+        contact, err := s.q.Contact.WithContext(ctx).Where(s.q.Contact.ID.Eq(id)).First()
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, ErrContactNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov8" title="1">return s.toResponse(contact), nil</span>
+}
+
+// Create
+func (s *ContactService) Create(ctx context.Context, customerID int64, req *dto.ContactCreateRequest) (*dto.ContactResponse, error) <span class="cov8" title="1">{
+        // 先检查客户是否存在
+        if err := s.validateCustomerExists(ctx, customerID); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 检查主要联系人唯一性
+        <span class="cov8" title="1">if req.IsPrimary </span><span class="cov8" title="1">{
+                if err := s.validatePrimaryContactUniqueness(ctx, customerID, 0); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        // 检查手机号唯一性（同一客户下）
+        <span class="cov8" title="1">if req.Phone != "" </span><span class="cov8" title="1">{
+                if err := s.validatePhoneUniqueness(ctx, customerID, req.Phone, 0); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        // 检查邮箱唯一性（同一客户下）
+        <span class="cov8" title="1">if req.Email != "" </span><span class="cov8" title="1">{
+                if err := s.validateEmailUniqueness(ctx, customerID, req.Email, 0); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">contact := &amp;model.Contact{
+                CustomerID: customerID,
+                Name:       req.Name,
+                Phone:      req.Phone,
+                Email:      req.Email,
+                Position:   req.Position,
+                IsPrimary:  req.IsPrimary,
+                Note:       req.Note,
+        }
+        if err := s.q.Contact.WithContext(ctx).Create(contact); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return s.toResponse(contact), nil</span>
+}
+
+// Update
+func (s *ContactService) Update(ctx context.Context, id int64, req *dto.ContactUpdateRequest) error <span class="cov8" title="1">{
+        // 先检查联系人是否存在并获取当前信息
+        existingContact, err := s.q.Contact.WithContext(ctx).Where(s.q.Contact.ID.Eq(id)).First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrContactNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        // 检查主要联系人唯一性
+        <span class="cov8" title="1">if req.IsPrimary != nil &amp;&amp; *req.IsPrimary </span><span class="cov0" title="0">{
+                if err := s.validatePrimaryContactUniqueness(ctx, existingContact.CustomerID, id); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        // 检查手机号唯一性（同一客户下）
+        <span class="cov8" title="1">if req.Phone != "" &amp;&amp; req.Phone != existingContact.Phone </span><span class="cov0" title="0">{
+                if err := s.validatePhoneUniqueness(ctx, existingContact.CustomerID, req.Phone, id); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        // 检查邮箱唯一性（同一客户下）
+        <span class="cov8" title="1">if req.Email != "" &amp;&amp; req.Email != existingContact.Email </span><span class="cov0" title="0">{
+                if err := s.validateEmailUniqueness(ctx, existingContact.CustomerID, req.Email, id); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+        }
+
+        <span class="cov8" title="1">updates := map[string]interface{}{}
+        if req.Name != "" </span><span class="cov8" title="1">{
+                updates["name"] = req.Name
+        }</span>
+        <span class="cov8" title="1">if req.Phone != "" </span><span class="cov0" title="0">{
+                updates["phone"] = req.Phone
+        }</span>
+        <span class="cov8" title="1">if req.Email != "" </span><span class="cov0" title="0">{
+                updates["email"] = req.Email
+        }</span>
+        <span class="cov8" title="1">if req.Position != "" </span><span class="cov0" title="0">{
+                updates["position"] = req.Position
+        }</span>
+        <span class="cov8" title="1">if req.IsPrimary != nil </span><span class="cov0" title="0">{
+                updates["is_primary"] = *req.IsPrimary
+        }</span>
+        <span class="cov8" title="1">if req.Note != "" </span><span class="cov0" title="0">{
+                updates["note"] = req.Note
+        }</span>
+
+        <span class="cov8" title="1">if len(updates) == 0 </span><span class="cov0" title="0">{
+                return nil // 没有需要更新的字段
+        }</span>
+
+        <span class="cov8" title="1">res, err := s.q.Contact.WithContext(ctx).Where(s.q.Contact.ID.Eq(id)).Updates(updates)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if res.RowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrContactNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// Delete
+func (s *ContactService) Delete(ctx context.Context, id int64) error <span class="cov8" title="1">{
+        res, err := s.q.Contact.WithContext(ctx).Where(s.q.Contact.ID.Eq(id)).Delete()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if res.RowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrContactNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// 私有方法：业务逻辑校验
+
+// validateCustomerExists 检查客户是否存在
+func (s *ContactService) validateCustomerExists(ctx context.Context, customerID int64) error <span class="cov8" title="1">{
+        count, err := s.q.Customer.WithContext(ctx).
+                Where(s.q.Customer.ID.Eq(customerID)).
+                Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if count == 0 </span><span class="cov0" title="0">{
+                return ErrCustomerNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// validatePrimaryContactUniqueness 检查主要联系人唯一性
+func (s *ContactService) validatePrimaryContactUniqueness(ctx context.Context, customerID int64, excludeID int64) error <span class="cov8" title="1">{
+        query := s.q.Contact.WithContext(ctx).
+                Where(s.q.Contact.CustomerID.Eq(customerID), s.q.Contact.IsPrimary.Is(true))
+
+        if excludeID &gt; 0 </span><span class="cov0" title="0">{
+                query = query.Where(s.q.Contact.ID.Neq(excludeID))
+        }</span>
+
+        <span class="cov8" title="1">count, err := query.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if count &gt; 0 </span><span class="cov0" title="0">{
+                return ErrPrimaryContactAlreadyExists
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// validatePhoneUniqueness 检查手机号唯一性（同一客户下）
+func (s *ContactService) validatePhoneUniqueness(ctx context.Context, customerID int64, phone string, excludeID int64) error <span class="cov8" title="1">{
+        query := s.q.Contact.WithContext(ctx).
+                Where(s.q.Contact.CustomerID.Eq(customerID), s.q.Contact.Phone.Eq(phone))
+
+        if excludeID &gt; 0 </span><span class="cov0" title="0">{
+                query = query.Where(s.q.Contact.ID.Neq(excludeID))
+        }</span>
+
+        <span class="cov8" title="1">count, err := query.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if count &gt; 0 </span><span class="cov0" title="0">{
+                return ErrContactPhoneAlreadyExists
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// validateEmailUniqueness 检查邮箱唯一性（同一客户下）
+func (s *ContactService) validateEmailUniqueness(ctx context.Context, customerID int64, email string, excludeID int64) error <span class="cov8" title="1">{
+        query := s.q.Contact.WithContext(ctx).
+                Where(s.q.Contact.CustomerID.Eq(customerID), s.q.Contact.Email.Eq(email))
+
+        if excludeID &gt; 0 </span><span class="cov0" title="0">{
+                query = query.Where(s.q.Contact.ID.Neq(excludeID))
+        }</span>
+
+        <span class="cov8" title="1">count, err := query.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if count &gt; 0 </span><span class="cov0" title="0">{
+                return ErrContactEmailAlreadyExists
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+        "errors"
+        "fmt"
+        "strconv"
+        "strings"
+        "time"
+
+        "gorm.io/gorm"
+)
+
+// ICustomerRepo 定义了客户数据仓库的接口
+type ICustomerRepo interface {
+        FindByPhoneUnscoped(ctx context.Context, phone string) (*model.Customer, error)
+        Update(ctx context.Context, customer *model.Customer) error
+        Create(ctx context.Context, customer *model.Customer) error
+        List(ctx context.Context, req *dto.CustomerListRequest) ([]*model.Customer, int64, error)
+        FindByID(ctx context.Context, id int64) (*model.Customer, error)
+        Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error)
+        Delete(ctx context.Context, id int64) (int64, error)
+        FindByPhoneExcludingID(ctx context.Context, phone string, id int64) (int64, error)
+}
+
+// customerRepo 实现了 ICustomerRepo 接口，封装了 gorm 操作
+type customerRepo struct {
+        q *query.Query
+}
+
+// NewCustomerRepo 创建一个新的 customerRepo
+func NewCustomerRepo(db *gorm.DB) ICustomerRepo <span class="cov8" title="1">{
+        return &amp;customerRepo{
+                q: query.Use(db),
+        }
+}</span>
+
+func (r *customerRepo) FindByPhoneUnscoped(ctx context.Context, phone string) (*model.Customer, error) <span class="cov8" title="1">{
+        return r.q.Customer.WithContext(ctx).Unscoped().Where(r.q.Customer.Phone.Eq(phone)).First()
+}</span>
+
+func (r *customerRepo) Update(ctx context.Context, customer *model.Customer) error <span class="cov0" title="0">{
+        // 使用 map 来构建更新，这样可以更新零值字段
+        updates := map[string]interface{}{
+                "name":        customer.Name,
+                "email":       customer.Email,
+                "gender":      customer.Gender,
+                "level":       customer.Level,
+                "tags":        customer.Tags,
+                "note":        customer.Note,
+                "source":      customer.Source,
+                "assigned_to": customer.AssignedTo,
+                "birthday":    customer.Birthday,
+                "deleted_at":  nil, // 恢复记录
+        }
+        _, err := r.q.Customer.WithContext(ctx).Unscoped().Where(r.q.Customer.ID.Eq(customer.ID)).Updates(updates)
+        return err
+}</span>
+
+func (r *customerRepo) Create(ctx context.Context, customer *model.Customer) error <span class="cov8" title="1">{
+        return r.q.Customer.WithContext(ctx).Create(customer)
+}</span>
+
+func (r *customerRepo) List(ctx context.Context, req *dto.CustomerListRequest) ([]*model.Customer, int64, error) <span class="cov0" title="0">{
+        q := r.q.Customer.WithContext(ctx).Where(r.q.Customer.DeletedAt.IsNull())
+
+        if len(req.IDs) &gt; 0 </span><span class="cov0" title="0">{
+                q = q.Where(r.q.Customer.ID.In(req.IDs...))
+        }</span> else<span class="cov0" title="0"> {
+                // 构建筛选条件
+                if req.Name != "" </span><span class="cov0" title="0">{
+                        q = q.Where(r.q.Customer.Name.Like("%" + req.Name + "%"))
+                }</span>
+                <span class="cov0" title="0">if req.Phone != "" </span><span class="cov0" title="0">{
+                        q = q.Where(r.q.Customer.Phone.Eq(req.Phone))
+                }</span>
+                <span class="cov0" title="0">if req.Email != "" </span><span class="cov0" title="0">{
+                        q = q.Where(r.q.Customer.Email.Eq(req.Email))
+                }</span>
+        }
+
+        // 构建排序条件
+        <span class="cov0" title="0">if req.OrderBy != "" </span><span class="cov0" title="0">{
+                parts := strings.Split(req.OrderBy, "_")
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        field := parts[0]
+                        order := parts[1]
+                        if col, ok := r.q.Customer.GetFieldByName(field); ok </span><span class="cov0" title="0">{
+                                if order == "desc" </span><span class="cov0" title="0">{
+                                        q = q.Order(col.Desc())
+                                }</span> else<span class="cov0" title="0"> {
+                                        q = q.Order(col)
+                                }</span>
+                        }
+                }
+        } else<span class="cov0" title="0"> {
+                // 默认按创建时间降序
+                q = q.Order(r.q.Customer.CreatedAt.Desc())
+        }</span>
+
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, err
+        }</span>
+
+        <span class="cov0" title="0">var customers []*model.Customer
+        if len(req.IDs) == 0 &amp;&amp; req.PageSize &gt; 0 </span><span class="cov0" title="0">{
+                customers, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
+        }</span> else<span class="cov0" title="0"> {
+                customers, err = q.Find()
+        }</span>
+
+        <span class="cov0" title="0">return customers, total, err</span>
+}
+
+func (r *customerRepo) FindByID(ctx context.Context, id int64) (*model.Customer, error) <span class="cov0" title="0">{
+        return r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id), r.q.Customer.DeletedAt.IsNull()).First()
+}</span>
+
+func (r *customerRepo) Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error) <span class="cov0" title="0">{
+        result, err := r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id)).Updates(updates)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov0" title="0">return result.RowsAffected, nil</span>
+}
+
+func (r *customerRepo) Delete(ctx context.Context, id int64) (int64, error) <span class="cov0" title="0">{
+        result, err := r.q.Customer.WithContext(ctx).Where(r.q.Customer.ID.Eq(id)).Delete()
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+        <span class="cov0" title="0">return result.RowsAffected, nil</span>
+}
+
+func (r *customerRepo) FindByPhoneExcludingID(ctx context.Context, phone string, id int64) (int64, error) <span class="cov0" title="0">{
+        return r.q.Customer.WithContext(ctx).
+                Where(r.q.Customer.Phone.Eq(phone), r.q.Customer.ID.Neq(id)).
+                Where(r.q.Customer.DeletedAt.IsNull()).
+                Count()
+}</span>
+
+type CustomerService struct {
+        repo      ICustomerRepo
+        walletSvc IWalletService
+}
+
+func NewCustomerService(repo ICustomerRepo, walletSvc IWalletService) *CustomerService <span class="cov8" title="1">{
+        return &amp;CustomerService{
+                repo:      repo,
+                walletSvc: walletSvc,
+        }
+}</span>
+
+func (s *CustomerService) toCustomerResponse(customer *model.Customer) *dto.CustomerResponse <span class="cov8" title="1">{
+        birthday := ""
+        if customer != nil &amp;&amp; !customer.Birthday.IsZero() </span><span class="cov0" title="0">{
+                birthday = customer.Birthday.Format("2006-01-02")
+        }</span>
+        <span class="cov8" title="1">return &amp;dto.CustomerResponse{
+                ID:         customer.ID,
+                Name:       customer.Name,
+                Phone:      customer.Phone,
+                Email:      customer.Email,
+                Gender:     customer.Gender,
+                Birthday:   birthday,
+                Level:      customer.Level,
+                Tags:       customer.Tags,
+                Note:       customer.Note,
+                Source:     customer.Source,
+                AssignedTo: customer.AssignedTo,
+                CreatedAt:  utils.FormatTime(customer.CreatedAt),
+                UpdatedAt:  utils.FormatTime(customer.UpdatedAt),
+        }</span>
+}
+
+// CreateCustomer 创建客户
+func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerCreateRequest) (*dto.CustomerResponse, error) <span class="cov8" title="1">{
+        var customerToReturn *model.Customer
+        isNewCreation := false
+
+        if req.Phone != "" </span><span class="cov8" title="1">{
+                existingCustomer, err := s.repo.FindByPhoneUnscoped(ctx, req.Phone)
+                if err == nil </span><span class="cov8" title="1">{
+                        if existingCustomer.DeletedAt.Valid </span><span class="cov8" title="1">{
+                                // 恢复并更新
+                                existingCustomer.Name = req.Name
+                                existingCustomer.Email = req.Email
+                                existingCustomer.Gender = req.Gender
+                                existingCustomer.Level = req.Level
+                                existingCustomer.Tags = req.Tags
+                                existingCustomer.Note = req.Note
+                                existingCustomer.Source = req.Source
+                                existingCustomer.AssignedTo = req.AssignedTo
+
+                                if req.Birthday != "" </span><span class="cov0" title="0">{
+                                        birthday, err := time.Parse("2006-01-02", req.Birthday)
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                return nil, fmt.Errorf("invalid birthday format: %w", err)
+                                        }</span>
+                                        <span class="cov0" title="0">existingCustomer.Birthday = birthday</span>
+                                }
+
+                                <span class="cov8" title="1">if err := s.repo.Update(ctx, existingCustomer); err != nil </span><span class="cov0" title="0">{
+                                        return nil, err
+                                }</span>
+                                <span class="cov8" title="1">customerToReturn = existingCustomer</span>
+                        } else<span class="cov8" title="1"> {
+                                return nil, ErrPhoneAlreadyExists
+                        }</span>
+                } else<span class="cov8" title="1"> if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov8" title="1">if customerToReturn == nil </span><span class="cov8" title="1">{
+                customer := &amp;model.Customer{
+                        Name:       req.Name,
+                        Phone:      req.Phone,
+                        Email:      req.Email,
+                        Gender:     req.Gender,
+                        Level:      req.Level,
+                        Tags:       req.Tags,
+                        Note:       req.Note,
+                        Source:     req.Source,
+                        AssignedTo: req.AssignedTo,
+                }
+                if req.Birthday != "" </span><span class="cov0" title="0">{
+                        birthday, err := time.Parse("2006-01-02", req.Birthday)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return nil, fmt.Errorf("invalid birthday format: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">customer.Birthday = birthday</span>
+                }
+                <span class="cov8" title="1">if err := s.repo.Create(ctx, customer); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov8" title="1">customerToReturn = customer
+                isNewCreation = true</span>
+        }
+
+        <span class="cov8" title="1">if _, err := s.walletSvc.CreateWallet(ctx, customerToReturn.ID, "balance"); err != nil </span><span class="cov0" title="0">{
+                if isNewCreation </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to create wallet for new customer: %w", err)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return s.toCustomerResponse(customerToReturn), nil</span>
+}
+
+// ListCustomers 获取客户列表（可扩展分页）
+func (s *CustomerService) ListCustomers(ctx context.Context, req *dto.CustomerListRequest) (*dto.CustomerListResponse, error) <span class="cov8" title="1">{
+        customers, total, err := s.repo.List(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">customerResponses := make([]*dto.CustomerResponse, 0, len(customers))
+        for _, c := range customers </span><span class="cov8" title="1">{
+                resp := s.toCustomerResponse(c)
+                if wallet, errW := s.walletSvc.GetWalletByCustomerID(ctx, c.ID); errW == nil </span><span class="cov8" title="1">{
+                        resp.WalletBalance = wallet.Balance
+                }</span>
+                <span class="cov8" title="1">customerResponses = append(customerResponses, resp)</span>
+        }
+
+        <span class="cov8" title="1">return &amp;dto.CustomerListResponse{
+                Total:     total,
+                Customers: customerResponses,
+        }, nil</span>
+}
+
+// GetCustomerByID 获取单个客户
+func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*dto.CustomerResponse, error) <span class="cov8" title="1">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return nil, ErrCustomerNotFound
+        }</span>
+        <span class="cov8" title="1">customer, err := s.repo.FindByID(ctx, idNum)
+        if err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov8" title="1">{
+                        return nil, ErrCustomerNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov8" title="1">resp := s.toCustomerResponse(customer)
+        if wallet, errW := s.walletSvc.GetWalletByCustomerID(ctx, customer.ID); errW == nil </span><span class="cov8" title="1">{
+                resp.WalletBalance = wallet.Balance
+        }</span>
+        <span class="cov8" title="1">return resp, nil</span>
+}
+
+// UpdateCustomer 更新客户
+func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dto.CustomerUpdateRequest) error <span class="cov8" title="1">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return ErrCustomerNotFound
+        }</span>
+
+        <span class="cov8" title="1">if req.Phone != "" </span><span class="cov0" title="0">{
+                count, err := s.repo.FindByPhoneExcludingID(ctx, req.Phone, idNum)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                        return ErrPhoneAlreadyExists
+                }</span>
+        }
+
+        <span class="cov8" title="1">updates := make(map[string]interface{})
+        if req.Name != "" </span><span class="cov8" title="1">{
+                updates["name"] = req.Name
+        }</span>
+        <span class="cov8" title="1">if req.Phone != "" </span><span class="cov0" title="0">{
+                updates["phone"] = req.Phone
+        }</span>
+        <span class="cov8" title="1">if req.Email != "" </span><span class="cov0" title="0">{
+                updates["email"] = req.Email
+        }</span>
+        <span class="cov8" title="1">if req.Gender != "" </span><span class="cov0" title="0">{
+                updates["gender"] = req.Gender
+        }</span>
+        <span class="cov8" title="1">if req.Level != "" </span><span class="cov0" title="0">{
+                updates["level"] = req.Level
+        }</span>
+        <span class="cov8" title="1">if req.Tags != "" </span><span class="cov0" title="0">{
+                updates["tags"] = req.Tags
+        }</span>
+        <span class="cov8" title="1">if req.Note != "" </span><span class="cov0" title="0">{
+                updates["note"] = req.Note
+        }</span>
+        <span class="cov8" title="1">if req.Source != "" </span><span class="cov0" title="0">{
+                updates["source"] = req.Source
+        }</span>
+        <span class="cov8" title="1">if req.AssignedTo != 0 </span><span class="cov0" title="0">{
+                updates["assigned_to"] = req.AssignedTo
+        }</span>
+        <span class="cov8" title="1">if req.Birthday != "" </span><span class="cov0" title="0">{
+                birthday, err := time.Parse("2006-01-02", req.Birthday)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("invalid birthday format: %w", err)
+                }</span>
+                <span class="cov0" title="0">updates["birthday"] = birthday</span>
+        }
+
+        <span class="cov8" title="1">if len(updates) == 0 </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov8" title="1">rowsAffected, err := s.repo.Updates(ctx, idNum, updates)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrCustomerNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// DeleteCustomer 删除客户
+func (s *CustomerService) DeleteCustomer(ctx context.Context, id string) error <span class="cov8" title="1">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return ErrCustomerNotFound
+        }</span>
+        <span class="cov8" title="1">rowsAffected, err := s.repo.Delete(ctx, idNum)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrCustomerNotFound
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package service
+
+import (
+        "crm_lite/internal/core/config"
+        "crm_lite/internal/core/logger"
+        "crypto/tls"
+
+        "go.uber.org/zap"
+        "gopkg.in/gomail.v2"
+)
+
+// IEmailService 定义了邮件服务需要实现的接口
+type IEmailService interface {
+        SendMail(to, subject, body string) error
+}
+
+// EmailService 封装了邮件发送的功能
+type EmailService struct {
+        opts config.EmailOptions
+}
+
+// NewEmailService 创建一个新的邮件服务实例
+func NewEmailService(opts config.EmailOptions) IEmailService <span class="cov0" title="0">{
+        return &amp;EmailService{opts: opts}
+}</span>
+
+// SendMail 发送邮件
+func (s *EmailService) SendMail(to, subject, body string) error <span class="cov0" title="0">{
+        m := gomail.NewMessage()
+        m.SetHeader("From", m.FormatAddress(s.opts.FromAddress, s.opts.FromName))
+        m.SetHeader("To", to)
+        m.SetHeader("Subject", subject)
+        m.SetBody("text/html", body)
+
+        // #nosec G402
+        d := gomail.NewDialer(s.opts.Host, s.opts.Port, s.opts.Username, s.opts.Password)
+        logger.Info("dialer", zap.String("host", s.opts.Host))
+        d.TLSConfig = &amp;tls.Config{InsecureSkipVerify: s.opts.InsecureSkip, ServerName: s.opts.Host}
+
+        return d.DialAndSend(m)
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/query"
+        "encoding/json"
+        "fmt"
+        "log"
+        "time"
+
+        "github.com/redis/go-redis/v9"
+        "gorm.io/gorm"
+)
+
+// SimpleHierarchyService 专为中小企业设计的极简上下级关系查询服务
+// 实现了 Redis 缓存以优化性能。
+type SimpleHierarchyService struct {
+        q     *query.Query
+        db    *gorm.DB
+        cache *redis.Client
+}
+
+// NewSimpleHierarchyService 创建实例，并注入数据库和 Redis 资源
+func NewSimpleHierarchyService(resManager *resource.Manager) *SimpleHierarchyService <span class="cov0" title="0">{
+        dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get DB resource for HierarchyService: " + err.Error())</span>
+        }
+        <span class="cov0" title="0">cacheRes, err := resource.Get[*resource.CacheResource](resManager, resource.CacheServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get Cache resource for HierarchyService: " + err.Error())</span>
+        }
+        <span class="cov0" title="0">return &amp;SimpleHierarchyService{
+                q:     query.Use(dbRes.DB),
+                db:    dbRes.DB,
+                cache: cacheRes.Client,
+        }</span>
+}
+
+// GetSubordinates 返回 managerID 的所有下属（含多级），层级深度不超过 5。
+// 优先从 Redis 缓存获取，失败则查询数据库并回填缓存。
+func (s *SimpleHierarchyService) GetSubordinates(ctx context.Context, managerID int64) ([]int64, error) <span class="cov0" title="0">{
+        cacheKey := fmt.Sprintf("subordinates:%d", managerID)
+
+        // 1. 尝试从缓存获取
+        cachedIDs, err := s.getCachedSubordinates(ctx, cacheKey)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error getting subordinates from cache for manager %d: %v", managerID, err)
+                // 即使缓存出错，也继续从数据库查询，保证可用性
+        }</span>
+        <span class="cov0" title="0">if cachedIDs != nil </span><span class="cov0" title="0">{
+                log.Printf("Cache hit for manager %d", managerID)
+                return cachedIDs, nil
+        }</span>
+
+        <span class="cov0" title="0">log.Printf("Cache miss for manager %d", managerID)
+
+        // 2. 缓存未命中，从数据库查询
+        var subordinates []int64
+        queue := []int64{managerID}
+        visited := make(map[int64]bool)
+        const maxDepth = 5
+
+        for depth := 0; depth &lt; maxDepth &amp;&amp; len(queue) &gt; 0; depth++ </span><span class="cov0" title="0">{
+                var nextLevel []int64
+                for _, current := range queue </span><span class="cov0" title="0">{
+                        if visited[current] </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                        <span class="cov0" title="0">visited[current] = true
+                        var direct []int64
+                        if err := s.db.Raw("SELECT id FROM admin_users WHERE manager_id = ? AND deleted_at IS NULL", current).Scan(&amp;direct).Error; err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                        <span class="cov0" title="0">subordinates = append(subordinates, direct...)
+                        nextLevel = append(nextLevel, direct...)</span>
+                }
+                <span class="cov0" title="0">queue = nextLevel</span>
+        }
+
+        // 3. 异步写入缓存
+        <span class="cov0" title="0">go s.cacheSubordinates(context.Background(), cacheKey, subordinates, 5*time.Minute)
+
+        return subordinates, nil</span>
+}
+
+// CanAccessCustomer 判断 operator 是否可以访问 customer
+// 规则：1) 如果 operator 是 customer 的 assigned_to 负责人，则允许
+//  2. 如果 operator 是负责人的上级（递归），则允许
+func (s *SimpleHierarchyService) CanAccessCustomer(ctx context.Context, operatorID int64, customerID int64) (bool, error) <span class="cov0" title="0">{
+        // 查询客户负责人
+        customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(customerID)).First()
+        if err != nil </span><span class="cov0" title="0">{
+                return false, err
+        }</span>
+
+        // 负责人本人
+        <span class="cov0" title="0">if customer.AssignedTo == operatorID </span><span class="cov0" title="0">{
+                return true, nil
+        }</span>
+
+        // 判断是否上级
+        <span class="cov0" title="0">subs, err := s.GetSubordinates(ctx, operatorID)
+        if err != nil </span><span class="cov0" title="0">{
+                return false, err
+        }</span>
+        <span class="cov0" title="0">for _, id := range subs </span><span class="cov0" title="0">{
+                if id == customer.AssignedTo </span><span class="cov0" title="0">{
+                        return true, nil
+                }</span>
+        }
+        <span class="cov0" title="0">return false, nil</span>
+}
+
+// --- 缓存实现 ---
+
+func (s *SimpleHierarchyService) getCachedSubordinates(ctx context.Context, key string) ([]int64, error) <span class="cov0" title="0">{
+        val, err := s.cache.Get(ctx, key).Result()
+        if err == redis.Nil </span><span class="cov0" title="0">{
+                return nil, nil // 缓存未命中，不是错误
+        }</span> else<span class="cov0" title="0"> if err != nil </span><span class="cov0" title="0">{
+                return nil, err // Redis 服务错误
+        }</span>
+
+        <span class="cov0" title="0">var ids []int64
+        if err := json.Unmarshal([]byte(val), &amp;ids); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to unmarshal cached subordinates: %w", err)
+        }</span>
+        <span class="cov0" title="0">return ids, nil</span>
+}
+
+func (s *SimpleHierarchyService) cacheSubordinates(ctx context.Context, key string, ids []int64, ttl time.Duration) <span class="cov0" title="0">{
+        bytes, err := json.Marshal(ids)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error marshalling subordinates for key %s: %v", key, err)
+                return
+        }</span>
+        <span class="cov0" title="0">if err := s.cache.Set(ctx, key, bytes, ttl).Err(); err != nil </span><span class="cov0" title="0">{
+                log.Printf("Error setting cache for key %s: %v", key, err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package service
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "strconv"
+        "strings"
+        "time"
+
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+
+        "errors"
+
+        "gorm.io/gorm"
+)
+
+type MarketingService struct {
+        q        *query.Query
+        resource *resource.Manager
+}
+
+func NewMarketingService(resManager *resource.Manager) *MarketingService <span class="cov0" title="0">{
+        db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get database resource for MarketingService: " + err.Error())</span>
+        }
+        <span class="cov0" title="0">return &amp;MarketingService{
+                q:        query.Use(db.DB),
+                resource: resManager,
+        }</span>
+}
+
+// ================ 营销活动管理 ================
+
+// CreateCampaign 创建营销活动
+func (s *MarketingService) CreateCampaign(ctx context.Context, req *dto.MarketingCampaignCreateRequest, createdBy int64) (*dto.MarketingCampaignResponse, error) <span class="cov0" title="0">{
+        // 1. 验证时间范围
+        if req.StartTime.After(req.EndTime) </span><span class="cov0" title="0">{
+                return nil, ErrMarketingInvalidTimeRange
+        }</span>
+
+        // 2. 检查活动名称唯一性
+        <span class="cov0" title="0">count, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.Name.Eq(req.Name)).
+                Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignNameExists
+        }</span>
+
+        // 3. 序列化目标标签
+        <span class="cov0" title="0">targetTagsJSON, err := json.Marshal(req.TargetTags)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to marshal target tags: %w", err)
+        }</span>
+
+        // 4. 确定初始状态
+        <span class="cov0" title="0">status := "draft"
+        if req.StartTime.After(time.Now()) </span><span class="cov0" title="0">{
+                status = "scheduled"
+        }</span>
+
+        // 5. 创建营销活动
+        <span class="cov0" title="0">campaign := &amp;model.MarketingCampaign{
+                Name:              req.Name,
+                Type:              req.Type,
+                Status:            status,
+                TargetTags:        string(targetTagsJSON),
+                TargetSegmentID:   req.TargetSegmentID,
+                ContentTemplateID: req.ContentTemplateID,
+                Content:           req.Content,
+                StartTime:         req.StartTime,
+                EndTime:           req.EndTime,
+                CreatedBy:         createdBy,
+                UpdatedBy:         createdBy,
+        }
+
+        if err := s.q.MarketingCampaign.WithContext(ctx).Create(campaign); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return s.toCampaignResponse(campaign), nil</span>
+}
+
+// GetCampaign 获取单个营销活动
+func (s *MarketingService) GetCampaign(ctx context.Context, id string) (*dto.MarketingCampaignResponse, error) <span class="cov0" title="0">{
+        idNum, err := strconv.ParseInt(id, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignNotFound
+        }</span>
+
+        <span class="cov0" title="0">campaign, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov0" title="0">return s.toCampaignResponse(campaign), nil</span>
+}
+
+// ListCampaigns 获取营销活动列表
+func (s *MarketingService) ListCampaigns(ctx context.Context, req *dto.MarketingCampaignListRequest) (*dto.MarketingCampaignListResponse, error) <span class="cov0" title="0">{
+        // 设置默认分页参数
+        if req.Page &lt;= 0 </span><span class="cov0" title="0">{
+                req.Page = 1
+        }</span>
+        <span class="cov0" title="0">if req.PageSize &lt;= 0 </span><span class="cov0" title="0">{
+                req.PageSize = 10
+        }</span>
+
+        <span class="cov0" title="0">q := s.q.MarketingCampaign.WithContext(ctx)
+
+        // 构建筛选条件
+        if req.Name != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingCampaign.Name.Like("%" + req.Name + "%"))
+        }</span>
+        <span class="cov0" title="0">if req.Type != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingCampaign.Type.Eq(req.Type))
+        }</span>
+        <span class="cov0" title="0">if req.Status != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingCampaign.Status.Eq(req.Status))
+        }</span>
+
+        // 构建排序条件
+        <span class="cov0" title="0">if req.OrderBy != "" </span><span class="cov0" title="0">{
+                parts := strings.Split(req.OrderBy, "_")
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        field := parts[0]
+                        order := parts[1]
+                        if col, ok := s.q.MarketingCampaign.GetFieldByName(field); ok </span><span class="cov0" title="0">{
+                                if order == "desc" </span><span class="cov0" title="0">{
+                                        q = q.Order(col.Desc())
+                                }</span> else<span class="cov0" title="0"> {
+                                        q = q.Order(col)
+                                }</span>
+                        }
+                }
+        } else<span class="cov0" title="0"> {
+                // 默认按创建时间降序
+                q = q.Order(s.q.MarketingCampaign.CreatedAt.Desc())
+        }</span>
+
+        // 获取总数
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 分页查询
+        <span class="cov0" title="0">campaigns, err := q.Limit(req.PageSize).
+                Offset((req.Page - 1) * req.PageSize).
+                Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 转换响应
+        <span class="cov0" title="0">responses := make([]*dto.MarketingCampaignResponse, 0, len(campaigns))
+        for _, campaign := range campaigns </span><span class="cov0" title="0">{
+                responses = append(responses, s.toCampaignResponse(campaign))
+        }</span>
+
+        <span class="cov0" title="0">return &amp;dto.MarketingCampaignListResponse{
+                Total:     total,
+                Campaigns: responses,
+        }, nil</span>
+}
+
+// UpdateCampaign 更新营销活动
+func (s *MarketingService) UpdateCampaign(ctx context.Context, id string, req *dto.MarketingCampaignUpdateRequest, updatedBy int64) (*dto.MarketingCampaignResponse, error) <span class="cov0" title="0">{
+        idNum, err := strconv.ParseInt(id, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignNotFound
+        }</span>
+
+        // 1. 检查活动是否存在
+        <span class="cov0" title="0">existingCampaign, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        // 2. 检查是否可以修改
+        <span class="cov0" title="0">if existingCampaign.Status == "active" &amp;&amp; req.Status != "paused" &amp;&amp; req.Status != "completed" </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignCannotModify
+        }</span>
+
+        // 3. 验证时间范围
+        <span class="cov0" title="0">if req.StartTime != nil &amp;&amp; req.EndTime != nil &amp;&amp; req.StartTime.After(*req.EndTime) </span><span class="cov0" title="0">{
+                return nil, ErrMarketingInvalidTimeRange
+        }</span>
+
+        // 4. 构建更新数据
+        <span class="cov0" title="0">updates := make(map[string]interface{})
+        if req.Name != "" </span><span class="cov0" title="0">{
+                // 检查名称唯一性（排除当前活动）
+                count, err := s.q.MarketingCampaign.WithContext(ctx).
+                        Where(s.q.MarketingCampaign.Name.Eq(req.Name), s.q.MarketingCampaign.ID.Neq(idNum)).
+                        Count()
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNameExists
+                }</span>
+                <span class="cov0" title="0">updates["name"] = req.Name</span>
+        }
+        <span class="cov0" title="0">if req.Type != "" </span><span class="cov0" title="0">{
+                updates["type"] = req.Type
+        }</span>
+        <span class="cov0" title="0">if req.Status != "" </span><span class="cov0" title="0">{
+                updates["status"] = req.Status
+        }</span>
+        <span class="cov0" title="0">if req.TargetTags != nil </span><span class="cov0" title="0">{
+                targetTagsJSON, err := json.Marshal(req.TargetTags)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to marshal target tags: %w", err)
+                }</span>
+                <span class="cov0" title="0">updates["target_tags"] = string(targetTagsJSON)</span>
+        }
+        <span class="cov0" title="0">if req.TargetSegmentID != 0 </span><span class="cov0" title="0">{
+                updates["target_segment_id"] = req.TargetSegmentID
+        }</span>
+        <span class="cov0" title="0">if req.ContentTemplateID != 0 </span><span class="cov0" title="0">{
+                updates["content_template_id"] = req.ContentTemplateID
+        }</span>
+        <span class="cov0" title="0">if req.Content != "" </span><span class="cov0" title="0">{
+                updates["content"] = req.Content
+        }</span>
+        <span class="cov0" title="0">if req.StartTime != nil </span><span class="cov0" title="0">{
+                updates["start_time"] = *req.StartTime
+        }</span>
+        <span class="cov0" title="0">if req.EndTime != nil </span><span class="cov0" title="0">{
+                updates["end_time"] = *req.EndTime
+        }</span>
+        <span class="cov0" title="0">updates["updated_by"] = updatedBy
+
+        // 5. 执行更新
+        if len(updates) &gt; 0 </span><span class="cov0" title="0">{
+                result, err := s.q.MarketingCampaign.WithContext(ctx).
+                        Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                        Updates(updates)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNotFound
+                }</span>
+        }
+
+        // 6. 重新获取更新后的数据
+        <span class="cov0" title="0">return s.GetCampaign(ctx, id)</span>
+}
+
+// DeleteCampaign 删除营销活动
+func (s *MarketingService) DeleteCampaign(ctx context.Context, id string) error <span class="cov0" title="0">{
+        idNum, err := strconv.ParseInt(id, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrMarketingCampaignNotFound
+        }</span>
+
+        // 检查活动状态，运行中的活动不能删除
+        <span class="cov0" title="0">campaign, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrMarketingCampaignNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+
+        <span class="cov0" title="0">if campaign.Status == "active" </span><span class="cov0" title="0">{
+                return ErrMarketingCampaignCannotModify
+        }</span>
+
+        <span class="cov0" title="0">result, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                Delete()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrMarketingCampaignNotFound
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ExecuteCampaign 执行营销活动
+func (s *MarketingService) ExecuteCampaign(ctx context.Context, id string, req *dto.MarketingCampaignExecuteRequest) (*dto.MarketingCampaignExecuteResponse, error) <span class="cov0" title="0">{
+        idNum, err := strconv.ParseInt(id, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignNotFound
+        }</span>
+
+        // 1. 获取活动信息
+        <span class="cov0" title="0">campaign, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        // 2. 检查活动状态
+        <span class="cov0" title="0">if campaign.Status != "scheduled" &amp;&amp; campaign.Status != "draft" </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignInvalidStatus
+        }</span>
+
+        // 3. 获取目标客户
+        <span class="cov0" title="0">customers, err := s.getTargetCustomers(ctx, campaign)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">if len(customers) == 0 </span><span class="cov0" title="0">{
+                return nil, ErrMarketingNoTargetCustomers
+        }</span>
+
+        // 4. 根据执行类型处理
+        <span class="cov0" title="0">executionType := req.ExecutionType
+        if executionType == "" </span><span class="cov0" title="0">{
+                executionType = "actual"
+        }</span>
+
+        <span class="cov0" title="0">if executionType == "simulation" </span><span class="cov0" title="0">{
+                // 模拟执行，只返回统计信息
+                return &amp;dto.MarketingCampaignExecuteResponse{
+                        Status:      "simulation_started",
+                        Message:     fmt.Sprintf("模拟执行完成，预计触达 %d 位客户", len(customers)),
+                        ExecutionID: fmt.Sprintf("sim-%d-%d", campaign.ID, time.Now().Unix()),
+                }, nil
+        }</span>
+
+        // 5. 实际执行：更新活动状态
+        <span class="cov0" title="0">now := time.Now()
+        updates := map[string]interface{}{
+                "status":            "active",
+                "actual_start_time": now,
+                "target_count":      int32(len(customers)),
+        }
+
+        _, err = s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                Updates(updates)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 6. 创建营销记录（这里简化处理，实际应该异步执行）
+        <span class="cov0" title="0">go s.createMarketingRecords(context.Background(), campaign, customers)
+
+        return &amp;dto.MarketingCampaignExecuteResponse{
+                Status:      "triggered",
+                Message:     fmt.Sprintf("营销活动已成功触发执行，目标客户 %d 位", len(customers)),
+                ExecutionID: fmt.Sprintf("exec-%d-%d", campaign.ID, time.Now().Unix()),
+        }, nil</span>
+}
+
+// ================ 营销记录管理 ================
+
+// ListMarketingRecords 获取营销记录列表
+func (s *MarketingService) ListMarketingRecords(ctx context.Context, req *dto.MarketingRecordListRequest) (*dto.MarketingRecordListResponse, error) <span class="cov0" title="0">{
+        // 设置默认分页参数
+        if req.Page &lt;= 0 </span><span class="cov0" title="0">{
+                req.Page = 1
+        }</span>
+        <span class="cov0" title="0">if req.PageSize &lt;= 0 </span><span class="cov0" title="0">{
+                req.PageSize = 50
+        }</span>
+
+        <span class="cov0" title="0">q := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(req.CampaignID))
+
+        // 构建筛选条件
+        if req.CustomerID &gt; 0 </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingRecord.CustomerID.Eq(req.CustomerID))
+        }</span>
+        <span class="cov0" title="0">if req.Channel != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingRecord.Channel.Eq(req.Channel))
+        }</span>
+        <span class="cov0" title="0">if req.Status != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.MarketingRecord.Status.Eq(req.Status))
+        }</span>
+        <span class="cov0" title="0">if req.StartDate != "" </span><span class="cov0" title="0">{
+                startTime, err := time.Parse("2006-01-02", req.StartDate)
+                if err == nil </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.MarketingRecord.CreatedAt.Gte(startTime))
+                }</span>
+        }
+        <span class="cov0" title="0">if req.EndDate != "" </span><span class="cov0" title="0">{
+                endTime, err := time.Parse("2006-01-02", req.EndDate)
+                if err == nil </span><span class="cov0" title="0">{
+                        // 包含结束日期的整天
+                        endTime = endTime.Add(24 * time.Hour).Add(-time.Second)
+                        q = q.Where(s.q.MarketingRecord.CreatedAt.Lte(endTime))
+                }</span>
+        }
+
+        // 获取总数
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 分页查询
+        <span class="cov0" title="0">records, err := q.Order(s.q.MarketingRecord.CreatedAt.Desc()).
+                Limit(req.PageSize).
+                Offset((req.Page - 1) * req.PageSize).
+                Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 转换响应
+        <span class="cov0" title="0">responses := make([]*dto.MarketingRecordResponse, 0, len(records))
+        for _, record := range records </span><span class="cov0" title="0">{
+                responses = append(responses, s.toRecordResponse(record))
+        }</span>
+
+        <span class="cov0" title="0">return &amp;dto.MarketingRecordListResponse{
+                Total:   total,
+                Records: responses,
+        }, nil</span>
+}
+
+// GetCampaignStats 获取营销活动统计
+func (s *MarketingService) GetCampaignStats(ctx context.Context, id string) (*dto.MarketingCampaignStatsResponse, error) <span class="cov0" title="0">{
+        idNum, err := strconv.ParseInt(id, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrMarketingCampaignNotFound
+        }</span>
+
+        // 1. 获取活动基础信息
+        <span class="cov0" title="0">campaign, err := s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(idNum)).
+                First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrMarketingCampaignNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        // 2. 统计各状态的记录数
+        <span class="cov0" title="0">var stats struct {
+                DeliveredCount    int64
+                FailedCount       int64
+                OpenedCount       int64
+                ClickedCount      int64
+                RepliedCount      int64
+                UnsubscribedCount int64
+        }
+
+        // 查询各种状态的统计
+        deliveredCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("delivered")).
+                Count()
+
+        failedCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("failed")).
+                Count()
+
+        openedCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("opened")).
+                Count()
+
+        clickedCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("clicked")).
+                Count()
+
+        repliedCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("replied")).
+                Count()
+
+        unsubscribedCount, _ := s.q.MarketingRecord.WithContext(ctx).
+                Where(s.q.MarketingRecord.CampaignID.Eq(idNum), s.q.MarketingRecord.Status.Eq("unsubscribed")).
+                Count()
+
+        stats.DeliveredCount = deliveredCount
+        stats.FailedCount = failedCount
+        stats.OpenedCount = openedCount
+        stats.ClickedCount = clickedCount
+        stats.RepliedCount = repliedCount
+        stats.UnsubscribedCount = unsubscribedCount
+
+        // 3. 计算比率
+        var deliveryRate, openRate, clickRate, replyRate, unsubscribeRate float64
+
+        if campaign.SentCount &gt; 0 </span><span class="cov0" title="0">{
+                deliveryRate = float64(stats.DeliveredCount) / float64(campaign.SentCount) * 100
+        }</span>
+        <span class="cov0" title="0">if stats.DeliveredCount &gt; 0 </span><span class="cov0" title="0">{
+                openRate = float64(stats.OpenedCount) / float64(stats.DeliveredCount) * 100
+                clickRate = float64(stats.ClickedCount) / float64(stats.DeliveredCount) * 100
+                replyRate = float64(stats.RepliedCount) / float64(stats.DeliveredCount) * 100
+                unsubscribeRate = float64(stats.UnsubscribedCount) / float64(stats.DeliveredCount) * 100
+        }</span>
+
+        <span class="cov0" title="0">return &amp;dto.MarketingCampaignStatsResponse{
+                CampaignID:        campaign.ID,
+                CampaignName:      campaign.Name,
+                TargetCount:       campaign.TargetCount,
+                SentCount:         campaign.SentCount,
+                DeliveredCount:    int32(stats.DeliveredCount),
+                FailedCount:       int32(stats.FailedCount),
+                OpenedCount:       int32(stats.OpenedCount),
+                ClickedCount:      int32(stats.ClickedCount),
+                RepliedCount:      int32(stats.RepliedCount),
+                UnsubscribedCount: int32(stats.UnsubscribedCount),
+                DeliveryRate:      deliveryRate,
+                OpenRate:          openRate,
+                ClickRate:         clickRate,
+                ReplyRate:         replyRate,
+                UnsubscribeRate:   unsubscribeRate,
+        }, nil</span>
+}
+
+// ================ 客户分群 ================
+
+// GetCustomerSegment 获取客户分群
+func (s *MarketingService) GetCustomerSegment(ctx context.Context, req *dto.CustomerSegmentRequest) (*dto.CustomerSegmentResponse, error) <span class="cov0" title="0">{
+        q := s.q.Customer.WithContext(ctx).Where(s.q.Customer.DeletedAt.IsNull())
+
+        // 构建筛选条件
+        if len(req.Tags) &gt; 0 </span><span class="cov0" title="0">{
+                // 这里简化处理，假设tags是JSON数组，实际可能需要更复杂的查询
+                for _, tag := range req.Tags </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.Customer.Tags.Like("%" + tag + "%"))
+                }</span>
+        }
+        <span class="cov0" title="0">if req.Level != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.Customer.Level.Eq(req.Level))
+        }</span>
+        <span class="cov0" title="0">if req.Gender != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.Customer.Gender.Eq(req.Gender))
+        }</span>
+        <span class="cov0" title="0">if req.Source != "" </span><span class="cov0" title="0">{
+                q = q.Where(s.q.Customer.Source.Eq(req.Source))
+        }</span>
+
+        // 获取总数
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 获取客户列表（限制返回数量）
+        <span class="cov0" title="0">customers, err := q.Select(s.q.Customer.ID, s.q.Customer.Name, s.q.Customer.Phone, s.q.Customer.Email).
+                Limit(1000). // 限制最多返回1000个客户
+                Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 构建响应
+        <span class="cov0" title="0">response := &amp;dto.CustomerSegmentResponse{
+                Total: total,
+                Customers: make([]struct {
+                        ID    int64  `json:"id" example:"100"`
+                        Name  string `json:"name" example:"张三"`
+                        Phone string `json:"phone" example:"138****8888"`
+                        Email string `json:"email,omitempty" example:"zhangsan@example.com"`
+                }, len(customers)),
+        }
+
+        for i, customer := range customers </span><span class="cov0" title="0">{
+                response.Customers[i].ID = customer.ID
+                response.Customers[i].Name = customer.Name
+                response.Customers[i].Phone = customer.Phone
+                response.Customers[i].Email = customer.Email
+        }</span>
+
+        <span class="cov0" title="0">return response, nil</span>
+}
+
+// ================ 私有方法 ================
+
+// toCampaignResponse 转换为营销活动响应DTO
+func (s *MarketingService) toCampaignResponse(campaign *model.MarketingCampaign) *dto.MarketingCampaignResponse <span class="cov0" title="0">{
+        // 解析目标标签
+        var targetTags []string
+        if campaign.TargetTags != "" </span><span class="cov0" title="0">{
+                json.Unmarshal([]byte(campaign.TargetTags), &amp;targetTags)
+        }</span>
+
+        <span class="cov0" title="0">response := &amp;dto.MarketingCampaignResponse{
+                ID:                campaign.ID,
+                Name:              campaign.Name,
+                Type:              campaign.Type,
+                Status:            campaign.Status,
+                TargetTags:        targetTags,
+                TargetSegmentID:   campaign.TargetSegmentID,
+                ContentTemplateID: campaign.ContentTemplateID,
+                Content:           campaign.Content,
+                StartTime:         campaign.StartTime,
+                EndTime:           campaign.EndTime,
+                TargetCount:       campaign.TargetCount,
+                SentCount:         campaign.SentCount,
+                SuccessCount:      campaign.SuccessCount,
+                ClickCount:        campaign.ClickCount,
+                CreatedBy:         campaign.CreatedBy,
+                UpdatedBy:         campaign.UpdatedBy,
+                CreatedAt:         utils.FormatTime(campaign.CreatedAt),
+                UpdatedAt:         utils.FormatTime(campaign.UpdatedAt),
+        }
+
+        // 处理可选时间字段
+        if !campaign.ActualStartTime.IsZero() </span><span class="cov0" title="0">{
+                response.ActualStartTime = &amp;campaign.ActualStartTime
+        }</span>
+        <span class="cov0" title="0">if !campaign.ActualEndTime.IsZero() </span><span class="cov0" title="0">{
+                response.ActualEndTime = &amp;campaign.ActualEndTime
+        }</span>
+
+        <span class="cov0" title="0">return response</span>
+}
+
+// toRecordResponse 转换为营销记录响应DTO
+func (s *MarketingService) toRecordResponse(record *model.MarketingRecord) *dto.MarketingRecordResponse <span class="cov0" title="0">{
+        response := &amp;dto.MarketingRecordResponse{
+                ID:           record.ID,
+                CampaignID:   record.CampaignID,
+                CustomerID:   record.CustomerID,
+                ContactID:    record.ContactID,
+                Channel:      record.Channel,
+                Status:       record.Status,
+                ErrorMessage: record.ErrorMessage,
+                Response:     record.Response,
+                CreatedAt:    utils.FormatTime(record.CreatedAt),
+        }
+
+        // 处理可选时间字段
+        if !record.SentAt.IsZero() </span><span class="cov0" title="0">{
+                response.SentAt = &amp;record.SentAt
+        }</span>
+        <span class="cov0" title="0">if !record.DeliveredAt.IsZero() </span><span class="cov0" title="0">{
+                response.DeliveredAt = &amp;record.DeliveredAt
+        }</span>
+        <span class="cov0" title="0">if !record.OpenedAt.IsZero() </span><span class="cov0" title="0">{
+                response.OpenedAt = &amp;record.OpenedAt
+        }</span>
+        <span class="cov0" title="0">if !record.ClickedAt.IsZero() </span><span class="cov0" title="0">{
+                response.ClickedAt = &amp;record.ClickedAt
+        }</span>
+        <span class="cov0" title="0">if !record.RepliedAt.IsZero() </span><span class="cov0" title="0">{
+                response.RepliedAt = &amp;record.RepliedAt
+        }</span>
+
+        <span class="cov0" title="0">return response</span>
+}
+
+// getTargetCustomers 获取目标客户列表
+func (s *MarketingService) getTargetCustomers(ctx context.Context, campaign *model.MarketingCampaign) ([]*model.Customer, error) <span class="cov0" title="0">{
+        q := s.q.Customer.WithContext(ctx).Where(s.q.Customer.DeletedAt.IsNull())
+
+        // 解析目标标签
+        var targetTags []string
+        if campaign.TargetTags != "" </span><span class="cov0" title="0">{
+                if err := json.Unmarshal([]byte(campaign.TargetTags), &amp;targetTags); err != nil </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("failed to unmarshal target tags: %w", err)
+                }</span>
+        }
+
+        // 根据标签筛选客户
+        <span class="cov0" title="0">if len(targetTags) &gt; 0 </span><span class="cov0" title="0">{
+                for _, tag := range targetTags </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.Customer.Tags.Like("%" + tag + "%"))
+                }</span>
+        }
+
+        <span class="cov0" title="0">customers, err := q.Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return customers, nil</span>
+}
+
+// createMarketingRecords 创建营销记录（异步执行）
+func (s *MarketingService) createMarketingRecords(ctx context.Context, campaign *model.MarketingCampaign, customers []*model.Customer) <span class="cov0" title="0">{
+        // 这里是简化实现，实际应该根据不同渠道调用不同的发送服务
+        // 并根据发送结果更新记录状态
+
+        records := make([]*model.MarketingRecord, 0, len(customers))
+        for _, customer := range customers </span><span class="cov0" title="0">{
+                record := &amp;model.MarketingRecord{
+                        CampaignID: campaign.ID,
+                        CustomerID: customer.ID,
+                        Channel:    campaign.Type,
+                        Status:     "pending",
+                }
+                records = append(records, record)
+        }</span>
+
+        // 批量创建记录
+        <span class="cov0" title="0">if err := s.q.MarketingRecord.WithContext(ctx).CreateInBatches(records, 100); err != nil </span><span class="cov0" title="0">{
+                // 记录错误日志
+                fmt.Printf("Failed to create marketing records: %v\n", err)
+                return
+        }</span>
+
+        // 这里应该调用实际的发送服务，如短信、邮件等
+        // 发送完成后更新记录状态和活动统计
+
+        // 简化处理：直接更新活动的发送统计
+        <span class="cov0" title="0">updates := map[string]interface{}{
+                "sent_count":    int32(len(customers)),
+                "success_count": int32(len(customers)), // 假设全部发送成功
+        }
+
+        s.q.MarketingCampaign.WithContext(ctx).
+                Where(s.q.MarketingCampaign.ID.Eq(campaign.ID)).
+                Updates(updates)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+        "errors"
+        "fmt"
+        "strconv"
+        "strings"
+
+        "gorm.io/gorm"
+)
+
+var (
+        // ErrOrderNotFound 表示订单未找到。
+        ErrOrderNotFound = errors.New("order not found")
+        // ErrProductInfoChanged 表示产品信息已更改（例如，价格、库存），提示用户重新确认。
+        ErrProductInfoChanged = errors.New("product information has changed, please re-confirm")
+)
+
+// OrderService 封装了与订单相关的业务逻辑。
+type OrderService struct {
+        db *gorm.DB
+        q  *query.Query
+}
+
+// NewOrderService 创建一个新的 OrderService 实例。
+func NewOrderService(rm *resource.Manager) *OrderService <span class="cov0" title="0">{
+        dbRes, _ := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
+        return &amp;OrderService{
+                db: dbRes.DB,
+                q:  query.Use(dbRes.DB),
+        }
+}</span>
+
+// toOrderResponse 将 model.Order（及其关联的 OrderItems）转换为 dto.OrderResponse。
+func (s *OrderService) toOrderResponse(o *model.Order) *dto.OrderResponse <span class="cov0" title="0">{
+        items := make([]*dto.OrderItemResponse, len(o.OrderItems))
+        for i, item := range o.OrderItems </span><span class="cov0" title="0">{
+                items[i] = &amp;dto.OrderItemResponse{
+                        ID:         item.ID,
+                        ProductID:  item.ProductID,
+                        Quantity:   int(item.Quantity),
+                        UnitPrice:  item.UnitPrice,
+                        FinalPrice: item.FinalPrice,
+                }
+        }</span>
+        <span class="cov0" title="0">return &amp;dto.OrderResponse{
+                ID:          o.ID,
+                OrderNo:     o.OrderNo,
+                CustomerID:  o.CustomerID,
+                OrderDate:   o.OrderDate,
+                Status:      o.Status,
+                TotalAmount: o.TotalAmount,
+                FinalAmount: o.FinalAmount,
+                Remark:      o.Remark,
+                CreatedAt:   o.CreatedAt,
+                Items:       items,
+        }</span>
+}
+
+// CreateOrder 在单个事务中创建一个新订单及其订单项。
+func (s *OrderService) CreateOrder(ctx context.Context, req *dto.OrderCreateRequest) (*dto.OrderResponse, error) <span class="cov0" title="0">{
+        var createdOrder *model.Order
+        err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error </span><span class="cov0" title="0">{
+                // 1. 验证客户是否存在
+                var customer model.Customer
+                if err := tx.First(&amp;customer, req.CustomerID).Error; err != nil </span><span class="cov0" title="0">{
+                        if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                                return ErrCustomerNotFound
+                        }</span>
+                        <span class="cov0" title="0">return err</span>
+                }
+
+                // 2. 批量验证商品是否存在
+                <span class="cov0" title="0">var products []*model.Product
+                productIDs := make([]int64, len(req.Items))
+                for i, item := range req.Items </span><span class="cov0" title="0">{
+                        productIDs[i] = item.ProductID
+                }</span>
+                <span class="cov0" title="0">if err := tx.Find(&amp;products, productIDs).Error; err != nil || len(products) != len(req.Items) </span><span class="cov0" title="0">{
+                        return ErrProductNotFound
+                }</span>
+                <span class="cov0" title="0">productMap := make(map[int64]*model.Product, len(products))
+                for _, p := range products </span><span class="cov0" title="0">{
+                        productMap[p.ID] = p
+                }</span>
+
+                // 3. 计算总价并构建订单项
+                <span class="cov0" title="0">var totalAmount float64
+                orderItems := make([]*model.OrderItem, len(req.Items))
+                for i, item := range req.Items </span><span class="cov0" title="0">{
+                        product := productMap[item.ProductID]
+                        finalPrice := float64(item.Quantity) * item.UnitPrice
+                        totalAmount += finalPrice
+                        orderItems[i] = &amp;model.OrderItem{
+                                ProductID:   item.ProductID,
+                                ProductName: product.Name,
+                                Quantity:    int32(item.Quantity),
+                                UnitPrice:   item.UnitPrice,
+                                FinalPrice:  finalPrice,
+                        }
+                }</span>
+
+                // 4. 创建订单主体
+                <span class="cov0" title="0">order := &amp;model.Order{
+                        OrderNo:     utils.GenerateOrderNo(),
+                        CustomerID:  req.CustomerID,
+                        OrderDate:   req.OrderDate,
+                        Status:      "draft", // 默认状态为草稿
+                        TotalAmount: totalAmount,
+                        FinalAmount: totalAmount, // 假设没有折扣或运费等
+                        Remark:      req.Remark,
+                }
+                if req.Status != "" </span><span class="cov0" title="0">{
+                        order.Status = req.Status
+                }</span>
+
+                <span class="cov0" title="0">if err := tx.Create(order).Error; err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // 5. 创建订单项并关联到订单
+                <span class="cov0" title="0">for _, item := range orderItems </span><span class="cov0" title="0">{
+                        item.OrderID = order.ID
+                }</span>
+                <span class="cov0" title="0">if err := tx.Create(orderItems).Error; err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // 将新创建的订单项附加到模型中，以便 toOrderResponse 可以使用
+                <span class="cov0" title="0">order.OrderItems = make([]model.OrderItem, len(orderItems))
+                for i, item := range orderItems </span><span class="cov0" title="0">{
+                        order.OrderItems[i] = *item
+                }</span>
+                <span class="cov0" title="0">createdOrder = order
+                return nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("在事务中创建订单失败: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return s.toOrderResponse(createdOrder), nil</span>
+}
+
+// GetOrderByID 根据 ID 获取单个订单，并预加载其订单项。
+func (s *OrderService) GetOrderByID(ctx context.Context, idStr string) (*dto.OrderResponse, error) <span class="cov0" title="0">{
+        id, _ := strconv.ParseInt(idStr, 10, 64)
+        if id == 0 </span><span class="cov0" title="0">{
+                return nil, ErrOrderNotFound
+        }</span>
+        <span class="cov0" title="0">var order model.Order
+        // 使用原生 GORM 进行预加载
+        err := s.db.WithContext(ctx).Preload("OrderItems").First(&amp;order, id).Error
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrOrderNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov0" title="0">return s.toOrderResponse(&amp;order), nil</span>
+}
+
+// ListOrders 获取订单列表，支持分页、筛选、排序，并预加载订单项。
+func (s *OrderService) ListOrders(ctx context.Context, req *dto.OrderListRequest) (*dto.OrderListResponse, error) <span class="cov0" title="0">{
+        // 使用原生 GORM 以便利用 Preload
+        db := s.db.WithContext(ctx).Model(&amp;model.Order{})
+
+        if len(req.IDs) &gt; 0 </span><span class="cov0" title="0">{
+                db = db.Where("id IN ?", req.IDs)
+        }</span> else<span class="cov0" title="0"> {
+                if req.CustomerID &gt; 0 </span><span class="cov0" title="0">{
+                        db = db.Where("customer_id = ?", req.CustomerID)
+                }</span>
+                <span class="cov0" title="0">if req.Status != "" </span><span class="cov0" title="0">{
+                        db = db.Where("status = ?", req.Status)
+                }</span>
+        }
+
+        <span class="cov0" title="0">if req.OrderBy != "" </span><span class="cov0" title="0">{
+                parts := strings.Split(req.OrderBy, "_")
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        // 这里我们直接使用列名字符串，因为 GORM 支持这样做
+                        // 注意：为了安全，生产环境中应验证列名是否合法
+                        colName := parts[0]
+                        direction := parts[1]
+                        if direction == "desc" </span><span class="cov0" title="0">{
+                                db = db.Order(fmt.Sprintf("%s DESC", colName))
+                        }</span> else<span class="cov0" title="0"> {
+                                db = db.Order(colName)
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">var total int64
+        if err := db.Count(&amp;total).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">var orders []*model.Order
+        if len(req.IDs) == 0 </span><span class="cov0" title="0">{
+                db = db.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize)
+        }</span>
+
+        // 预加载关联的订单项
+        <span class="cov0" title="0">if err := db.Preload("OrderItems").Find(&amp;orders).Error; err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">items := make([]*dto.OrderResponse, len(orders))
+        for i := range orders </span><span class="cov0" title="0">{
+                items[i] = s.toOrderResponse(orders[i])
+        }</span>
+
+        <span class="cov0" title="0">return &amp;dto.OrderListResponse{
+                Total:  total,
+                Orders: items,
+        }, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "fmt"
+
+        "github.com/casbin/casbin/v2"
+        "gorm.io/gorm"
+)
+
+type PermissionService struct {
+        enforcer *casbin.Enforcer
+        q        *query.Query
+}
+
+func NewPermissionService(rm *resource.Manager) (*PermissionService, error) <span class="cov0" title="0">{
+        casbinRes, err := resource.Get[*resource.CasbinResource](rm, resource.CasbinServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get casbin resource: %w", err)
+        }</span>
+        <span class="cov0" title="0">dbRes, err := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get db resource: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;PermissionService{
+                enforcer: casbinRes.GetEnforcer(),
+                q:        query.Use(dbRes.DB),
+        }, nil</span>
+}
+
+// AddPermission 添加权限 (p, role, path, method)
+func (s *PermissionService) AddPermission(ctx context.Context, req *dto.PermissionRequest) error <span class="cov0" title="0">{
+        _, err := s.enforcer.AddPolicy(req.Role, req.Path, req.Method)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to add permission policy: %w", err)
+        }</span>
+        // 策略会自动定期保存或在其他操作中保存，此处无需手动保存
+        <span class="cov0" title="0">return nil</span>
+}
+
+// RemovePermission 移除权限
+func (s *PermissionService) RemovePermission(ctx context.Context, req *dto.PermissionRequest) error <span class="cov0" title="0">{
+        removed, err := s.enforcer.RemovePolicy(req.Role, req.Path, req.Method)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to remove permission policy: %w", err)
+        }</span>
+        <span class="cov0" title="0">if !removed </span><span class="cov0" title="0">{
+                return ErrPermissionNotFound
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// ListPermissionsByRole 获取指定角色的所有权限
+func (s *PermissionService) ListPermissionsByRole(ctx context.Context, role string) ([][]string, error) <span class="cov0" title="0">{
+        permissions, err := s.enforcer.GetFilteredPolicy(0, role)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get filtered policy: %w", err)
+        }</span>
+        <span class="cov0" title="0">return permissions, nil</span>
+}
+
+// AssignRoleToUser 给用户分配角色 (g, user_id, role)
+func (s *PermissionService) AssignRoleToUser(ctx context.Context, req *dto.UserRoleRequest) error <span class="cov0" title="0">{
+        return s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // 1. 根据 UUID 查找用户
+                user, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(req.UserID)).First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if err == gorm.ErrRecordNotFound </span><span class="cov0" title="0">{
+                                return ErrUserNotFound
+                        }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("failed to find user by uuid: %w", err)</span>
+                }
+
+                // 2. 根据角色名称查找角色
+                <span class="cov0" title="0">role, err := tx.Role.WithContext(ctx).Where(tx.Role.Name.Eq(req.Role)).First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if err == gorm.ErrRecordNotFound </span><span class="cov0" title="0">{
+                                return ErrRoleNotFound
+                        }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("failed to find role by name: %w", err)</span>
+                }
+
+                // 3. 在 admin_user_roles 中创建关联关系 (如果不存在)
+                <span class="cov0" title="0">_, err = tx.AdminUserRole.WithContext(ctx).
+                        Where(tx.AdminUserRole.AdminUserID.Eq(user.ID), tx.AdminUserRole.RoleID.Eq(role.ID)).
+                        FirstOrCreate()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to create user-role association: %w", err)
+                }</span>
+
+                // 4. 更新 Casbin 策略
+                // 使用 AddGroupingPolicy 来添加用户和角色之间的关联
+                <span class="cov0" title="0">_, err = s.enforcer.AddGroupingPolicy(req.UserID, req.Role)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to add grouping policy: %w", err)
+                }</span>
+
+                <span class="cov0" title="0">return nil</span>
+        })
+}
+
+// RemoveRoleFromUser 移除用户的角色
+func (s *PermissionService) RemoveRoleFromUser(ctx context.Context, req *dto.UserRoleRequest) error <span class="cov0" title="0">{
+        return s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // 1. 根据 UUID 查找用户
+                user, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(req.UserID)).First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if err == gorm.ErrRecordNotFound </span><span class="cov0" title="0">{
+                                return ErrUserNotFound
+                        }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("failed to find user by uuid: %w", err)</span>
+                }
+
+                // 2. 根据角色名称查找角色
+                <span class="cov0" title="0">role, err := tx.Role.WithContext(ctx).Where(tx.Role.Name.Eq(req.Role)).First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if err == gorm.ErrRecordNotFound </span><span class="cov0" title="0">{
+                                return ErrRoleNotFound
+                        }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("failed to find role by name: %w", err)</span>
+                }
+
+                // 3. 在 admin_user_roles 中删除关联关系
+                <span class="cov0" title="0">result, err := tx.AdminUserRole.WithContext(ctx).
+                        Where(tx.AdminUserRole.AdminUserID.Eq(user.ID), tx.AdminUserRole.RoleID.Eq(role.ID)).
+                        Delete()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to delete user-role association: %w", err)
+                }</span>
+                <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                        return ErrUserRoleNotFound
+                }</span>
+
+                // 4. 更新 Casbin 策略
+                <span class="cov0" title="0">removed, err := s.enforcer.RemoveGroupingPolicy(req.UserID, req.Role)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to remove grouping policy: %w", err)
+                }</span>
+                <span class="cov0" title="0">if !removed </span><span class="cov0" title="0">{
+                        return ErrUserRoleNotFound // Casbin中未找到，可能数据不一致
+                }</span>
+                <span class="cov0" title="0">return nil</span>
+        })
+}
+
+// GetRolesForUser 获取用户的所有角色
+func (s *PermissionService) GetRolesForUser(ctx context.Context, userID string) ([]string, error) <span class="cov0" title="0">{
+        roles, err := s.enforcer.GetRolesForUser(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get roles for user: %w", err)
+        }</span>
+        <span class="cov0" title="0">return roles, nil</span>
+}
+
+// GetUsersForRole 获取拥有指定角色的所有用户
+func (s *PermissionService) GetUsersForRole(ctx context.Context, role string) ([]string, error) <span class="cov0" title="0">{
+        users, err := s.enforcer.GetUsersForRole(role)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to get users for role: %w", err)
+        }</span>
+        <span class="cov0" title="0">return users, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "errors"
+        "fmt"
+        "strconv"
+        "strings"
+
+        "gorm.io/gorm"
+)
+
+var (
+        ErrSKUAlreadyExists = errors.New("sku already exists")
+        ErrProductNotFound  = errors.New("product not found")
+)
+
+// IProductRepo 定义了产品数据仓库的接口
+type IProductRepo interface {
+        FindBySKU(ctx context.Context, sku string) (*model.Product, error)
+        Create(ctx context.Context, product *model.Product) error
+        FindByID(ctx context.Context, id int64) (*model.Product, error)
+        List(ctx context.Context, req *dto.ProductListRequest) ([]*model.Product, int64, error)
+        Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error)
+        Delete(ctx context.Context, id int64) (int64, error)
+}
+
+// productRepo 实现了 IProductRepo 接口
+type productRepo struct {
+        q *query.Query
+}
+
+// NewProductRepo 创建一个新的产品仓库实例
+func NewProductRepo(db *gorm.DB) IProductRepo <span class="cov8" title="1">{
+        return &amp;productRepo{q: query.Use(db)}
+}</span>
+
+func (r *productRepo) FindBySKU(ctx context.Context, sku string) (*model.Product, error) <span class="cov8" title="1">{
+        return r.q.Product.WithContext(ctx).Where(r.q.Product.Category.Eq(sku)).First()
+}</span>
+
+func (r *productRepo) Create(ctx context.Context, product *model.Product) error <span class="cov8" title="1">{
+        return r.q.Product.WithContext(ctx).Create(product)
+}</span>
+
+func (r *productRepo) FindByID(ctx context.Context, id int64) (*model.Product, error) <span class="cov0" title="0">{
+        return r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).First()
+}</span>
+
+func (r *productRepo) List(ctx context.Context, req *dto.ProductListRequest) ([]*model.Product, int64, error) <span class="cov0" title="0">{
+        q := r.q.Product.WithContext(ctx)
+
+        if len(req.IDs) &gt; 0 </span><span class="cov0" title="0">{
+                q = q.Where(r.q.Product.ID.In(req.IDs...))
+        }</span> else<span class="cov0" title="0"> {
+                if req.Name != "" </span><span class="cov0" title="0">{
+                        q = q.Where(r.q.Product.Name.Like("%" + req.Name + "%"))
+                }</span>
+                <span class="cov0" title="0">if req.SKU != "" </span><span class="cov0" title="0">{
+                        q = q.Where(r.q.Product.Category.Eq(req.SKU))
+                }</span>
+        }
+
+        <span class="cov0" title="0">if req.OrderBy != "" </span><span class="cov0" title="0">{
+                parts := strings.Split(req.OrderBy, "_")
+                if len(parts) == 2 </span><span class="cov0" title="0">{
+                        if col, ok := r.q.Product.GetFieldByName(parts[0]); ok </span><span class="cov0" title="0">{
+                                if parts[1] == "desc" </span><span class="cov0" title="0">{
+                                        q = q.Order(col.Desc())
+                                }</span> else<span class="cov0" title="0"> {
+                                        q = q.Order(col)
+                                }</span>
+                        }
+                }
+        } else<span class="cov0" title="0"> {
+                q = q.Order(r.q.Product.CreatedAt.Desc())
+        }</span>
+
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, err
+        }</span>
+
+        <span class="cov0" title="0">var products []*model.Product
+        if len(req.IDs) &gt; 0 </span><span class="cov0" title="0">{
+                products, err = q.Find()
+        }</span> else<span class="cov0" title="0"> if req.PageSize &gt; 0 </span><span class="cov0" title="0">{
+                products, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
+        }</span> else<span class="cov0" title="0"> {
+                products, err = q.Find()
+        }</span>
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, 0, err
+        }</span>
+
+        <span class="cov0" title="0">return products, total, err</span>
+}
+
+func (r *productRepo) Updates(ctx context.Context, id int64, updates map[string]interface{}) (int64, error) <span class="cov0" title="0">{
+        result, err := r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).Updates(updates)
+        return result.RowsAffected, err
+}</span>
+
+func (r *productRepo) Delete(ctx context.Context, id int64) (int64, error) <span class="cov0" title="0">{
+        result, err := r.q.Product.WithContext(ctx).Where(r.q.Product.ID.Eq(id)).Delete()
+        return result.RowsAffected, err
+}</span>
+
+// ProductService 封装了与产品相关的业务逻辑。
+type ProductService struct {
+        repo IProductRepo
+}
+
+// NewProductService 创建一个新的 ProductService 实例。
+func NewProductService(repo IProductRepo) *ProductService <span class="cov8" title="1">{
+        return &amp;ProductService{repo: repo}
+}</span>
+
+// toProductResponse 将 model.Product 转换为 dto.ProductResponse。
+func (s *ProductService) toProductResponse(p *model.Product) *dto.ProductResponse <span class="cov8" title="1">{
+        if p == nil </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+        <span class="cov8" title="1">return &amp;dto.ProductResponse{
+                ID:          p.ID,
+                Name:        p.Name,
+                Description: p.Description,
+                Price:       p.Price,
+                SKU:         p.Category,
+                Stock:       int(p.StockQuantity),
+                CreatedAt:   p.CreatedAt,
+                UpdatedAt:   p.UpdatedAt,
+        }</span>
+}
+
+// CreateProduct 创建一个新产品。
+func (s *ProductService) CreateProduct(ctx context.Context, req *dto.ProductCreateRequest) (*dto.ProductResponse, error) <span class="cov8" title="1">{
+        existing, err := s.repo.FindBySKU(ctx, req.SKU)
+        if err != nil &amp;&amp; !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("检查SKU失败: %w", err)
+        }</span>
+        <span class="cov8" title="1">if existing != nil </span><span class="cov0" title="0">{
+                return nil, ErrSKUAlreadyExists
+        }</span>
+
+        <span class="cov8" title="1">product := &amp;model.Product{
+                Name:          req.Name,
+                Description:   req.Description,
+                Price:         req.Price,
+                Category:      req.SKU,
+                StockQuantity: int32(req.Stock),
+        }
+
+        if err := s.repo.Create(ctx, product); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("创建产品失败: %w", err)
+        }</span>
+        <span class="cov8" title="1">return s.toProductResponse(product), nil</span>
+}
+
+// GetProductByID 根据 ID 获取单个产品。
+func (s *ProductService) GetProductByID(ctx context.Context, idStr string) (*dto.ProductResponse, error) <span class="cov0" title="0">{
+        id, err := strconv.ParseInt(idStr, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrProductNotFound
+        }</span>
+
+        <span class="cov0" title="0">product, err := s.repo.FindByID(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrProductNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov0" title="0">return s.toProductResponse(product), nil</span>
+}
+
+// ListProducts 获取产品列表。
+func (s *ProductService) ListProducts(ctx context.Context, req *dto.ProductListRequest) (*dto.ProductListResponse, error) <span class="cov0" title="0">{
+        products, total, err := s.repo.List(ctx, req)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">items := make([]*dto.ProductResponse, len(products))
+        for i, p := range products </span><span class="cov0" title="0">{
+                items[i] = s.toProductResponse(p)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;dto.ProductListResponse{
+                Total:    total,
+                Products: items,
+        }, nil</span>
+}
+
+// UpdateProduct 更新一个现有的产品。
+func (s *ProductService) UpdateProduct(ctx context.Context, idStr string, req *dto.ProductUpdateRequest) (*dto.ProductResponse, error) <span class="cov0" title="0">{
+        id, err := strconv.ParseInt(idStr, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrProductNotFound
+        }</span>
+
+        <span class="cov0" title="0">if _, err := s.repo.FindByID(ctx, id); err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrProductNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov0" title="0">updates := make(map[string]interface{})
+        if req.Name != "" </span><span class="cov0" title="0">{
+                updates["name"] = req.Name
+        }</span>
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                updates["description"] = req.Description
+        }</span>
+        <span class="cov0" title="0">if req.Price &gt; 0 </span><span class="cov0" title="0">{
+                updates["price"] = req.Price
+        }</span>
+        <span class="cov0" title="0">if req.Stock &gt;= 0 </span><span class="cov0" title="0">{
+                updates["stock_quantity"] = int32(req.Stock)
+        }</span>
+
+        <span class="cov0" title="0">if len(updates) &gt; 0 </span><span class="cov0" title="0">{
+                if _, err := s.repo.Updates(ctx, id, updates); err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+        }
+
+        <span class="cov0" title="0">updatedProduct, err := s.repo.FindByID(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, ErrProductNotFound
+        }</span>
+        <span class="cov0" title="0">return s.toProductResponse(updatedProduct), nil</span>
+}
+
+// DeleteProduct 删除一个产品。
+func (s *ProductService) DeleteProduct(ctx context.Context, idStr string) error <span class="cov0" title="0">{
+        id, err := strconv.ParseInt(idStr, 10, 64)
+        if err != nil </span><span class="cov0" title="0">{
+                return ErrProductNotFound
+        }</span>
+
+        <span class="cov0" title="0">rowsAffected, err := s.repo.Delete(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if rowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrProductNotFound
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "errors"
+        "strconv"
+
+        "gorm.io/gorm"
+)
+
+type RoleService struct {
+        q        *query.Query
+        resource *resource.Manager
+}
+
+func NewRoleService(resManager *resource.Manager) *RoleService <span class="cov0" title="0">{
+        db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get database resource for RoleService: " + err.Error())</span>
+        }
+        <span class="cov0" title="0">return &amp;RoleService{
+                q:        query.Use(db.DB),
+                resource: resManager,
+        }</span>
+}
+
+func (s *RoleService) CreateRole(ctx context.Context, req *dto.RoleCreateRequest) (*dto.RoleResponse, error) <span class="cov0" title="0">{
+        // 检查 name 唯一性（排除软删除的记录）
+        count, err := s.q.Role.WithContext(ctx).
+                Where(s.q.Role.Name.Eq(req.Name)).
+                Where(s.q.Role.DeletedAt.IsNull()).
+                Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                return nil, ErrRoleNameAlreadyExists
+        }</span>
+
+        <span class="cov0" title="0">role := &amp;model.Role{
+                Name:        req.Name,
+                DisplayName: req.DisplayName,
+                Description: req.Description,
+                IsActive:    true,
+        }
+        if err := s.q.Role.WithContext(ctx).Create(role); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return s.toDTO(role), nil</span>
+}
+
+func (s *RoleService) ListRoles(ctx context.Context) ([]*dto.RoleResponse, error) <span class="cov0" title="0">{
+        roles, err := s.q.Role.WithContext(ctx).Find()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">res := make([]*dto.RoleResponse, 0, len(roles))
+        for _, r := range roles </span><span class="cov0" title="0">{
+                res = append(res, s.toDTO(r))
+        }</span>
+        <span class="cov0" title="0">return res, nil</span>
+}
+
+func (s *RoleService) GetRoleByID(ctx context.Context, id string) (*dto.RoleResponse, error) <span class="cov0" title="0">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return nil, ErrRoleNotFound
+        }</span>
+        <span class="cov0" title="0">role, err := s.q.Role.WithContext(ctx).Where(s.q.Role.ID.Eq(idNum)).First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrRoleNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+        <span class="cov0" title="0">return s.toDTO(role), nil</span>
+}
+
+func (s *RoleService) UpdateRole(ctx context.Context, id string, req *dto.RoleUpdateRequest) (*dto.RoleResponse, error) <span class="cov0" title="0">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return nil, ErrRoleNotFound
+        }</span>
+        <span class="cov0" title="0">r := s.q.Role
+        updates := make(map[string]interface{})
+
+        // 检查 display_name 是否需要更新以及唯一性（虽然数据库中没有强制唯一约束，但业务上建议保持唯一）
+        if req.DisplayName != "" </span><span class="cov0" title="0">{
+                // 检查 display_name 是否已存在（排除当前角色）
+                count, err := r.WithContext(ctx).Where(r.DisplayName.Eq(req.DisplayName), r.ID.Neq(idNum)).Count()
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                        return nil, ErrRoleNameAlreadyExists
+                }</span>
+                <span class="cov0" title="0">updates["display_name"] = req.DisplayName</span>
+        }
+
+        <span class="cov0" title="0">if req.Description != "" </span><span class="cov0" title="0">{
+                updates["description"] = req.Description
+        }</span>
+        <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                updates["is_active"] = *req.IsActive
+        }</span>
+
+        <span class="cov0" title="0">if len(updates) &gt; 0 </span><span class="cov0" title="0">{
+                result, err := r.WithContext(ctx).Where(r.ID.Eq(idNum)).Updates(updates)
+                if err != nil </span><span class="cov0" title="0">{
+                        return nil, err
+                }</span>
+                <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                        return nil, ErrRoleNotFound
+                }</span>
+        }
+
+        // 返回更新后的角色信息
+        <span class="cov0" title="0">return s.GetRoleByID(ctx, id)</span>
+}
+
+func (s *RoleService) DeleteRole(ctx context.Context, id string) error <span class="cov0" title="0">{
+        idNum, errConv := strconv.ParseInt(id, 10, 64)
+        if errConv != nil </span><span class="cov0" title="0">{
+                return ErrRoleNotFound
+        }</span>
+        <span class="cov0" title="0">r := s.q.Role
+        result, err := r.WithContext(ctx).Where(r.ID.Eq(idNum)).Delete()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if result.RowsAffected == 0 </span><span class="cov0" title="0">{
+                return ErrRoleNotFound
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+func (s *RoleService) toDTO(role *model.Role) *dto.RoleResponse <span class="cov0" title="0">{
+        return &amp;dto.RoleResponse{
+                ID:          role.ID,
+                Name:        role.Name,
+                DisplayName: role.DisplayName,
+                Description: role.Description,
+                IsActive:    role.IsActive,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/config"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "crm_lite/pkg/utils"
+        "errors"
+        "fmt"
+        "log"
+
+        "github.com/google/uuid"
+        "golang.org/x/crypto/bcrypt"
+        "gorm.io/gorm"
+)
+
+type UserService struct {
+        q        *query.Query
+        resource *resource.Manager // 添加 resource manager
+}
+
+func NewUserService(resManager *resource.Manager) *UserService <span class="cov0" title="0">{
+        db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get database resource for UserService: " + err.Error())</span>
+        }
+        <span class="cov0" title="0">return &amp;UserService{
+                q:        query.Use(db.DB),
+                resource: resManager, // 初始化 resource manager
+        }</span>
+}
+
+// GetUserByUUID 根据 UUID 获取单个用户详细信息
+func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.UserResponse, error) <span class="cov0" title="0">{
+        // 1. 查询用户基本信息
+        user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(uuid)).First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrUserNotFound
+                }</span>
+                <span class="cov0" title="0">return nil, fmt.Errorf("database query error: %w", err)</span>
+        }
+
+        // 2. 查询用户角色
+        <span class="cov0" title="0">var roles []string
+        err = s.q.Role.WithContext(ctx).
+                Select(s.q.Role.Name).
+                LeftJoin(s.q.AdminUserRole, s.q.AdminUserRole.RoleID.EqCol(s.q.Role.ID)).
+                Where(s.q.AdminUserRole.AdminUserID.Eq(user.ID)).
+                Scan(&amp;roles)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to query user roles: %w", err)
+        }</span>
+
+        // 3. 组装成 DTO 返回
+        <span class="cov0" title="0">return &amp;dto.UserResponse{
+                UUID:      user.UUID,
+                Username:  user.Username,
+                Email:     user.Email,
+                RealName:  user.RealName,
+                Phone:     user.Phone,
+                Avatar:    user.Avatar,
+                IsActive:  user.IsActive,
+                Roles:     roles,
+                CreatedAt: utils.FormatTime(user.CreatedAt),
+        }, nil</span>
+}
+
+// CreateUserByAdmin 管理员创建用户
+func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreateUserRequest) (*dto.UserResponse, error) <span class="cov0" title="0">{
+        // 使用事务确保原子性
+        var response *dto.UserResponse
+        err := s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // 1. 检查用户是否存在（包括软删除的）
+                var existingUser *model.AdminUser
+                // 使用 Unscoped() 来查找包括软删除在内的记录
+                existingUser, _ = tx.AdminUser.WithContext(ctx).Unscoped().
+                        Where(tx.AdminUser.Username.Eq(req.Username)).
+                        Or(tx.AdminUser.Email.Eq(req.Email)).
+                        Or(tx.AdminUser.Phone.Eq(req.Phone)).
+                        First()
+
+                var newUser *model.AdminUser
+
+                if existingUser != nil </span><span class="cov0" title="0">{
+                        // 如果用户存在
+                        if existingUser.DeletedAt.Valid </span><span class="cov0" title="0">{
+                                // a. 如果是软删除状态，则恢复并更新
+                                // 哈希新密码
+                                hashed, err_hash := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+                                if err_hash != nil </span><span class="cov0" title="0">{
+                                        return fmt.Errorf("failed to hash password: %w", err_hash)
+                                }</span>
+
+                                // 准备更新
+                                <span class="cov0" title="0">updates := map[string]interface{}{
+                                        "password_hash": string(hashed),
+                                        "real_name":     req.RealName,
+                                        "phone":         req.Phone,
+                                        "avatar":        req.Avatar,
+                                        "is_active":     true,
+                                        "deleted_at":    nil, // 恢复用户
+                                }
+                                if req.IsActive != nil </span><span class="cov0" title="0">{
+                                        updates["is_active"] = *req.IsActive
+                                }</span>
+                                <span class="cov0" title="0">if _, err_update := tx.AdminUser.WithContext(ctx).Unscoped().Where(tx.AdminUser.ID.Eq(existingUser.ID)).Updates(updates); err_update != nil </span><span class="cov0" title="0">{
+                                        return err_update
+                                }</span>
+                                <span class="cov0" title="0">newUser = existingUser // 后续处理角色时使用
+                                log.Printf("User %s restored and updated.", newUser.Username)</span>
+
+                        } else<span class="cov0" title="0"> {
+                                // b. 如果是正常状态，则返回错误
+                                if existingUser.Username == req.Username </span><span class="cov0" title="0">{
+                                        return ErrUserAlreadyExists
+                                }</span>
+                                <span class="cov0" title="0">if existingUser.Email == req.Email </span><span class="cov0" title="0">{
+                                        return ErrEmailAlreadyExists
+                                }</span>
+                                <span class="cov0" title="0">if existingUser.Phone == req.Phone </span><span class="cov0" title="0">{
+                                        return ErrPhoneAlreadyExists
+                                }</span>
+                        }
+                } else<span class="cov0" title="0"> {
+                        // 2. 如果用户不存在，则创建新用户
+                        hashed, err_hash := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+                        if err_hash != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to hash password: %w", err_hash)
+                        }</span>
+                        <span class="cov0" title="0">newUser = &amp;model.AdminUser{
+                                UUID:         uuid.New().String(),
+                                Username:     req.Username,
+                                Email:        req.Email,
+                                PasswordHash: string(hashed),
+                                RealName:     req.RealName,
+                                Phone:        req.Phone,
+                                Avatar:       req.Avatar,
+                        }
+                        if req.IsActive != nil </span><span class="cov0" title="0">{
+                                newUser.IsActive = *req.IsActive
+                        }</span> else<span class="cov0" title="0"> {
+                                newUser.IsActive = true // 默认激活
+                        }</span>
+                        <span class="cov0" title="0">if err_create := tx.AdminUser.WithContext(ctx).Create(newUser); err_create != nil </span><span class="cov0" title="0">{
+                                return err_create
+                        }</span>
+                }
+
+                // 3. 处理角色关联 (无论是创建还是恢复)
+                // a. 获取默认角色并添加到待处理的角色列表中
+                <span class="cov0" title="0">defaultRoleName := config.GetInstance().Auth.DefaultRole
+                finalRoleIDs := make([]int64, 0, len(req.RoleIDs)+1)
+                if len(req.RoleIDs) &gt; 0 </span><span class="cov0" title="0">{
+                        finalRoleIDs = append(finalRoleIDs, req.RoleIDs...)
+                }</span>
+
+                <span class="cov0" title="0">if defaultRoleName != "" </span><span class="cov0" title="0">{
+                        defaultRole, err_role := tx.Role.WithContext(ctx).Where(tx.Role.Name.Eq(defaultRoleName)).First()
+                        if err_role != nil &amp;&amp; !errors.Is(err_role, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to find default role: %w", err_role)
+                        }</span>
+                        // 如果默认角色存在，则添加其ID
+                        <span class="cov0" title="0">if defaultRole != nil </span><span class="cov0" title="0">{
+                                // 避免重复添加
+                                isDefaultRolePresent := false
+                                for _, id := range finalRoleIDs </span><span class="cov0" title="0">{
+                                        if id == defaultRole.ID </span><span class="cov0" title="0">{
+                                                isDefaultRolePresent = true
+                                                break</span>
+                                        }
+                                }
+                                <span class="cov0" title="0">if !isDefaultRolePresent </span><span class="cov0" title="0">{
+                                        finalRoleIDs = append(finalRoleIDs, defaultRole.ID)
+                                }</span>
+                        }
+                }
+
+                // b. 先删除旧的角色关联
+                <span class="cov0" title="0">if _, err_del_roles := tx.AdminUserRole.WithContext(ctx).Where(tx.AdminUserRole.AdminUserID.Eq(newUser.ID)).Delete(); err_del_roles != nil </span><span class="cov0" title="0">{
+                        return err_del_roles
+                }</span>
+                // c. 再添加新的角色关联
+                <span class="cov0" title="0">if len(finalRoleIDs) &gt; 0 </span><span class="cov0" title="0">{
+                        roles := make([]*model.AdminUserRole, 0, len(finalRoleIDs))
+                        for _, roleID := range finalRoleIDs </span><span class="cov0" title="0">{
+                                roles = append(roles, &amp;model.AdminUserRole{
+                                        AdminUserID: newUser.ID,
+                                        RoleID:      roleID,
+                                })
+                        }</span>
+                        <span class="cov0" title="0">if err_create_roles := tx.AdminUserRole.WithContext(ctx).Create(roles...); err_create_roles != nil </span><span class="cov0" title="0">{
+                                return err_create_roles
+                        }</span>
+                }
+
+                // 4. 更新 Casbin (非事务性，放在最后)
+                <span class="cov0" title="0">casbinRes, err_casbin := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+                if err_casbin != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to get casbin resource for role update: %w", err_casbin)
+                }</span>
+                <span class="cov0" title="0">enforcer := casbinRes.GetEnforcer()
+                // 先删除旧角色
+                if _, err_del_casbin := enforcer.DeleteRolesForUser(newUser.UUID); err_del_casbin != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to delete old roles from casbin: %w", err_del_casbin)
+                }</span>
+
+                <span class="cov0" title="0">var roles_to_add []string
+                // 再添加新角色
+                if len(finalRoleIDs) &gt; 0 </span><span class="cov0" title="0">{
+                        role_models, err_find_roles := tx.Role.WithContext(ctx).Where(tx.Role.ID.In(finalRoleIDs...)).Find()
+                        if err_find_roles != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to find roles by ids: %w", err_find_roles)
+                        }</span>
+                        <span class="cov0" title="0">if len(role_models) != len(finalRoleIDs) </span><span class="cov0" title="0">{
+                                return ErrRoleNotFound
+                        }</span>
+
+                        <span class="cov0" title="0">for _, r_model := range role_models </span><span class="cov0" title="0">{
+                                roles_to_add = append(roles_to_add, r_model.Name)
+                        }</span>
+                        <span class="cov0" title="0">if len(roles_to_add) &gt; 0 </span><span class="cov0" title="0">{
+                                if _, err_add_casbin := enforcer.AddRolesForUser(newUser.UUID, roles_to_add); err_add_casbin != nil </span><span class="cov0" title="0">{
+                                        return fmt.Errorf("failed to add new roles to casbin: %w", err_add_casbin)
+                                }</span>
+                        }
+                }
+
+                // 5. 准备返回数据 - 直接在事务内组装，不进行额外查询
+                <span class="cov0" title="0">response = &amp;dto.UserResponse{
+                        UUID:      newUser.UUID,
+                        Username:  newUser.Username,
+                        Email:     newUser.Email,
+                        RealName:  newUser.RealName,
+                        Phone:     newUser.Phone,
+                        Avatar:    newUser.Avatar,
+                        IsActive:  newUser.IsActive,
+                        Roles:     roles_to_add,
+                        CreatedAt: utils.FormatTime(newUser.CreatedAt),
+                }
+                return nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to create or restore user in transaction: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return response, nil</span>
+}
+
+// ListUsers 获取用户列表（带分页和筛选）
+func (s *UserService) ListUsers(ctx context.Context, req *dto.UserListRequest) (*dto.UserListResponse, error) <span class="cov0" title="0">{
+        q := s.q.AdminUser.WithContext(ctx)
+
+        // 优先处理批量UUID查询
+        if len(req.UUIDs) &gt; 0 </span><span class="cov0" title="0">{
+                q = q.Where(s.q.AdminUser.UUID.In(req.UUIDs...))
+        }</span> else<span class="cov0" title="0"> {
+                // 构建常规查询条件
+                if req.Username != "" </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.AdminUser.Username.Like("%" + req.Username + "%"))
+                }</span>
+                <span class="cov0" title="0">if req.Email != "" </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.AdminUser.Email.Eq(req.Email))
+                }</span>
+                <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                        q = q.Where(s.q.AdminUser.IsActive.Is(*req.IsActive))
+                }</span>
+        }
+
+        // 获取总数
+        <span class="cov0" title="0">total, err := q.Count()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 分页查询
+        <span class="cov0" title="0">var users []*model.AdminUser
+        if len(req.UUIDs) == 0 </span><span class="cov0" title="0">{
+                users, err = q.Limit(req.PageSize).Offset((req.Page - 1) * req.PageSize).Find()
+        }</span> else<span class="cov0" title="0"> {
+                // 如果是批量查询，则不使用分页，返回所有匹配的用户
+                users, err = q.Find()
+        }</span>
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // 组装响应
+        <span class="cov0" title="0">userResponses := make([]*dto.UserResponse, 0, len(users))
+        if len(users) &gt; 0 </span><span class="cov0" title="0">{
+                userIDs := make([]int64, len(users))
+                for i, u := range users </span><span class="cov0" title="0">{
+                        userIDs[i] = u.ID
+                }</span>
+
+                // 一次性查询所有用户的角色
+                <span class="cov0" title="0">type UserRole struct {
+                        AdminUserID int64
+                        RoleName    string
+                }
+                var userRoles []UserRole
+                s.q.Role.WithContext(ctx).
+                        Select(s.q.AdminUserRole.AdminUserID, s.q.Role.Name.As("role_name")).
+                        LeftJoin(s.q.AdminUserRole, s.q.AdminUserRole.RoleID.EqCol(s.q.Role.ID)).
+                        Where(s.q.AdminUserRole.AdminUserID.In(userIDs...)).
+                        Scan(&amp;userRoles)
+
+                // 将角色按用户ID分组
+                rolesMap := make(map[int64][]string, len(users))
+                for _, ur := range userRoles </span><span class="cov0" title="0">{
+                        rolesMap[ur.AdminUserID] = append(rolesMap[ur.AdminUserID], ur.RoleName)
+                }</span>
+
+                <span class="cov0" title="0">for _, u := range users </span><span class="cov0" title="0">{
+                        userResponses = append(userResponses, &amp;dto.UserResponse{
+                                UUID:      u.UUID,
+                                Username:  u.Username,
+                                Email:     u.Email,
+                                RealName:  u.RealName,
+                                Phone:     u.Phone,
+                                Avatar:    u.Avatar,
+                                IsActive:  u.IsActive,
+                                Roles:     rolesMap[u.ID], // 从 map 中获取角色
+                                CreatedAt: utils.FormatTime(u.CreatedAt),
+                        })
+                }</span>
+        }
+
+        <span class="cov0" title="0">return &amp;dto.UserListResponse{
+                Total: total,
+                Users: userResponses,
+        }, nil</span>
+}
+
+// UpdateUserByAdmin 管理员更新用户信息
+func (s *UserService) UpdateUserByAdmin(ctx context.Context, uuid_str string, req *dto.AdminUpdateUserRequest) (*dto.UserResponse, error) <span class="cov0" title="0">{
+        err := s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // 0. 在事务中根据 uuid 获取用户实体，确保数据一致性并获取主键ID
+                user, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                                return ErrUserNotFound
+                        }</span>
+                        <span class="cov0" title="0">return fmt.Errorf("finding user by uuid failed: %w", err)</span>
+                }
+
+                // 1. 更新用户信息
+                <span class="cov0" title="0">updates := make(map[string]interface{})
+                if req.Email != "" </span><span class="cov0" title="0">{
+                        updates["email"] = req.Email
+                }</span>
+                <span class="cov0" title="0">if req.RealName != "" </span><span class="cov0" title="0">{
+                        updates["real_name"] = req.RealName
+                }</span>
+                <span class="cov0" title="0">if req.Phone != "" </span><span class="cov0" title="0">{
+                        updates["phone"] = req.Phone
+                }</span>
+                <span class="cov0" title="0">if req.Avatar != "" </span><span class="cov0" title="0">{
+                        updates["avatar"] = req.Avatar
+                }</span>
+                <span class="cov0" title="0">if req.IsActive != nil </span><span class="cov0" title="0">{
+                        updates["is_active"] = *req.IsActive
+                }</span>
+
+                // 2. 检查 email 和 phone 的唯一性（排除软删除的记录）
+                <span class="cov0" title="0">if req.Email != "" </span><span class="cov0" title="0">{
+                        count, err := tx.AdminUser.WithContext(ctx).
+                                Where(tx.AdminUser.Email.Eq(req.Email), tx.AdminUser.UUID.Neq(uuid_str)).
+                                Where(tx.AdminUser.DeletedAt.IsNull()).
+                                Count()
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                                return ErrEmailAlreadyExists
+                        }</span>
+                        <span class="cov0" title="0">updates["email"] = req.Email</span>
+                }
+                <span class="cov0" title="0">if req.Phone != "" </span><span class="cov0" title="0">{
+                        count, err := tx.AdminUser.WithContext(ctx).
+                                Where(tx.AdminUser.Phone.Eq(req.Phone), tx.AdminUser.UUID.Neq(uuid_str)).
+                                Where(tx.AdminUser.DeletedAt.IsNull()).
+                                Count()
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov0" title="0">if count &gt; 0 </span><span class="cov0" title="0">{
+                                return ErrPhoneAlreadyExists
+                        }</span>
+                        <span class="cov0" title="0">updates["phone"] = req.Phone</span>
+                }
+
+                <span class="cov0" title="0">if len(updates) &gt; 0 </span><span class="cov0" title="0">{
+                        if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Updates(updates); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                }
+
+                // 3. 更新数据库中的角色关联 (如果请求中包含了 RoleIDs)
+                <span class="cov0" title="0">if req.RoleIDs != nil </span><span class="cov0" title="0">{
+                        // a. 先删除旧的角色关联
+                        if _, err := tx.AdminUserRole.WithContext(ctx).Where(tx.AdminUserRole.AdminUserID.Eq(user.ID)).Delete(); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to delete old user roles from db: %w", err)
+                        }</span>
+                        // b. 再添加新的角色关联
+                        <span class="cov0" title="0">if len(req.RoleIDs) &gt; 0 </span><span class="cov0" title="0">{
+                                newRoles := make([]*model.AdminUserRole, len(req.RoleIDs))
+                                for i, roleID := range req.RoleIDs </span><span class="cov0" title="0">{
+                                        newRoles[i] = &amp;model.AdminUserRole{AdminUserID: user.ID, RoleID: roleID}
+                                }</span>
+                                <span class="cov0" title="0">if err := tx.AdminUserRole.WithContext(ctx).Create(newRoles...); err != nil </span><span class="cov0" title="0">{
+                                        return fmt.Errorf("failed to create new user roles in db: %w", err)
+                                }</span>
+                        }
+                }
+
+                // 4. 更新 Casbin 中的角色策略 (如果请求中包含了 RoleIDs)
+                // 注意: Casbin 的操作不是事务性的，如果这里失败，前面的数据库更新会回滚。
+                <span class="cov0" title="0">if req.RoleIDs != nil </span><span class="cov0" title="0">{
+                        casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to get casbin resource for role update: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">enforcer := casbinRes.GetEnforcer()
+
+                        // a. 先删除用户的所有旧角色
+                        if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to delete old roles for user from casbin: %w", err)
+                        }</span>
+
+                        // b. 再添加新角色
+                        <span class="cov0" title="0">if len(req.RoleIDs) &gt; 0 </span><span class="cov0" title="0">{
+                                role_models, err := tx.Role.WithContext(ctx).Where(tx.Role.ID.In(req.RoleIDs...)).Find()
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return fmt.Errorf("failed to find roles by ids from db: %w", err)
+                                }</span>
+                                <span class="cov0" title="0">if len(role_models) != len(req.RoleIDs) </span><span class="cov0" title="0">{
+                                        return ErrRoleNotFound // 如果提供的某些RoleID无效
+                                }</span>
+
+                                <span class="cov0" title="0">var roles_to_add []string
+                                for _, r_model := range role_models </span><span class="cov0" title="0">{
+                                        roles_to_add = append(roles_to_add, r_model.Name)
+                                }</span>
+
+                                <span class="cov0" title="0">if len(roles_to_add) &gt; 0 </span><span class="cov0" title="0">{
+                                        if _, err := enforcer.AddRolesForUser(uuid_str, roles_to_add); err != nil </span><span class="cov0" title="0">{
+                                                return fmt.Errorf("failed to add new roles for user to casbin: %w", err)
+                                        }</span>
+                                }
+                        }
+                }
+                <span class="cov0" title="0">return nil</span>
+        })
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to update user in transaction: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return s.GetUserByUUID(ctx, uuid_str)</span>
+}
+
+// DeleteUser 删除用户
+func (s *UserService) DeleteUser(ctx context.Context, uuid_str string) error <span class="cov0" title="0">{
+        // 在删除用户时，也应该清理其在 Casbin 中的角色和权限信息
+        casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to get casbin resource for user deletion: %w", err)
+        }</span>
+        <span class="cov0" title="0">enforcer := casbinRes.GetEnforcer()
+
+        // 开启事务
+        return s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // 1. 从数据库中删除用户
+                if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Delete(); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // 2. 从 Casbin 中删除该用户的所有角色关联 (g policies)
+                <span class="cov0" title="0">if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil </span><span class="cov0" title="0">{
+                        // 注意：这里如果失败，数据库的用户记录已删除。
+                        // 这是一个需要权衡的地方。可以选择忽略这个错误，或者记录日志。
+                        log.Printf("Warn: failed to delete user roles from casbin for user %s, but user was deleted from db. manual cleanup may be needed. Error: %v", uuid_str, err)
+                }</span>
+
+                // 3. (可选) 删除以该用户为主体的权限策略 (p policies)
+                // 通常用户是通过角色获得权限的，直接赋予用户的权限较少。
+                // 如果有这种场景，需要执行 enforcer.DeletePermissionsForUser(uuid_str)
+                // 当前设计中，我们假设权限都与角色挂钩，所以这一步省略。
+
+                <span class="cov0" title="0">return nil</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package service
+
+import (
+        "context"
+        "crm_lite/internal/core/resource"
+        "crm_lite/internal/dao/model"
+        "crm_lite/internal/dao/query"
+        "crm_lite/internal/dto"
+        "errors"
+
+        "gorm.io/gorm"
+)
+
+// IWalletService 定义了钱包服务的接口
+type IWalletService interface {
+        CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error)
+        CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error
+        GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error)
+}
+
+// WalletService 提供了钱包相关的服务
+type WalletService struct {
+        q        *query.Query
+        resource *resource.Manager
+}
+
+// NewWalletService 创建一个新的 WalletService
+func NewWalletService(resManager *resource.Manager) IWalletService <span class="cov8" title="1">{
+        db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+        if err != nil </span><span class="cov0" title="0">{
+                panic("Failed to get database resource for WalletService: " + err.Error())</span>
+        }
+        <span class="cov8" title="1">return &amp;WalletService{
+                q:        query.Use(db.DB),
+                resource: resManager,
+        }</span>
+}
+
+// CreateWallet 为指定客户创建钱包（如果尚不存在）
+func (s *WalletService) CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error) <span class="cov8" title="1">{
+        // 默认创建 balance 类型的钱包
+        if walletType == "" </span><span class="cov0" title="0">{
+                walletType = "balance"
+        }</span>
+
+        // 检查钱包是否已存在，确保幂等性
+        <span class="cov8" title="1">existingWallet, err := s.q.Wallet.WithContext(ctx).
+                Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq(walletType)).
+                First()
+
+        if err == nil </span><span class="cov0" title="0">{
+                // 钱包已存在，直接返回
+                return existingWallet, nil
+        }</span> else<span class="cov8" title="1"> if !errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                // 其他数据库错误
+                return nil, err
+        }</span>
+
+        // 钱包不存在，创建新的钱包
+        <span class="cov8" title="1">newWallet := &amp;model.Wallet{
+                CustomerID: customerID,
+                Type:       walletType,
+                Balance:    0, // 初始余额为0
+        }
+
+        if err := s.q.Wallet.WithContext(ctx).Create(newWallet); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return newWallet, nil</span>
+}
+
+func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error <span class="cov0" title="0">{
+        // 不再在此处做权限检查，权限由中间件保证
+
+        // 1. 校验客户是否存在
+        customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(customerID)).First()
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return ErrCustomerNotFound
+                }</span>
+                <span class="cov0" title="0">return err</span>
+        }
+        <span class="cov0" title="0">_ = customer // 当前逻辑中仅验证存在性，可根据需要扩展
+
+        // 2. 在事务中执行交易
+        return s.q.Transaction(func(tx *query.Query) error </span><span class="cov0" title="0">{
+                // a. 锁定钱包记录以防止并发问题
+                wallet, err := tx.Wallet.WithContext(ctx).
+                        Where(tx.Wallet.CustomerID.Eq(customerID), tx.Wallet.Type.Eq("balance")).
+                        First()
+                if err != nil </span><span class="cov0" title="0">{
+                        if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                                return ErrWalletNotFound
+                        }</span>
+                        <span class="cov0" title="0">return err</span>
+                }
+
+                // b. 计算新余额和交易金额
+                <span class="cov0" title="0">balanceBefore := wallet.Balance
+                var transactionAmount float64
+                var newBalance float64
+                var newTotalConsumed float64 = wallet.TotalConsumed
+                var newTotalRecharged float64 = wallet.TotalRecharged
+
+                switch req.Type </span>{
+                case "consume":<span class="cov0" title="0">
+                        transactionAmount = -req.Amount
+                        newBalance = balanceBefore - req.Amount
+                        newTotalConsumed += req.Amount
+                        if newBalance &lt; 0 </span><span class="cov0" title="0">{
+                                return ErrInsufficientBalance
+                        }</span>
+                case "recharge":<span class="cov0" title="0">
+                        transactionAmount = req.Amount
+                        newBalance = balanceBefore + req.Amount
+                        newTotalRecharged += req.Amount</span>
+                default:<span class="cov0" title="0">
+                        return errors.New("unsupported transaction type")</span>
+                }
+
+                // c. 创建交易记录
+                <span class="cov0" title="0">transaction := &amp;model.WalletTransaction{
+                        WalletID:      wallet.ID,
+                        Type:          req.Type,
+                        Amount:        transactionAmount,
+                        BalanceBefore: balanceBefore,
+                        BalanceAfter:  newBalance,
+                        Source:        req.Source,
+                        RelatedID:     req.RelatedID,
+                        Remark:        req.Remark,
+                        OperatorID:    operatorID,
+                }
+                if err := tx.WalletTransaction.WithContext(ctx).Create(transaction); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // d. 更新钱包余额和累计数据
+                <span class="cov0" title="0">_, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
+                        Updates(map[string]interface{}{
+                                "balance":         newBalance,
+                                "total_consumed":  newTotalConsumed,
+                                "total_recharged": newTotalRecharged,
+                        })
+                return err</span>
+        })
+}
+
+// GetWalletByCustomerID 获取指定客户的钱包信息
+func (s *WalletService) GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error) <span class="cov0" title="0">{
+        wallet, err := s.q.Wallet.WithContext(ctx).
+                Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq("balance")).
+                First()
+
+        if err != nil </span><span class="cov0" title="0">{
+                if errors.Is(err, gorm.ErrRecordNotFound) </span><span class="cov0" title="0">{
+                        return nil, ErrWalletNotFound // 自定义错误
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov0" title="0">return s.toWalletResponse(wallet), nil</span>
+}
+
+// toWalletResponse 将 model.Wallet 转换为 dto.WalletResponse
+func (s *WalletService) toWalletResponse(wallet *model.Wallet) *dto.WalletResponse <span class="cov0" title="0">{
+        return &amp;dto.WalletResponse{
+                ID:             wallet.ID,
+                CustomerID:     wallet.CustomerID,
+                Type:           wallet.Type,
+                Balance:        wallet.Balance,
+                FrozenBalance:  wallet.FrozenBalance,
+                TotalRecharged: wallet.TotalRecharged,
+                TotalConsumed:  wallet.TotalConsumed,
+                CreatedAt:      wallet.CreatedAt,
+                UpdatedAt:      wallet.UpdatedAt,
+        }
+}</span>
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

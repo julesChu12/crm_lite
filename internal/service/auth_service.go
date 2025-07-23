@@ -19,97 +19,124 @@ import (
 	"gorm.io/gorm"
 )
 
-type AuthService struct {
-	q        *query.Query
-	resource *resource.Manager
-	opts     *config.Options
-	emailSvc *EmailService
+// IAuthRepo 定义了认证相关的数据库操作
+type IAuthRepo interface {
+	FindByUsername(ctx context.Context, username string) (*model.AdminUser, error)
+	FindByEmail(ctx context.Context, email string) (*model.AdminUser, error)
+	FindByUUID(ctx context.Context, uuid string) (*model.AdminUser, error)
+	Create(ctx context.Context, user *model.AdminUser) error
+	UpdatePassword(ctx context.Context, userID, hashedPassword string) (int64, error)
+	Save(ctx context.Context, user *model.AdminUser) error
 }
 
-func NewAuthService(resManager *resource.Manager) *AuthService {
-	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
-	if err != nil {
-		panic("Failed to get database resource for AuthService: " + err.Error())
-	}
+// IAuthCache 定义了认证相关的缓存操作
+type IAuthCache interface {
+	SetBlacklist(ctx context.Context, jti string, ttl time.Duration) error
+	SetResetToken(ctx context.Context, token, userID string, ttl time.Duration) error
+	GetResetToken(ctx context.Context, token string) (string, error)
+	DeleteResetToken(ctx context.Context, token string) error
+}
 
-	// 从资源管理器获取邮件配置
-	emailRes, err := resource.Get[*resource.EmailResource](resManager, resource.EmailServiceKey)
-	var emailSvc *EmailService
-	if err == nil {
-		// 如果邮件资源存在，则创建邮件服务实例
-		emailSvc = NewEmailService(emailRes.Opts)
-	}
+// authRepo 实现了 IAuthRepo
+type authRepo struct {
+	q *query.Query
+}
 
+func NewAuthRepo(db *gorm.DB) IAuthRepo {
+	return &authRepo{q: query.Use(db)}
+}
+
+func (r *authRepo) FindByUsername(ctx context.Context, username string) (*model.AdminUser, error) {
+	return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.Username.Eq(username)).First()
+}
+func (r *authRepo) FindByEmail(ctx context.Context, email string) (*model.AdminUser, error) {
+	return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.Email.Eq(email)).First()
+}
+func (r *authRepo) FindByUUID(ctx context.Context, uuid string) (*model.AdminUser, error) {
+	return r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.UUID.Eq(uuid)).First()
+}
+func (r *authRepo) Create(ctx context.Context, user *model.AdminUser) error {
+	return r.q.AdminUser.WithContext(ctx).Create(user)
+}
+func (r *authRepo) UpdatePassword(ctx context.Context, userID, hashedPassword string) (int64, error) {
+	result, err := r.q.AdminUser.WithContext(ctx).Where(r.q.AdminUser.UUID.Eq(userID)).Update(r.q.AdminUser.PasswordHash, hashedPassword)
+	return result.RowsAffected, err
+}
+func (r *authRepo) Save(ctx context.Context, user *model.AdminUser) error {
+	return r.q.AdminUser.WithContext(ctx).Save(user)
+}
+
+// authCache 实现了 IAuthCache
+type authCache struct {
+	client *resource.CacheResource
+}
+
+func NewAuthCache(client *resource.CacheResource) IAuthCache {
+	return &authCache{client: client}
+}
+func (c *authCache) SetBlacklist(ctx context.Context, jti string, ttl time.Duration) error {
+	return c.client.Client.Set(ctx, "jti:"+jti, "blacklisted", ttl).Err()
+}
+func (c *authCache) SetResetToken(ctx context.Context, token, userID string, ttl time.Duration) error {
+	return c.client.Client.Set(ctx, "reset_token:"+token, userID, ttl).Err()
+}
+func (c *authCache) GetResetToken(ctx context.Context, token string) (string, error) {
+	return c.client.Client.Get(ctx, "reset_token:"+token).Result()
+}
+func (c *authCache) DeleteResetToken(ctx context.Context, token string) error {
+	return c.client.Client.Del(ctx, "reset_token:"+token).Err()
+}
+
+type AuthService struct {
+	repo     IAuthRepo
+	cache    IAuthCache
+	emailSvc IEmailService // 假设 EmailService 也有一个接口
+	casbin   *resource.CasbinResource
+	opts     *config.Options
+}
+
+func NewAuthService(repo IAuthRepo, cache IAuthCache, emailSvc IEmailService, casbin *resource.CasbinResource, opts *config.Options) *AuthService {
 	return &AuthService{
-		q:        query.Use(db.DB),
-		resource: resManager,
-		opts:     config.GetInstance(),
+		repo:     repo,
+		cache:    cache,
 		emailSvc: emailSvc,
+		casbin:   casbin,
+		opts:     opts,
 	}
 }
 
 // Logout 将JWT加入黑名单
 func (s *AuthService) Logout(ctx context.Context, claims *utils.CustomClaims) error {
-	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
-	if err != nil {
-		return fmt.Errorf("failed to get cache resource: %w", err)
-	}
-
-	// 计算剩余过期时间
 	expiresAt := claims.ExpiresAt.Time
 	ttl := time.Until(expiresAt)
-
-	// 如果 token 已经过期，则无需操作
 	if ttl <= 0 {
 		return nil
 	}
-
-	// JTI（JWT ID）是令牌的唯一标识符
-	// 我们用 "jti:" 作为前缀，便于管理
-	err = cache.Client.Set(ctx, "jti:"+claims.ID, "blacklisted", ttl).Err()
-	if err != nil {
-		return fmt.Errorf("failed to add token to blacklist: %w", err)
-	}
-	return nil
+	return s.cache.SetBlacklist(ctx, claims.ID, ttl)
 }
 
 // RefreshToken 刷新令牌
 func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.LoginResponse, error) {
-	// 1. 解析 Refresh Token
-	claims, err := utils.ParseToken(req.RefreshToken)
+	claims, err := utils.ParseToken(req.RefreshToken, s.opts.Auth.JWTOptions)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
-
-	// 2. 检查黑名单（如果需要，登出时也可以将 RefreshToken 加入黑名单）
-	// 此处简化，不检查 refreshToken 的黑名单
-
-	// 3. 验证用户是否存在
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(claims.UserID)).First()
+	user, err := s.repo.FindByUUID(ctx, claims.UserID)
 	if err != nil {
 		return nil, ErrUserNotFound
 	}
 
-	// 3.5. 重新获取用户最新角色信息
-	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
-	}
-	enforcer := casbinRes.GetEnforcer()
-
+	enforcer := s.casbin.GetEnforcer()
 	roles, err := enforcer.GetRolesForUser(user.UUID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
 	}
 
-	// 4. 生成新的 Access Token 和 Refresh Token
-	// 为安全起见，通常刷新操作也会轮换 Refresh Token
 	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
 	}
 
-	// 5. 返回响应
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -120,10 +147,8 @@ func (s *AuthService) RefreshToken(ctx context.Context, req *dto.RefreshTokenReq
 
 // ForgotPassword 处理忘记密码请求
 func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswordRequest) error {
-	// 1. 查找用户
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Email.Eq(req.Email)).First()
+	user, err := s.repo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		// 即使找不到用户，也返回 nil，避免泄露用户信息
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			logger.Warn("Password reset requested for non-existent email", zap.String("email", req.Email))
 			return nil
@@ -131,134 +156,72 @@ func (s *AuthService) ForgotPassword(ctx context.Context, req *dto.ForgotPasswor
 		return err
 	}
 
-	// 2. 生成一个安全的重置令牌
 	resetToken := uuid.New().String()
-	cacheKey := "reset_token:" + resetToken
-
-	// 3. 将令牌存入 Redis，并设置一个较短的过期时间（例如 15 分钟）
-	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
-	if err != nil {
-		return fmt.Errorf("failed to get cache resource: %w", err)
-	}
 	ttl := 15 * time.Minute
-	err = cache.Client.Set(ctx, cacheKey, user.UUID, ttl).Err()
-	if err != nil {
+	if err := s.cache.SetResetToken(ctx, resetToken, user.UUID, ttl); err != nil {
 		return fmt.Errorf("failed to store reset token: %w", err)
 	}
 
-	// 4. 发送邮件
 	if s.emailSvc == nil {
 		logger.Error("Email service is not configured, cannot send password reset email.")
-		// 在邮件服务未配置时，可以选择返回错误或仅记录日志
-		// 为避免影响核心功能，此处仅记录日志
 		return nil
 	}
 
 	subject := "Reset Your Password"
-	// 在真实项目中，这里应该使用 HTML 模板
-	body := fmt.Sprintf(`
-		<p>Hi,</p>
-		<p>You requested to reset your password. Please use the following token to proceed:</p>
-		<p><b>%s</b></p>
-		<p>This token is valid for 15 minutes.</p>
-		<p>If you did not request a password reset, please ignore this email.</p>
-		<p>Thanks,<br>CRM Lite Team</p>
-	`, resetToken)
+	body := fmt.Sprintf(`<p>Your password reset token is: <b>%s</b></p>`, resetToken)
 
 	if err := s.emailSvc.SendMail(req.Email, subject, body); err != nil {
 		logger.Error("Failed to send password reset email", zap.Error(err), zap.String("email", req.Email))
-		// 即使邮件发送失败，也可能不希望将错误暴露给前端，以防范邮箱探测
 		return nil
 	}
-
-	logger.Info("Password reset email sent successfully", zap.String("email", req.Email))
-
 	return nil
 }
 
 // ResetPassword 使用令牌重置密码
 func (s *AuthService) ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error {
-	// 1. 验证重置令牌
-	cacheKey := "reset_token:" + req.Token
-	cache, err := resource.Get[*resource.CacheResource](s.resource, resource.CacheServiceKey)
+	userID, err := s.cache.GetResetToken(ctx, req.Token)
 	if err != nil {
-		return fmt.Errorf("failed to get cache resource: %w", err)
+		return ErrInvalidToken
 	}
 
-	userID, err := cache.Client.Get(ctx, cacheKey).Result()
-	if err != nil {
-		return ErrInvalidToken // 令牌不存在或已过期
-	}
-
-	// 2. 哈希新密码
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 
-	// 3. 更新数据库中的密码
-	result, err := s.q.AdminUser.WithContext(ctx).
-		Where(s.q.AdminUser.UUID.Eq(userID)).
-		Update(s.q.AdminUser.PasswordHash, string(hashed))
+	rowsAffected, err := s.repo.UpdatePassword(ctx, userID, string(hashed))
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrUserNotFound
 	}
-
-	// 4. 删除已使用的令牌
-	_ = cache.Client.Del(ctx, cacheKey).Err()
-
+	_ = s.cache.DeleteResetToken(ctx, req.Token)
 	return nil
 }
 
 // Login 处理用户登录逻辑
 func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.LoginResponse, error) {
-	// 1. 根据用户名查找用户
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Username.Eq(req.Username)).First()
+	user, err := s.repo.FindByUsername(ctx, req.Username)
 	if err != nil {
-		fmt.Printf("User not found: %v\n", err)
 		return nil, ErrUserNotFound
 	}
 
-	fmt.Printf("Login attempt details:\n")
-	fmt.Printf("- Username: %s\n", user.Username)
-	fmt.Printf("- Stored Hash: %s\n", user.PasswordHash)
-	fmt.Printf("- Input Password: %s\n", req.Password)
-	fmt.Printf("- Hash Format: %s (algorithm), %s (cost), %s (salt+hash)\n",
-		user.PasswordHash[0:4], // $2a$
-		user.PasswordHash[4:6], // 10
-		user.PasswordHash[6:],  // 剩余部分
-	)
-
-	// 2. 验证密码 - 注意字段名是 PasswordHash
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		fmt.Printf("Password verification failed: %v\n", err)
 		return nil, ErrInvalidPassword
 	}
 
-	fmt.Printf("Password verification successful!\n")
-
-	// 3. 查询用户角色 - 从 Casbin enforcer 中获取
-	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
-	}
-	enforcer := casbinRes.GetEnforcer()
-
+	enforcer := s.casbin.GetEnforcer()
 	roles, err := enforcer.GetRolesForUser(user.UUID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
 	}
 
-	// 4. 生成JWT
 	accessToken, refreshToken, err := utils.GenerateTokens(user.UUID, user.Username, roles)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. 返回响应
 	return &dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -269,22 +232,19 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Lo
 
 // Register 用户注册
 func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) error {
-	// 1. 检查用户名是否存在
-	_, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.Username.Eq(req.Username)).First()
+	_, err := s.repo.FindByUsername(ctx, req.Username)
 	if err == nil {
 		return ErrUserAlreadyExists
 	}
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err // 其他数据库错误
+		return err
 	}
 
-	// 2. 生成密码哈希
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
-	// 3. 创建用户
 	user := &model.AdminUser{
 		UUID:         uuid.New().String(),
 		Username:     req.Username,
@@ -294,22 +254,17 @@ func (s *AuthService) Register(ctx context.Context, req *dto.RegisterRequest) er
 		IsActive:     true,
 	}
 
-	if err := s.q.AdminUser.WithContext(ctx).Create(user); err != nil {
-		return err
-	}
-	return nil
+	return s.repo.Create(ctx, user)
 }
 
-// UpdateProfile 更新用户信息（示例）
+// UpdateProfile 更新用户信息
 func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequest) error {
-	// 1. 获取当前用户ID（应由上游中间件注入到 ctx）
 	userID, ok := utils.GetUserID(ctx)
 	if !ok || userID == "" {
 		return ErrUserNotFound
 	}
 
-	// 2. 查询用户
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.repo.FindByUUID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrUserNotFound
@@ -317,7 +272,6 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 		return err
 	}
 
-	// 3. 更新字段
 	if req.RealName != "" {
 		user.RealName = req.RealName
 	}
@@ -328,13 +282,12 @@ func (s *AuthService) UpdateProfile(ctx context.Context, req *dto.UpdateUserRequ
 		user.Avatar = req.Avatar
 	}
 
-	return s.q.AdminUser.WithContext(ctx).Save(user)
+	return s.repo.Save(ctx, user)
 }
 
 // GetProfile 获取当前登录用户的个人资料
 func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserResponse, error) {
-	// 1. 查询用户基本信息
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.repo.FindByUUID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrUserNotFound
@@ -342,19 +295,12 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserR
 		return nil, fmt.Errorf("database query error: %w", err)
 	}
 
-	// 2. 查询用户角色 - 从 Casbin enforcer 中获取
-	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get casbin resource: %w", err)
-	}
-	enforcer := casbinRes.GetEnforcer()
-
+	enforcer := s.casbin.GetEnforcer()
 	roles, err := enforcer.GetRolesForUser(user.UUID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query user roles from casbin: %w", err)
 	}
 
-	// 3. 组装 DTO
 	return &dto.UserResponse{
 		UUID:      user.UUID,
 		Username:  user.Username,
@@ -370,31 +316,25 @@ func (s *AuthService) GetProfile(ctx context.Context, userID string) (*dto.UserR
 
 // ChangePassword 修改密码
 func (s *AuthService) ChangePassword(ctx context.Context, userID string, req *dto.ChangePasswordRequest) error {
-	// 1. 查询用户
-	user, err := s.q.AdminUser.WithContext(ctx).Where(s.q.AdminUser.UUID.Eq(userID)).First()
+	user, err := s.repo.FindByUUID(ctx, userID)
 	if err != nil {
 		return ErrUserNotFound
 	}
 
-	// 2. 验证旧密码
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.OldPassword)); err != nil {
 		return ErrInvalidPassword
 	}
 
-	// 3. 哈希新密码并更新
 	hashed, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("failed to hash new password: %w", err)
 	}
 
-	result, err := s.q.AdminUser.WithContext(ctx).
-		Where(s.q.AdminUser.UUID.Eq(userID)).
-		Update(s.q.AdminUser.PasswordHash, string(hashed))
-
+	rowsAffected, err := s.repo.UpdatePassword(ctx, userID, string(hashed))
 	if err != nil {
 		return err
 	}
-	if result.RowsAffected == 0 {
+	if rowsAffected == 0 {
 		return ErrUserNotFound
 	}
 	return nil

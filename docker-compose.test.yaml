@@ -1,0 +1,30 @@
+services:
+  mariadb-test:
+    image: mariadb:10.8
+    container_name: crm-mariadb-test
+    ports:
+      - "3307:3306" # 使用不同的端口，避免与本地开发数据库冲突
+    environment:
+      MARIADB_ROOT_PASSWORD: testpassword
+      MARIADB_DATABASE: crm_test
+      MARIADB_USER: testuser
+      MARIADB_PASSWORD: testpassword
+      TZ: 'Asia/Shanghai'
+    tmpfs:
+      - /var/lib/mysql # 使用内存文件系统，测试结束后数据会自动销毁
+    restart: always
+    networks:
+      - crm-test-network
+
+  redis-test:
+    image: redis:6-alpine
+    container_name: crm-redis-test
+    ports:
+      - "6380:6379" # 使用不同的端口
+    restart: always
+    networks:
+      - crm-test-network
+
+networks:
+  crm-test-network:
+    driver: bridge 

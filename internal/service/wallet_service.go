@@ -11,6 +11,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// IWalletService 定义了钱包服务的接口
+type IWalletService interface {
+	CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error)
+	CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error
+	GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error)
+}
+
 // WalletService 提供了钱包相关的服务
 type WalletService struct {
 	q        *query.Query
@@ -18,7 +25,7 @@ type WalletService struct {
 }
 
 // NewWalletService 创建一个新的 WalletService
-func NewWalletService(resManager *resource.Manager) *WalletService {
+func NewWalletService(resManager *resource.Manager) IWalletService {
 	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic("Failed to get database resource for WalletService: " + err.Error())

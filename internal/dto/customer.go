@@ -46,19 +46,20 @@ type CustomerBatchGetRequest struct {
 
 // CustomerResponse 单个客户的响应数据
 type CustomerResponse struct {
-	ID         int64  `json:"id"`
-	Name       string `json:"name"`
-	Phone      string `json:"phone"`
-	Email      string `json:"email"`
-	Gender     string `json:"gender"`
-	Birthday   string `json:"birthday"`
-	Level      string `json:"level"`
-	Tags       string `json:"tags"`
-	Note       string `json:"note"`
-	Source     string `json:"source"`
-	AssignedTo int64  `json:"assigned_to"`
-	CreatedAt  string `json:"created_at"`
-	UpdatedAt  string `json:"updated_at"`
+	ID            int64   `json:"id"`
+	Name          string  `json:"name"`
+	Phone         string  `json:"phone"`
+	Email         string  `json:"email"`
+	Gender        string  `json:"gender"`
+	Birthday      string  `json:"birthday"`
+	Level         string  `json:"level"`
+	Tags          string  `json:"tags"`
+	Note          string  `json:"note"`
+	Source        string  `json:"source"`
+	AssignedTo    int64   `json:"assigned_to"`
+	WalletBalance float64 `json:"wallet_balance,omitempty"` // 兼容测试字段
+	CreatedAt     string  `json:"created_at"`
+	UpdatedAt     string  `json:"updated_at"`
 }
 
 // CustomerListResponse 客户列表的响应

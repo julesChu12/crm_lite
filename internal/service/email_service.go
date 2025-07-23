@@ -9,13 +9,18 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
+// IEmailService 定义了邮件服务需要实现的接口
+type IEmailService interface {
+	SendMail(to, subject, body string) error
+}
+
 // EmailService 封装了邮件发送的功能
 type EmailService struct {
 	opts config.EmailOptions
 }
 
 // NewEmailService 创建一个新的邮件服务实例
-func NewEmailService(opts config.EmailOptions) *EmailService {
+func NewEmailService(opts config.EmailOptions) IEmailService {
 	return &EmailService{opts: opts}
 }
 

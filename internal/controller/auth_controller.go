@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
@@ -17,8 +18,37 @@ type AuthController struct {
 }
 
 func NewAuthController(resManager *resource.Manager) *AuthController {
+	// 1. 获取必要的资源
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for AuthController: " + err.Error())
+	}
+	cache, err := resource.Get[*resource.CacheResource](resManager, resource.CacheServiceKey)
+	if err != nil {
+		panic("Failed to get cache resource for AuthController: " + err.Error())
+	}
+	casbinRes, err := resource.Get[*resource.CasbinResource](resManager, resource.CasbinServiceKey)
+	if err != nil {
+		panic("Failed to get casbin resource for AuthController: " + err.Error())
+	}
+	opts := config.GetInstance()
+
+	// 2. 创建依赖的服务和仓库
+	authRepo := service.NewAuthRepo(db.DB)
+	authCache := service.NewAuthCache(cache)
+
+	// EmailService 是可选的，如果资源不存在则为 nil
+	var emailSvc service.IEmailService
+	emailRes, err := resource.Get[*resource.EmailResource](resManager, resource.EmailServiceKey)
+	if err == nil && emailRes != nil {
+		emailSvc = service.NewEmailService(emailRes.Opts)
+	}
+
+	// 3. 注入所有依赖项来创建 AuthService
+	authService := service.NewAuthService(authRepo, authCache, emailSvc, casbinRes, opts)
+
 	return &AuthController{
-		authService: service.NewAuthService(resManager),
+		authService: authService,
 	}
 }
 

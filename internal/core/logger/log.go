@@ -47,6 +47,15 @@ func InitGlobalLogger(opts *config.LogOptions) {
 
 // GetGlobalLogger 获取全局日志记录器实例
 func GetGlobalLogger() *Logger {
+	if globalLogger == nil {
+		// 在测试等场景未显式初始化时，使用一个简易的默认 logger，避免空指针。
+		raw := zap.NewExample()
+		globalLogger = &Logger{
+			rawLogger:     raw,
+			defaultLogger: raw,
+			sugaredLogger: raw.Sugar(),
+		}
+	}
 	return globalLogger
 }
 

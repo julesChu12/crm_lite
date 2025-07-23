@@ -1,6 +1,6 @@
 # CRM Lite - 轻量级客户关系管理系统
 
-[![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
 [![Gin](https://img.shields.io/badge/Gin-v1.9-0089D6?style=for-the-badge)](https://gin-gonic.com/)
 [![GORM](https://img.shields.io/badge/GORM-v1.25-9B4F96?style=for-the-badge)](https://gorm.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)

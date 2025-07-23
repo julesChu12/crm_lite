@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/policy"
 	"crm_lite/pkg/resp"
@@ -52,7 +53,7 @@ func NewJWTAuthMiddleware(resManager *resource.Manager) gin.HandlerFunc {
 		}
 
 		// 2.3 解析并校验 token
-		claims, err := utils.ParseToken(parts[1])
+		claims, err := utils.ParseToken("", config.JWTOptions{})
 		if err != nil {
 			resp.Error(c, resp.CodeUnauthorized, "invalid or expired token")
 			c.Abort()

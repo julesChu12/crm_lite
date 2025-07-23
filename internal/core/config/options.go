@@ -62,6 +62,7 @@ type DBOptions struct {
 	TablePrefix     string        `mapstructure:"tablePrefix"`     // 表前缀
 	SSLMode         string        `mapstructure:"sslmode"`         // SSL模式
 	TimeZone        string        `mapstructure:"timeZone"`        // 时区
+	DSN             string        `mapstructure:"dsn"`             // 兼容测试场景直接指定 DSN
 	MaxOpenConns    int64         `mapstructure:"maxOpenConns"`    // 最大连接数
 	MaxIdleConns    int64         `mapstructure:"maxIdleConns"`    // 最大空闲连接数
 	ConnMaxLifetime time.Duration `mapstructure:"connMaxLifetime"` // 连接最大存活时间
@@ -165,6 +166,13 @@ func GetInstance() *Options {
 	return instance
 }
 
+// SetInstanceForTest 仅用于测试，允许重置配置实例
+func SetInstanceForTest(opts *Options) {
+	instance = opts
+	// 重置 once，以便 GetInstance 可以在下次调用时重新初始化
+	once = sync.Once{}
+}
+
 // ==================== 配置初始化 ====================
 
 // InitOptions 初始化配置选项
@@ -234,6 +242,7 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 		TablePrefix:     o.getStringWithDefault("db.tablePrefix", ""),
 		SSLMode:         o.getStringWithDefault("db.sslmode", "disable"),
 		TimeZone:        o.getStringWithDefault("db.timeZone", "Asia/Shanghai"),
+		DSN:             o.getStringWithDefault("db.dsn", ""), // 兼容测试场景直接指定 DSN
 		MaxOpenConns:    o.getInt64WithDefault("db.maxOpenConns", 100),
 		MaxIdleConns:    o.getInt64WithDefault("db.maxIdleConns", 10),
 		ConnMaxLifetime: o.getDurationWithDefault("db.connMaxLifetime", time.Hour),

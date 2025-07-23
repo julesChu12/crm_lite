@@ -15,7 +15,19 @@ type CustomerController struct {
 }
 
 func NewCustomerController(resManager *resource.Manager) *CustomerController {
-	return &CustomerController{customerService: service.NewCustomerService(resManager)}
+	// 1. 从资源管理器获取数据库资源
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for CustomerController: " + err.Error())
+	}
+	// 2. 创建 repo
+	customerRepo := service.NewCustomerRepo(db.DB)
+	// 3. 创建依赖的服务
+	walletSvc := service.NewWalletService(resManager)
+	// 4. 注入 repo 和依赖服务来创建 service
+	customerSvc := service.NewCustomerService(customerRepo, walletSvc)
+
+	return &CustomerController{customerService: customerSvc}
 }
 
 // CreateCustomer

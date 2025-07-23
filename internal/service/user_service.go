@@ -73,7 +73,9 @@ func (s *UserService) GetUserByUUID(ctx context.Context, uuid string) (*dto.User
 func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreateUserRequest) (*dto.UserResponse, error) {
 	// 使用事务确保原子性
 	var response *dto.UserResponse
-	err := s.q.Transaction(func(tx *query.Query) error {
+	var roles_to_add []string
+
+	txErr := s.q.Transaction(func(tx *query.Query) error {
 		// 1. 检查用户是否存在（包括软删除的）
 		var existingUser *model.AdminUser
 		// 使用 Unscoped() 来查找包括软删除在内的记录
@@ -197,19 +199,7 @@ func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreat
 			}
 		}
 
-		// 4. 更新 Casbin (非事务性，放在最后)
-		casbinRes, err_casbin := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
-		if err_casbin != nil {
-			return fmt.Errorf("failed to get casbin resource for role update: %w", err_casbin)
-		}
-		enforcer := casbinRes.GetEnforcer()
-		// 先删除旧角色
-		if _, err_del_casbin := enforcer.DeleteRolesForUser(newUser.UUID); err_del_casbin != nil {
-			return fmt.Errorf("failed to delete old roles from casbin: %w", err_del_casbin)
-		}
-
-		var roles_to_add []string
-		// 再添加新角色
+		// Find role names for casbin and response
 		if len(finalRoleIDs) > 0 {
 			role_models, err_find_roles := tx.Role.WithContext(ctx).Where(tx.Role.ID.In(finalRoleIDs...)).Find()
 			if err_find_roles != nil {
@@ -218,18 +208,12 @@ func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreat
 			if len(role_models) != len(finalRoleIDs) {
 				return ErrRoleNotFound
 			}
-
 			for _, r_model := range role_models {
 				roles_to_add = append(roles_to_add, r_model.Name)
 			}
-			if len(roles_to_add) > 0 {
-				if _, err_add_casbin := enforcer.AddRolesForUser(newUser.UUID, roles_to_add); err_add_casbin != nil {
-					return fmt.Errorf("failed to add new roles to casbin: %w", err_add_casbin)
-				}
-			}
 		}
 
-		// 5. 准备返回数据 - 直接在事务内组装，不进行额外查询
+		// 4. 准备返回数据
 		response = &dto.UserResponse{
 			UUID:      newUser.UUID,
 			Username:  newUser.Username,
@@ -238,14 +222,30 @@ func (s *UserService) CreateUserByAdmin(ctx context.Context, req *dto.AdminCreat
 			Phone:     newUser.Phone,
 			Avatar:    newUser.Avatar,
 			IsActive:  newUser.IsActive,
-			Roles:     roles_to_add,
+			Roles:     roles_to_add, // Use the list we just built
 			CreatedAt: utils.FormatTime(newUser.CreatedAt),
 		}
 		return nil
 	})
 
+	if txErr != nil {
+		return nil, txErr
+	}
+
+	// 5. 在事务成功后，更新 Casbin
+	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create or restore user in transaction: %w", err)
+		log.Printf("Error: failed to get casbin resource after user transaction: %v", err)
+		return response, nil
+	}
+	enforcer := casbinRes.GetEnforcer()
+	if _, err := enforcer.DeleteRolesForUser(response.UUID); err != nil {
+		log.Printf("Error: failed to delete old roles from casbin for user %s: %v", response.UUID, err)
+	}
+	if len(response.Roles) > 0 {
+		if _, err := enforcer.AddRolesForUser(response.UUID, response.Roles); err != nil {
+			log.Printf("Error: failed to add new roles to casbin for user %s: %v", response.UUID, err)
+		}
 	}
 
 	return response, nil
@@ -466,32 +466,24 @@ func (s *UserService) UpdateUserByAdmin(ctx context.Context, uuid_str string, re
 
 // DeleteUser 删除用户
 func (s *UserService) DeleteUser(ctx context.Context, uuid_str string) error {
-	// 在删除用户时，也应该清理其在 Casbin 中的角色和权限信息
+	// 1. 先在事务中删除数据库用户
+	err := s.q.Transaction(func(tx *query.Query) error {
+		_, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Delete()
+		return err
+	})
+	if err != nil {
+		return err
+	}
+
+	// 2. 事务成功后，再清理 Casbin
 	casbinRes, err := resource.Get[*resource.CasbinResource](s.resource, resource.CasbinServiceKey)
 	if err != nil {
-		return fmt.Errorf("failed to get casbin resource for user deletion: %w", err)
+		log.Printf("Warn: failed to get casbin resource for user %s deletion. Casbin policies may need manual cleanup. Error: %v", uuid_str, err)
+		return nil
 	}
 	enforcer := casbinRes.GetEnforcer()
-
-	// 开启事务
-	return s.q.Transaction(func(tx *query.Query) error {
-		// 1. 从数据库中删除用户
-		if _, err := tx.AdminUser.WithContext(ctx).Where(tx.AdminUser.UUID.Eq(uuid_str)).Delete(); err != nil {
-			return err
-		}
-
-		// 2. 从 Casbin 中删除该用户的所有角色关联 (g policies)
-		if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil {
-			// 注意：这里如果失败，数据库的用户记录已删除。
-			// 这是一个需要权衡的地方。可以选择忽略这个错误，或者记录日志。
-			log.Printf("Warn: failed to delete user roles from casbin for user %s, but user was deleted from db. manual cleanup may be needed. Error: %v", uuid_str, err)
-		}
-
-		// 3. (可选) 删除以该用户为主体的权限策略 (p policies)
-		// 通常用户是通过角色获得权限的，直接赋予用户的权限较少。
-		// 如果有这种场景，需要执行 enforcer.DeletePermissionsForUser(uuid_str)
-		// 当前设计中，我们假设权限都与角色挂钩，所以这一步省略。
-
-		return nil
-	})
+	if _, err := enforcer.DeleteRolesForUser(uuid_str); err != nil {
+		log.Printf("Warn: failed to delete user roles from casbin for user %s. Casbin policies may need manual cleanup. Error: %v", uuid_str, err)
+	}
+	return nil
 }

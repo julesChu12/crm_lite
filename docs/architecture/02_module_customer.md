@@ -29,21 +29,22 @@
 
 ## 📂 模块目录结构
 
-internal/customer/
+```bash
+internal/
 ├── controller/
 │   └── customer_controller.go    # HTTP 路由处理
 ├── service/
 │   └── customer_service.go       # 业务逻辑处理
-├── model/
-│   └── customer.go               # GORM 模型定义
-├── query/
-│   └── customer_query.go         # 查询封装（可选）
-├── router/
-│   └── customer_router.go        # 路由注册
-├── validator/
-│   └── customer_validator.go     # 请求参数校验器（可选）
-
----
+├── dao/
+│   ├── model/
+│   │   └── customers.gen.go      # GORM 模型定义 (由 gen 生成)
+│   └── query/
+│       └── customers.gen.go      # 查询封装 (由 gen 生成)
+├── dto/
+│   └── customer.go               # 数据传输对象 (DTO)
+└── routes/
+    └── customer.go               # 路由注册
+```
 
 ## 🔌 接口设计（RESTful）
 

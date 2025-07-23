@@ -63,8 +63,7 @@ func createToken(claims CustomClaims, secret string) (string, error) {
 }
 
 // ParseToken 解析并验证一个JWT
-func ParseToken(tokenString string) (*CustomClaims, error) {
-	opts := config.GetInstance().Auth.JWTOptions
+func ParseToken(tokenString string, opts config.JWTOptions) (*CustomClaims, error) {
 	secret := opts.Secret
 
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
