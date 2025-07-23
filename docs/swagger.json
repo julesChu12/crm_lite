@@ -2066,6 +2066,137 @@
                 }
             }
         },
+        "/v1/customers/{customer_id}/wallet": {
+            "get": {
+                "description": "根据客户ID获取其默认的余额钱包信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.WalletResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "钱包未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/customers/{customer_id}/wallet/transactions": {
+            "post": {
+                "description": "为客户的钱包创建一笔交易（充值或消费）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "交易信息",
+                        "name": "transaction",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WalletTransactionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "客户或钱包未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务逻辑错误（如余额不足）",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/customers/{id}/contacts": {
             "get": {
                 "description": "根据客户ID获取其所有联系人",
@@ -2075,6 +2206,7 @@
                 "tags": [
                     "Contacts"
                 ],
+                "summary": "获取客户的联系人列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2125,6 +2257,7 @@
                 "tags": [
                     "Contacts"
                 ],
+                "summary": "为客户创建新联系人",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2189,6 +2322,7 @@
                 "tags": [
                     "Contacts"
                 ],
+                "summary": "更新联系人信息",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2249,6 +2383,7 @@
                 "tags": [
                     "Contacts"
                 ],
+                "summary": "删除联系人",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2274,137 +2409,6 @@
                     },
                     "404": {
                         "description": "联系人未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/customers/{id}/wallet": {
-            "get": {
-                "description": "根据客户ID获取其默认的余额钱包信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Wallets"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/resp.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.WalletResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "钱包未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/customers/{id}/wallet/transactions": {
-            "post": {
-                "description": "为客户的钱包创建一笔交易（充值或消费）",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Wallets"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "交易信息",
-                        "name": "transaction",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.WalletTransactionRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "操作成功",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "无权操作",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "客户或钱包未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "422": {
-                        "description": "业务逻辑错误（如余额不足）",
                         "schema": {
                             "$ref": "#/definitions/resp.Response"
                         }

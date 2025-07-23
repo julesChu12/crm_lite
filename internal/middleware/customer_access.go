@@ -17,7 +17,7 @@ func NewSimpleCustomerAccessMiddleware(resManager *resource.Manager) gin.Handler
 
 	return func(c *gin.Context) {
 		// 仅拦截涉及 customer_id 的路由
-		customerIDStr := c.Param("customer_id")
+		customerIDStr := c.Param("id")
 		if customerIDStr == "" {
 			c.Next()
 			return
