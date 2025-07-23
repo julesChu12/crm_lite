@@ -20,19 +20,6 @@ func NewContactController(resManager *resource.Manager) *ContactController {
 	return &ContactController{svc: service.NewContactService(resManager)}
 }
 
-<<<<<<< HEAD
-// List @Summary 获取客户的联系人列表
-// @Description 根据客户ID获取其所有联系人
-// @Tags Contacts
-// @Produce json
-// @Param id path int true "客户ID"
-// @Success 200 {object} resp.Response{data=[]dto.ContactResponse} "成功"
-// @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{id}/contacts [get]
-func (cc *ContactController) List(ctx *gin.Context) {
-	customerID, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
-	list, err := cc.svc.List(ctx.Request.Context(), customerID)
-=======
 // ListContacts godoc
 // @Summary      获取客户的联系人列表
 // @Description  根据客户ID获取其所有联系人
@@ -45,7 +32,6 @@ func (cc *ContactController) List(ctx *gin.Context) {
 func (cc *ContactController) ListContacts(c *gin.Context) {
 	customerID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	list, err := cc.svc.List(c.Request.Context(), customerID)
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, err.Error())
 		return
@@ -53,21 +39,6 @@ func (cc *ContactController) ListContacts(c *gin.Context) {
 	resp.Success(c, list)
 }
 
-<<<<<<< HEAD
-// Create @Summary 为客户创建新联系人
-// @Description 为指定客户创建一个新的联系人
-// @Tags Contacts
-// @Accept json
-// @Produce json
-// @Param id path int true "客户ID"
-// @Param contact body dto.ContactCreateRequest true "联系人信息"
-// @Success 200 {object} resp.Response{data=dto.ContactResponse} "成功"
-// @Failure 400 {object} resp.Response "请求参数错误"
-// @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{id}/contacts [post]
-func (cc *ContactController) Create(ctx *gin.Context) {
-	customerID, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
-=======
 // CreateContact godoc
 // @Summary      为客户创建新联系人
 // @Description  为指定客户创建一个新的联系人
@@ -82,7 +53,6 @@ func (cc *ContactController) Create(ctx *gin.Context) {
 // @Router       /v1/customers/{id}/contacts [post]
 func (cc *ContactController) CreateContact(c *gin.Context) {
 	customerID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
 	var req dto.ContactCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
@@ -96,23 +66,6 @@ func (cc *ContactController) CreateContact(c *gin.Context) {
 	resp.Success(c, res)
 }
 
-<<<<<<< HEAD
-// Update @Summary 更新联系人信息
-// @Description 更新指定ID的联系人信息
-// @Tags Contacts
-// @Accept json
-// @Produce json
-// @Param id path int true "客户ID"
-// @Param contact_id path int true "联系人ID"
-// @Param contact body dto.ContactUpdateRequest true "要更新的联系人信息"
-// @Success 200 {object} resp.Response "操作成功"
-// @Failure 400 {object} resp.Response "请求参数错误"
-// @Failure 404 {object} resp.Response "联系人未找到"
-// @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{id}/contacts/{contact_id} [put]
-func (cc *ContactController) Update(ctx *gin.Context) {
-	id, _ := strconv.ParseInt(ctx.Param("contact_id"), 10, 64)
-=======
 // UpdateContact godoc
 // @Summary      更新联系人信息
 // @Description  更新指定ID的联系人信息
@@ -129,7 +82,6 @@ func (cc *ContactController) Update(ctx *gin.Context) {
 // @Router       /v1/customers/{id}/contacts/{contact_id} [put]
 func (cc *ContactController) UpdateContact(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("contact_id"), 10, 64)
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
 	var req dto.ContactUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
@@ -147,21 +99,6 @@ func (cc *ContactController) UpdateContact(c *gin.Context) {
 	resp.Success(c, nil)
 }
 
-<<<<<<< HEAD
-// Delete @Summary 删除联系人
-// @Description 删除指定ID的联系人
-// @Tags Contacts
-// @Produce json
-// @Param id path int true "客户ID"
-// @Param contact_id path int true "联系人ID"
-// @Success 200 {object} resp.Response "操作成功"
-// @Failure 404 {object} resp.Response "联系人未找到"
-// @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{id}/contacts/{contact_id} [delete]
-func (cc *ContactController) Delete(ctx *gin.Context) {
-	id, _ := strconv.ParseInt(ctx.Param("contact_id"), 10, 64)
-	err := cc.svc.Delete(ctx.Request.Context(), id)
-=======
 // DeleteContact godoc
 // @Summary      删除联系人
 // @Description  删除指定ID的联系人
@@ -176,7 +113,6 @@ func (cc *ContactController) Delete(ctx *gin.Context) {
 func (cc *ContactController) DeleteContact(c *gin.Context) {
 	id, _ := strconv.ParseInt(c.Param("contact_id"), 10, 64)
 	err := cc.svc.Delete(c.Request.Context(), id)
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			resp.Error(c, resp.CodeNotFound, "not found")

@@ -2081,6 +2081,7 @@ const docTemplate = `{
                 "tags": [
                     "Contacts"
                 ],
+                "summary": "获取客户的联系人列表",
                 "parameters": [
                     {
                         "type": "integer",
@@ -2131,10 +2132,7 @@ const docTemplate = `{
                 "tags": [
                     "Contacts"
                 ],
-<<<<<<< HEAD
-=======
                 "summary": "为客户创建新联系人",
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
                 "parameters": [
                     {
                         "type": "integer",
@@ -2199,10 +2197,7 @@ const docTemplate = `{
                 "tags": [
                     "Contacts"
                 ],
-<<<<<<< HEAD
-=======
                 "summary": "更新联系人信息",
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
                 "parameters": [
                     {
                         "type": "integer",
@@ -2263,10 +2258,7 @@ const docTemplate = `{
                 "tags": [
                     "Contacts"
                 ],
-<<<<<<< HEAD
-=======
                 "summary": "删除联系人",
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
                 "parameters": [
                     {
                         "type": "integer",
@@ -2304,7 +2296,6 @@ const docTemplate = `{
                     }
                 }
             }
-<<<<<<< HEAD
         },
         "/v1/customers/{id}/wallet": {
             "get": {
@@ -2436,8 +2427,6 @@ const docTemplate = `{
                     }
                 }
             }
-=======
->>>>>>> 31622e1ce213b0aea836c85472258f76fe59fd53
         }
     },
     "definitions": {
