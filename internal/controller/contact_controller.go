@@ -25,12 +25,12 @@ func NewContactController(resManager *resource.Manager) *ContactController {
 // @Description 根据客户ID获取其所有联系人
 // @Tags Contacts
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Success 200 {object} resp.Response{data=[]dto.ContactResponse} "成功"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/contacts [get]
+// @Router /v1/customers/{id}/contacts [get]
 func (cc *ContactController) List(ctx *gin.Context) {
-	customerID, _ := strconv.ParseInt(ctx.Param("customer_id"), 10, 64)
+	customerID, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	list, err := cc.svc.List(ctx.Request.Context(), customerID)
 	if err != nil {
 		resp.Error(ctx, http.StatusInternalServerError, err.Error())
@@ -44,14 +44,14 @@ func (cc *ContactController) List(ctx *gin.Context) {
 // @Tags Contacts
 // @Accept json
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Param contact body dto.ContactCreateRequest true "联系人信息"
 // @Success 200 {object} resp.Response{data=dto.ContactResponse} "成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/contacts [post]
+// @Router /v1/customers/{id}/contacts [post]
 func (cc *ContactController) Create(ctx *gin.Context) {
-	customerID, _ := strconv.ParseInt(ctx.Param("customer_id"), 10, 64)
+	customerID, _ := strconv.ParseInt(ctx.Param("id"), 10, 64)
 	var req dto.ContactCreateRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		resp.Error(ctx, 400, err.Error())
@@ -70,14 +70,14 @@ func (cc *ContactController) Create(ctx *gin.Context) {
 // @Tags Contacts
 // @Accept json
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Param contact_id path int true "联系人ID"
 // @Param contact body dto.ContactUpdateRequest true "要更新的联系人信息"
 // @Success 200 {object} resp.Response "操作成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
 // @Failure 404 {object} resp.Response "联系人未找到"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/contacts/{contact_id} [put]
+// @Router /v1/customers/{id}/contacts/{contact_id} [put]
 func (cc *ContactController) Update(ctx *gin.Context) {
 	id, _ := strconv.ParseInt(ctx.Param("contact_id"), 10, 64)
 	var req dto.ContactUpdateRequest
@@ -101,12 +101,12 @@ func (cc *ContactController) Update(ctx *gin.Context) {
 // @Description 删除指定ID的联系人
 // @Tags Contacts
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Param contact_id path int true "联系人ID"
 // @Success 200 {object} resp.Response "操作成功"
 // @Failure 404 {object} resp.Response "联系人未找到"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/contacts/{contact_id} [delete]
+// @Router /v1/customers/{id}/contacts/{contact_id} [delete]
 func (cc *ContactController) Delete(ctx *gin.Context) {
 	id, _ := strconv.ParseInt(ctx.Param("contact_id"), 10, 64)
 	err := cc.svc.Delete(ctx.Request.Context(), id)

@@ -27,14 +27,14 @@ func NewWalletController(walletSvc *service.WalletService) *WalletController {
 // @Tags Wallets
 // @Accept json
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Success 200 {object} resp.Response{data=dto.WalletResponse} "成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
 // @Failure 404 {object} resp.Response "钱包未找到"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/wallet [get]
+// @Router /v1/customers/{id}/wallet [get]
 func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
-	customerIDStr := ctx.Param("customer_id")
+	customerIDStr := ctx.Param("id")
 	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
 	if err != nil {
 		resp.Error(ctx, http.StatusBadRequest, "无效的客户ID")
@@ -59,7 +59,7 @@ func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
 // @Tags Wallets
 // @Accept json
 // @Produce json
-// @Param customer_id path int true "客户ID"
+// @Param id path int true "客户ID"
 // @Param transaction body dto.WalletTransactionRequest true "交易信息"
 // @Success 200 {object} resp.Response "操作成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
@@ -67,10 +67,10 @@ func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
 // @Failure 404 {object} resp.Response "客户或钱包未找到"
 // @Failure 422 {object} resp.Response "业务逻辑错误（如余额不足）"
 // @Failure 500 {object} resp.Response "服务器内部错误"
-// @Router /v1/customers/{customer_id}/wallet/transactions [post]
+// @Router /v1/customers/{id}/wallet/transactions [post]
 func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 	// 1. 解析参数和请求体
-	customerIDStr := ctx.Param("customer_id")
+	customerIDStr := ctx.Param("id")
 	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
 	if err != nil {
 		resp.Error(ctx, http.StatusBadRequest, "无效的客户ID")

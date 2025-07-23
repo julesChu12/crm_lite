@@ -45,6 +45,61 @@ definitions:
           type: integer
         type: array
     type: object
+  dto.ContactCreateRequest:
+    properties:
+      email:
+        type: string
+      is_primary:
+        type: boolean
+      name:
+        type: string
+      note:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+    required:
+    - name
+    type: object
+  dto.ContactResponse:
+    properties:
+      created_at:
+        type: string
+      customer_id:
+        type: integer
+      email:
+        type: string
+      id:
+        type: integer
+      is_primary:
+        type: boolean
+      name:
+        type: string
+      note:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.ContactUpdateRequest:
+    properties:
+      email:
+        type: string
+      is_primary:
+        type: boolean
+      name:
+        type: string
+      note:
+        type: string
+      phone:
+        type: string
+      position:
+        type: string
+    type: object
   dto.CustomerBatchGetRequest:
     properties:
       ids:
@@ -56,12 +111,33 @@ definitions:
     type: object
   dto.CustomerCreateRequest:
     properties:
+      assigned_to:
+        description: 分配给哪个员工
+        type: integer
+      birthday:
+        description: 生日，格式：YYYY-MM-DD
+        type: string
       email:
+        type: string
+      gender:
+        description: '性别: male, female, unknown'
+        type: string
+      level:
+        description: '客户等级: 普通, 银牌, 金牌, 铂金'
         type: string
       name:
         type: string
+      note:
+        description: 备注
+        type: string
       phone:
         description: 使用e164格式校验手机号
+        type: string
+      source:
+        description: 客户来源：manual, referral, marketing, etc.
+        type: string
+      tags:
+        description: 标签，逗号分隔
         type: string
     required:
     - name
@@ -77,26 +153,61 @@ definitions:
     type: object
   dto.CustomerResponse:
     properties:
+      assigned_to:
+        type: integer
+      birthday:
+        type: string
       created_at:
         type: string
       email:
         type: string
+      gender:
+        type: string
       id:
         type: integer
+      level:
+        type: string
       name:
         type: string
+      note:
+        type: string
       phone:
+        type: string
+      source:
+        type: string
+      tags:
         type: string
       updated_at:
         type: string
     type: object
   dto.CustomerUpdateRequest:
     properties:
+      assigned_to:
+        description: 分配给哪个员工
+        type: integer
+      birthday:
+        description: 生日，格式：YYYY-MM-DD
+        type: string
       email:
+        type: string
+      gender:
+        description: '性别: male, female, unknown'
+        type: string
+      level:
+        description: '客户等级: 普通, 银牌, 金牌, 铂金'
         type: string
       name:
         type: string
+      note:
+        description: 备注
+        type: string
       phone:
+        type: string
+      source:
+        description: 客户来源：manual, referral, marketing, etc.
+        type: string
+      tags:
+        description: 标签，逗号分隔
         type: string
     type: object
   dto.ForgotPasswordRequest:
@@ -450,6 +561,52 @@ definitions:
     required:
     - role
     - user_id
+    type: object
+  dto.WalletResponse:
+    properties:
+      balance:
+        type: number
+      created_at:
+        type: string
+      customer_id:
+        type: integer
+      frozen_balance:
+        type: number
+      id:
+        type: integer
+      total_consumed:
+        type: number
+      total_recharged:
+        type: number
+      type:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  dto.WalletTransactionRequest:
+    properties:
+      amount:
+        description: 交易金额，必须为正数
+        type: number
+      related_id:
+        description: 关联ID（如订单ID等）
+        type: integer
+      remark:
+        description: 备注
+        type: string
+      source:
+        description: '交易来源: manual, system 等'
+        type: string
+      type:
+        description: '交易类型: recharge (充值), consume (消费)'
+        enum:
+        - recharge
+        - consume
+        type: string
+    required:
+    - amount
+    - source
+    - type
     type: object
   resp.Response:
     properties:
@@ -1715,4 +1872,227 @@ paths:
       summary: 批量获取用户
       tags:
       - Users
+  /v1/customers/{id}/contacts:
+    get:
+      description: 根据客户ID获取其所有联系人
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/dto.ContactResponse'
+                  type: array
+              type: object
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Contacts
+    post:
+      consumes:
+      - application/json
+      description: 为指定客户创建一个新的联系人
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 联系人信息
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ContactCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.ContactResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Contacts
+  /v1/customers/{id}/contacts/{contact_id}:
+    delete:
+      description: 删除指定ID的联系人
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 联系人ID
+        in: path
+        name: contact_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "404":
+          description: 联系人未找到
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Contacts
+    put:
+      consumes:
+      - application/json
+      description: 更新指定ID的联系人信息
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 联系人ID
+        in: path
+        name: contact_id
+        required: true
+        type: integer
+      - description: 要更新的联系人信息
+        in: body
+        name: contact
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ContactUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "404":
+          description: 联系人未找到
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Contacts
+  /v1/customers/{id}/wallet:
+    get:
+      consumes:
+      - application/json
+      description: 根据客户ID获取其默认的余额钱包信息
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WalletResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "404":
+          description: 钱包未找到
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Wallets
+  /v1/customers/{id}/wallet/transactions:
+    post:
+      consumes:
+      - application/json
+      description: 为客户的钱包创建一笔交易（充值或消费）
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 交易信息
+        in: body
+        name: transaction
+        required: true
+        schema:
+          $ref: '#/definitions/dto.WalletTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 操作成功
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "403":
+          description: 无权操作
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "404":
+          description: 客户或钱包未找到
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "422":
+          description: 业务逻辑错误（如余额不足）
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 服务器内部错误
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Wallets
 swagger: "2.0"
