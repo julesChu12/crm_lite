@@ -38,6 +38,8 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 		registerProductRoutes(apiV1, resManager)
 		registerOrderRoutes(apiV1, resManager)
 		RegisterWalletRoutes(apiV1, resManager)
+		RegisterMarketingRoutes(apiV1, resManager)
+		RegisterDashboardRoutes(apiV1, resManager)
 	}
 
 	// 5. 设置一些通用路由

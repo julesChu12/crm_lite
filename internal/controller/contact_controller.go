@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 type ContactController struct {
@@ -27,16 +26,60 @@ func NewContactController(resManager *resource.Manager) *ContactController {
 // @Produce      json
 // @Param        id path int true "客户ID"
 // @Success      200 {object} resp.Response{data=[]dto.ContactResponse} "成功"
+// @Failure      400 {object} resp.Response "请求参数错误"
+// @Failure      404 {object} resp.Response "客户未找到"
 // @Failure      500 {object} resp.Response "服务器内部错误"
-// @Router       /v1/customers/{id}/contacts [get]
+// @Router       /customers/{id}/contacts [get]
 func (cc *ContactController) ListContacts(c *gin.Context) {
-	customerID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	customerIDStr := c.Param("id")
+	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
+	if err != nil {
+		resp.Error(c, resp.CodeInvalidParam, "invalid customer ID")
+		return
+	}
+
 	list, err := cc.svc.List(c.Request.Context(), customerID)
 	if err != nil {
-		resp.Error(c, resp.CodeInternalError, err.Error())
+		if errors.Is(err, service.ErrCustomerNotFound) {
+			resp.Error(c, resp.CodeNotFound, "customer not found")
+			return
+		}
+		resp.SystemError(c, err)
 		return
 	}
 	resp.Success(c, list)
+}
+
+// GetContact godoc
+// @Summary      获取单个联系人详情
+// @Description  根据联系人ID获取其详细信息
+// @Tags         Contacts
+// @Produce      json
+// @Param        id path int true "客户ID"
+// @Param        contact_id path int true "联系人ID"
+// @Success      200 {object} resp.Response{data=dto.ContactResponse} "成功"
+// @Failure      400 {object} resp.Response "请求参数错误"
+// @Failure      404 {object} resp.Response "联系人未找到"
+// @Failure      500 {object} resp.Response "服务器内部错误"
+// @Router       /customers/{id}/contacts/{contact_id} [get]
+func (cc *ContactController) GetContact(c *gin.Context) {
+	contactIDStr := c.Param("contact_id")
+	contactID, err := strconv.ParseInt(contactIDStr, 10, 64)
+	if err != nil {
+		resp.Error(c, resp.CodeInvalidParam, "invalid contact ID")
+		return
+	}
+
+	contact, err := cc.svc.GetContactByID(c.Request.Context(), contactID)
+	if err != nil {
+		if errors.Is(err, service.ErrContactNotFound) {
+			resp.Error(c, resp.CodeNotFound, "contact not found")
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
+	resp.Success(c, contact)
 }
 
 // CreateContact godoc
@@ -47,23 +90,48 @@ func (cc *ContactController) ListContacts(c *gin.Context) {
 // @Produce      json
 // @Param        id path int true "客户ID"
 // @Param        contact body dto.ContactCreateRequest true "联系人信息"
-// @Success      200 {object} resp.Response{data=dto.ContactResponse} "成功"
+// @Success      201 {object} resp.Response{data=dto.ContactResponse} "成功"
 // @Failure      400 {object} resp.Response "请求参数错误"
+// @Failure      404 {object} resp.Response "客户未找到"
+// @Failure      409 {object} resp.Response "业务冲突（如主要联系人已存在）"
 // @Failure      500 {object} resp.Response "服务器内部错误"
-// @Router       /v1/customers/{id}/contacts [post]
+// @Router       /customers/{id}/contacts [post]
 func (cc *ContactController) CreateContact(c *gin.Context) {
-	customerID, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	customerIDStr := c.Param("id")
+	customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
+	if err != nil {
+		resp.Error(c, resp.CodeInvalidParam, "invalid customer ID")
+		return
+	}
+
 	var req dto.ContactCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	res, err := cc.svc.Create(c.Request.Context(), customerID, &req)
+
+	contact, err := cc.svc.Create(c.Request.Context(), customerID, &req)
 	if err != nil {
-		resp.Error(c, resp.CodeInternalError, err.Error())
+		if errors.Is(err, service.ErrCustomerNotFound) {
+			resp.Error(c, resp.CodeNotFound, "customer not found")
+			return
+		}
+		if errors.Is(err, service.ErrPrimaryContactAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "primary contact already exists for this customer")
+			return
+		}
+		if errors.Is(err, service.ErrContactPhoneAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
+			return
+		}
+		if errors.Is(err, service.ErrContactEmailAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "contact email already exists")
+			return
+		}
+		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, res)
+	resp.SuccessWithCode(c, resp.CodeCreated, contact)
 }
 
 // UpdateContact godoc
@@ -78,22 +146,42 @@ func (cc *ContactController) CreateContact(c *gin.Context) {
 // @Success      200 {object} resp.Response "操作成功"
 // @Failure      400 {object} resp.Response "请求参数错误"
 // @Failure      404 {object} resp.Response "联系人未找到"
+// @Failure      409 {object} resp.Response "业务冲突（如主要联系人已存在）"
 // @Failure      500 {object} resp.Response "服务器内部错误"
-// @Router       /v1/customers/{id}/contacts/{contact_id} [put]
+// @Router       /customers/{id}/contacts/{contact_id} [put]
 func (cc *ContactController) UpdateContact(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("contact_id"), 10, 64)
+	contactIDStr := c.Param("contact_id")
+	contactID, err := strconv.ParseInt(contactIDStr, 10, 64)
+	if err != nil {
+		resp.Error(c, resp.CodeInvalidParam, "invalid contact ID")
+		return
+	}
+
 	var req dto.ContactUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	err := cc.svc.Update(c.Request.Context(), id, &req)
+
+	err = cc.svc.Update(c.Request.Context(), contactID, &req)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			resp.Error(c, resp.CodeNotFound, "not found")
-		} else {
-			resp.Error(c, resp.CodeInternalError, err.Error())
+		if errors.Is(err, service.ErrContactNotFound) {
+			resp.Error(c, resp.CodeNotFound, "contact not found")
+			return
 		}
+		if errors.Is(err, service.ErrPrimaryContactAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "primary contact already exists for this customer")
+			return
+		}
+		if errors.Is(err, service.ErrContactPhoneAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
+			return
+		}
+		if errors.Is(err, service.ErrContactEmailAlreadyExists) {
+			resp.Error(c, resp.CodeConflict, "contact email already exists")
+			return
+		}
+		resp.SystemError(c, err)
 		return
 	}
 	resp.Success(c, nil)
@@ -106,20 +194,27 @@ func (cc *ContactController) UpdateContact(c *gin.Context) {
 // @Produce      json
 // @Param        id path int true "客户ID"
 // @Param        contact_id path int true "联系人ID"
-// @Success      200 {object} resp.Response "操作成功"
+// @Success      204 {object} resp.Response "操作成功"
+// @Failure      400 {object} resp.Response "请求参数错误"
 // @Failure      404 {object} resp.Response "联系人未找到"
 // @Failure      500 {object} resp.Response "服务器内部错误"
-// @Router       /v1/customers/{id}/contacts/{contact_id} [delete]
+// @Router       /customers/{id}/contacts/{contact_id} [delete]
 func (cc *ContactController) DeleteContact(c *gin.Context) {
-	id, _ := strconv.ParseInt(c.Param("contact_id"), 10, 64)
-	err := cc.svc.Delete(c.Request.Context(), id)
+	contactIDStr := c.Param("contact_id")
+	contactID, err := strconv.ParseInt(contactIDStr, 10, 64)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			resp.Error(c, resp.CodeNotFound, "not found")
-		} else {
-			resp.Error(c, resp.CodeInternalError, err.Error())
-		}
+		resp.Error(c, resp.CodeInvalidParam, "invalid contact ID")
 		return
 	}
-	resp.Success(c, nil)
+
+	err = cc.svc.Delete(c.Request.Context(), contactID)
+	if err != nil {
+		if errors.Is(err, service.ErrContactNotFound) {
+			resp.Error(c, resp.CodeNotFound, "contact not found")
+			return
+		}
+		resp.SystemError(c, err)
+		return
+	}
+	resp.SuccessWithCode(c, resp.CodeNoContent, nil)
 }

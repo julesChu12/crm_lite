@@ -659,6 +659,1393 @@ const docTemplate = `{
                 }
             }
         },
+        "/customers/{id}/contacts": {
+            "get": {
+                "description": "根据客户ID获取其所有联系人",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "获取客户的联系人列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/dto.ContactResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "客户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "为指定客户创建一个新的联系人",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "为客户创建新联系人",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "联系人信息",
+                        "name": "contact",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContactCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ContactResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "客户未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "业务冲突（如主要联系人已存在）",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/customers/{id}/contacts/{contact_id}": {
+            "get": {
+                "description": "根据联系人ID获取其详细信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "获取单个联系人详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "联系人ID",
+                        "name": "contact_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ContactResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "联系人未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "更新指定ID的联系人信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "更新联系人信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "联系人ID",
+                        "name": "contact_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的联系人信息",
+                        "name": "contact",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContactUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "联系人未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "业务冲突（如主要联系人已存在）",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "删除指定ID的联系人",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "删除联系人",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "联系人ID",
+                        "name": "contact_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "联系人未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/activities": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取客户活动相关的摘要数据，包括待办活动统计、活动类型分布、最近活动等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取活动摘要数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ActivitySummaryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/analytics/customers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取客户相关的分析数据，包括客户等级分布、来源分布、增长趋势等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取客户分析数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CustomerAnalyticsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/analytics/financial": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取财务相关的分析数据，包括收入概览、钱包统计、收入来源分布等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取财务分析数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.FinancialAnalyticsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/analytics/marketing": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取营销相关的分析数据，包括营销活动概览、渠道效果、ROI排行等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取营销分析数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingAnalyticsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/analytics/products": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取产品相关的分析数据，包括热销产品排行、类别销售分布、库存预警等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取产品分析数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ProductAnalyticsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/analytics/sales": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取销售相关的分析数据，包括销售趋势、订单状态分布、客单价、复购率等",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取销售分析数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.SalesAnalyticsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/overview": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取CRM系统工作台的总览统计数据，包括客户、订单、收入等核心指标",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取工作台总览数据",
+                "parameters": [
+                    {
+                        "enum": [
+                            "today",
+                            "week",
+                            "month",
+                            "quarter",
+                            "year"
+                        ],
+                        "type": "string",
+                        "default": "month",
+                        "description": "时间范围",
+                        "name": "date_range",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "default": "Asia/Shanghai",
+                        "description": "时区",
+                        "name": "timezone",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DashboardOverviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/dashboard/quick-stats": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取实时快速统计数据，用于工作台实时刷新显示",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取快速统计数据",
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.QuickStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/campaigns": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取营销活动列表，支持分页和筛选",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "获取营销活动列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "每页大小",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "活动名称模糊搜索",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "sms",
+                            "email",
+                            "push_notification",
+                            "wechat",
+                            "call"
+                        ],
+                        "type": "string",
+                        "description": "活动类型",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "draft",
+                            "scheduled",
+                            "active",
+                            "paused",
+                            "completed",
+                            "archived"
+                        ],
+                        "type": "string",
+                        "description": "活动状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"created_at_desc\"",
+                        "description": "排序字段",
+                        "name": "order_by",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "创建一个新的营销活动",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "创建营销活动",
+                "parameters": [
+                    {
+                        "description": "营销活动信息",
+                        "name": "campaign",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarketingCampaignCreateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "活动名称已存在",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/campaigns/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "根据ID获取营销活动详细信息",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "获取单个营销活动",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "营销活动ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "营销活动未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "更新营销活动信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "更新营销活动",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "营销活动ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "要更新的营销活动信息",
+                        "name": "campaign",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarketingCampaignUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "营销活动未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "业务冲突（如活动名称已存在或无法修改）",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "删除指定的营销活动",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "删除营销活动",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "营销活动ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "营销活动未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "无法删除运行中的活动",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/campaigns/{id}/execute": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "手动触发营销活动执行或进行模拟执行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "执行营销活动",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "营销活动ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "执行参数",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarketingCampaignExecuteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "执行成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignExecuteResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "营销活动未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "活动状态不允许执行",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "没有找到目标客户",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/campaigns/{id}/stats": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定营销活动的详细统计数据",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "获取营销活动统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "营销活动ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingCampaignStatsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "营销活动未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/customer-segments": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "根据指定条件获取客户分群信息",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "获取客户分群",
+                "parameters": [
+                    {
+                        "description": "分群条件",
+                        "name": "segment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CustomerSegmentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.CustomerSegmentResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/marketing/records": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取指定营销活动的客户触达记录",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Marketing"
+                ],
+                "summary": "获取营销记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "每页大小",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "营销活动ID",
+                        "name": "campaign_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "customer_id",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "sms",
+                            "email",
+                            "push_notification",
+                            "wechat",
+                            "call"
+                        ],
+                        "type": "string",
+                        "description": "触达渠道",
+                        "name": "channel",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending",
+                            "sent",
+                            "delivered",
+                            "failed",
+                            "opened",
+                            "clicked",
+                            "replied",
+                            "unsubscribed"
+                        ],
+                        "type": "string",
+                        "description": "记录状态",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "开始日期",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "format": "date",
+                        "description": "结束日期",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "获取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.MarketingRecordListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/orders": {
             "get": {
                 "description": "获取订单列表，支持分页和筛选",
@@ -2072,231 +3459,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1/customers/{id}/contacts": {
-            "get": {
-                "description": "根据客户ID获取其所有联系人",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Contacts"
-                ],
-                "summary": "获取客户的联系人列表",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/resp.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/definitions/dto.ContactResponse"
-                                            }
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "为指定客户创建一个新的联系人",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Contacts"
-                ],
-                "summary": "为客户创建新联系人",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "联系人信息",
-                        "name": "contact",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.ContactCreateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/resp.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.ContactResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/customers/{id}/contacts/{contact_id}": {
-            "put": {
-                "description": "更新指定ID的联系人信息",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Contacts"
-                ],
-                "summary": "更新联系人信息",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "联系人ID",
-                        "name": "contact_id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "要更新的联系人信息",
-                        "name": "contact",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.ContactUpdateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "操作成功",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "400": {
-                        "description": "请求参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "联系人未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "删除指定ID的联系人",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Contacts"
-                ],
-                "summary": "删除联系人",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "联系人ID",
-                        "name": "contact_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "操作成功",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "联系人未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            }
-        },
         "/v1/customers/{id}/wallet": {
             "get": {
                 "description": "根据客户ID获取其默认的余额钱包信息",
@@ -2430,6 +3592,124 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ActivitySummaryResponse": {
+            "type": "object",
+            "properties": {
+                "activity_type_distribution": {
+                    "description": "活动类型分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 156
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 35.2
+                            },
+                            "type": {
+                                "type": "string",
+                                "example": "call"
+                            }
+                        }
+                    }
+                },
+                "pending_activities": {
+                    "description": "待办活动统计",
+                    "type": "object",
+                    "properties": {
+                        "due_today": {
+                            "type": "integer",
+                            "example": 8
+                        },
+                        "high_priority": {
+                            "type": "integer",
+                            "example": 5
+                        },
+                        "overdue": {
+                            "type": "integer",
+                            "example": 3
+                        },
+                        "total": {
+                            "type": "integer",
+                            "example": 23
+                        }
+                    }
+                },
+                "recent_activities": {
+                    "description": "最近活动列表（最近10条）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "assigned_to_name": {
+                                "type": "string",
+                                "example": "李销售"
+                            },
+                            "customer_name": {
+                                "type": "string",
+                                "example": "张三"
+                            },
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "priority": {
+                                "type": "string",
+                                "example": "high"
+                            },
+                            "scheduled_at": {
+                                "type": "string",
+                                "example": "2024-06-10T09:00:00Z"
+                            },
+                            "status": {
+                                "type": "string",
+                                "example": "completed"
+                            },
+                            "title": {
+                                "type": "string",
+                                "example": "客户回访电话"
+                            },
+                            "type": {
+                                "type": "string",
+                                "example": "call"
+                            }
+                        }
+                    }
+                },
+                "staff_activity_stats": {
+                    "description": "员工活动统计（Top 5）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "completed_activities": {
+                                "type": "integer",
+                                "example": 45
+                            },
+                            "completion_rate": {
+                                "type": "number",
+                                "example": 84.9
+                            },
+                            "pending_activities": {
+                                "type": "integer",
+                                "example": 8
+                            },
+                            "staff_id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "staff_name": {
+                                "type": "string",
+                                "example": "李销售"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "dto.AdminCreateUserRequest": {
             "type": "object",
             "required": [
@@ -2580,6 +3860,116 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CustomerAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "customer_age_distribution": {
+                    "description": "客户年龄分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "age_range": {
+                                "type": "string",
+                                "example": "18-25"
+                            },
+                            "count": {
+                                "type": "integer",
+                                "example": 234
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 18.7
+                            }
+                        }
+                    }
+                },
+                "customer_gender_distribution": {
+                    "description": "客户性别分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 687
+                            },
+                            "gender": {
+                                "type": "string",
+                                "example": "male"
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 55
+                            }
+                        }
+                    }
+                },
+                "customer_level_distribution": {
+                    "description": "客户等级分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 125
+                            },
+                            "level": {
+                                "type": "string",
+                                "example": "VIP"
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 10
+                            }
+                        }
+                    }
+                },
+                "customer_source_distribution": {
+                    "description": "客户来源分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 356
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 28.5
+                            },
+                            "source": {
+                                "type": "string",
+                                "example": "微信"
+                            }
+                        }
+                    }
+                },
+                "customer_trend": {
+                    "description": "新客户趋势（最近12个月）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "month": {
+                                "type": "string",
+                                "example": "2024-01"
+                            },
+                            "new_customers": {
+                                "type": "integer",
+                                "example": 45
+                            },
+                            "total_customers": {
+                                "type": "integer",
+                                "example": 1205
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "dto.CustomerBatchGetRequest": {
             "type": "object",
             "required": [
@@ -2698,6 +4088,74 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CustomerSegmentRequest": {
+            "type": "object",
+            "properties": {
+                "age_max": {
+                    "type": "integer",
+                    "example": 65
+                },
+                "age_min": {
+                    "type": "integer",
+                    "example": 18
+                },
+                "gender": {
+                    "type": "string",
+                    "example": "male"
+                },
+                "level": {
+                    "type": "string",
+                    "example": "VIP"
+                },
+                "source": {
+                    "type": "string",
+                    "example": "微信"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"VIP\"",
+                        " \"新用户\"]"
+                    ]
+                }
+            }
+        },
+        "dto.CustomerSegmentResponse": {
+            "type": "object",
+            "properties": {
+                "customers": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "email": {
+                                "type": "string",
+                                "example": "zhangsan@example.com"
+                            },
+                            "id": {
+                                "type": "integer",
+                                "example": 100
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "张三"
+                            },
+                            "phone": {
+                                "type": "string",
+                                "example": "138****8888"
+                            }
+                        }
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 500
+                }
+            }
+        },
         "dto.CustomerUpdateRequest": {
             "type": "object",
             "properties": {
@@ -2737,6 +4195,185 @@ const docTemplate = `{
                 "tags": {
                     "description": "标签，逗号分隔",
                     "type": "string"
+                }
+            }
+        },
+        "dto.DashboardOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "active_marketing_campaigns": {
+                    "description": "活跃度指标",
+                    "type": "integer",
+                    "example": 5
+                },
+                "customer_growth_rate": {
+                    "description": "增长率（与上月对比）",
+                    "type": "number",
+                    "example": 12.5
+                },
+                "low_stock_products": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "monthly_new_customers": {
+                    "description": "本月数据",
+                    "type": "integer",
+                    "example": 56
+                },
+                "monthly_orders": {
+                    "type": "integer",
+                    "example": 234
+                },
+                "monthly_revenue": {
+                    "type": "number",
+                    "example": 186500
+                },
+                "order_growth_rate": {
+                    "description": "订单增长率",
+                    "type": "number",
+                    "example": 8.3
+                },
+                "pending_activities": {
+                    "type": "integer",
+                    "example": 23
+                },
+                "revenue_growth_rate": {
+                    "description": "收入增长率",
+                    "type": "number",
+                    "example": 15.2
+                },
+                "today_new_customers": {
+                    "description": "今日数据",
+                    "type": "integer",
+                    "example": 3
+                },
+                "today_orders": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "today_revenue": {
+                    "type": "number",
+                    "example": 8500
+                },
+                "total_customers": {
+                    "description": "总体统计",
+                    "type": "integer",
+                    "example": 1250
+                },
+                "total_orders": {
+                    "type": "integer",
+                    "example": 3456
+                },
+                "total_products": {
+                    "type": "integer",
+                    "example": 89
+                },
+                "total_revenue": {
+                    "type": "number",
+                    "example": 2450000
+                }
+            }
+        },
+        "dto.FinancialAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "financial_trend": {
+                    "description": "财务趋势（最近12个月）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "cost": {
+                                "type": "number",
+                                "example": 89600
+                            },
+                            "month": {
+                                "type": "string",
+                                "example": "2024-01"
+                            },
+                            "profit": {
+                                "type": "number",
+                                "example": 67200
+                            },
+                            "profit_rate": {
+                                "type": "number",
+                                "example": 42.9
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 156800
+                            }
+                        }
+                    }
+                },
+                "revenue_overview": {
+                    "description": "收入概览",
+                    "type": "object",
+                    "properties": {
+                        "daily_revenue": {
+                            "type": "number",
+                            "example": 8500
+                        },
+                        "growth_rate": {
+                            "type": "number",
+                            "example": 15.2
+                        },
+                        "monthly_revenue": {
+                            "type": "number",
+                            "example": 186500
+                        },
+                        "total_revenue": {
+                            "type": "number",
+                            "example": 2450000
+                        }
+                    }
+                },
+                "revenue_source_distribution": {
+                    "description": "收入来源分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "percentage": {
+                                "type": "number",
+                                "example": 77.1
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 1890000
+                            },
+                            "source": {
+                                "type": "string",
+                                "example": "产品销售"
+                            }
+                        }
+                    }
+                },
+                "wallet_stats": {
+                    "description": "钱包统计",
+                    "type": "object",
+                    "properties": {
+                        "active_wallets": {
+                            "type": "integer",
+                            "example": 856
+                        },
+                        "total_balance": {
+                            "type": "number",
+                            "example": 125600
+                        },
+                        "total_consumption": {
+                            "type": "number",
+                            "example": 230400
+                        },
+                        "total_recharge": {
+                            "type": "number",
+                            "example": 356000
+                        },
+                        "total_wallets": {
+                            "type": "integer",
+                            "example": 1180
+                        }
+                    }
                 }
             }
         },
@@ -2786,6 +4423,519 @@ const docTemplate = `{
                 "token_type": {
                     "description": "令牌类型, 通常是 \"Bearer\"",
                     "type": "string"
+                }
+            }
+        },
+        "dto.MarketingAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "campaign_overview": {
+                    "description": "营销活动概览",
+                    "type": "object",
+                    "properties": {
+                        "active_campaigns": {
+                            "type": "integer",
+                            "example": 5
+                        },
+                        "completed_campaigns": {
+                            "type": "integer",
+                            "example": 20
+                        },
+                        "total_campaigns": {
+                            "type": "integer",
+                            "example": 28
+                        },
+                        "total_reach": {
+                            "type": "integer",
+                            "example": 15600
+                        }
+                    }
+                },
+                "campaign_roi": {
+                    "description": "营销活动ROI排行",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "cost": {
+                                "type": "number",
+                                "example": 5000
+                            },
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "春季促销活动"
+                            },
+                            "reach": {
+                                "type": "integer",
+                                "example": 1200
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 35000
+                            },
+                            "roi": {
+                                "type": "number",
+                                "example": 600
+                            },
+                            "type": {
+                                "type": "string",
+                                "example": "sms"
+                            }
+                        }
+                    }
+                },
+                "channel_performance": {
+                    "description": "营销渠道效果",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "campaigns": {
+                                "type": "integer",
+                                "example": 12
+                            },
+                            "channel": {
+                                "type": "string",
+                                "example": "sms"
+                            },
+                            "click_rate": {
+                                "type": "number",
+                                "example": 8.9
+                            },
+                            "delivery_rate": {
+                                "type": "number",
+                                "example": 96.5
+                            },
+                            "open_rate": {
+                                "type": "number",
+                                "example": 32.1
+                            },
+                            "reach": {
+                                "type": "integer",
+                                "example": 5600
+                            }
+                        }
+                    }
+                },
+                "marketing_trend": {
+                    "description": "营销效果趋势",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "campaigns": {
+                                "type": "integer",
+                                "example": 5
+                            },
+                            "conversion_rate": {
+                                "type": "number",
+                                "example": 7.5
+                            },
+                            "conversions": {
+                                "type": "integer",
+                                "example": 256
+                            },
+                            "month": {
+                                "type": "string",
+                                "example": "2024-01"
+                            },
+                            "total_reach": {
+                                "type": "integer",
+                                "example": 3400
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "dto.MarketingCampaignCreateRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "end_time",
+                "name",
+                "start_time",
+                "type"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "亲爱的{name}，您有一份专属优惠待领取！"
+                },
+                "content_template_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2024-06-15T23:59:59Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "六月会员关怀活动"
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-06-10T09:00:00Z"
+                },
+                "target_segment_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "target_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"VIP\"",
+                        " \"新用户\"]"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "sms",
+                        "email",
+                        "push_notification",
+                        "wechat",
+                        "call"
+                    ],
+                    "example": "sms"
+                }
+            }
+        },
+        "dto.MarketingCampaignExecuteRequest": {
+            "type": "object",
+            "properties": {
+                "execution_type": {
+                    "type": "string",
+                    "enum": [
+                        "actual",
+                        "simulation"
+                    ],
+                    "example": "actual"
+                }
+            }
+        },
+        "dto.MarketingCampaignExecuteResponse": {
+            "type": "object",
+            "properties": {
+                "execution_id": {
+                    "type": "string",
+                    "example": "exec-12345"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "营销活动已成功触发执行"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "triggered"
+                }
+            }
+        },
+        "dto.MarketingCampaignListResponse": {
+            "type": "object",
+            "properties": {
+                "campaigns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MarketingCampaignResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 50
+                }
+            }
+        },
+        "dto.MarketingCampaignResponse": {
+            "type": "object",
+            "properties": {
+                "actual_end_time": {
+                    "type": "string"
+                },
+                "actual_start_time": {
+                    "type": "string",
+                    "example": "2024-06-10T09:05:00Z"
+                },
+                "click_count": {
+                    "type": "integer",
+                    "example": 280
+                },
+                "content": {
+                    "type": "string",
+                    "example": "亲爱的{name}，您有一份专属优惠待领取！"
+                },
+                "content_template_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-06-01T10:00:00Z"
+                },
+                "created_by": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "end_time": {
+                    "type": "string",
+                    "example": "2024-06-15T23:59:59Z"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "name": {
+                    "type": "string",
+                    "example": "六月会员关怀活动"
+                },
+                "sent_count": {
+                    "type": "integer",
+                    "example": 1450
+                },
+                "start_time": {
+                    "type": "string",
+                    "example": "2024-06-10T09:00:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "success_count": {
+                    "type": "integer",
+                    "example": 1400
+                },
+                "target_count": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "target_segment_id": {
+                    "type": "integer",
+                    "example": 0
+                },
+                "target_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"VIP\"",
+                        " \"新用户\"]"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "example": "sms"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2024-06-10T14:30:00Z"
+                },
+                "updated_by": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
+        "dto.MarketingCampaignStatsResponse": {
+            "type": "object",
+            "properties": {
+                "campaign_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "campaign_name": {
+                    "type": "string",
+                    "example": "六月会员关怀活动"
+                },
+                "click_rate": {
+                    "description": "点击率 = clicked / delivered * 100",
+                    "type": "number",
+                    "example": 20
+                },
+                "clicked_count": {
+                    "type": "integer",
+                    "example": 280
+                },
+                "delivered_count": {
+                    "type": "integer",
+                    "example": 1400
+                },
+                "delivery_rate": {
+                    "description": "计算比率",
+                    "type": "number",
+                    "example": 96.55
+                },
+                "failed_count": {
+                    "type": "integer",
+                    "example": 50
+                },
+                "open_rate": {
+                    "description": "打开率 = opened / delivered * 100",
+                    "type": "number",
+                    "example": 30
+                },
+                "opened_count": {
+                    "type": "integer",
+                    "example": 420
+                },
+                "replied_count": {
+                    "type": "integer",
+                    "example": 35
+                },
+                "reply_rate": {
+                    "description": "回复率 = replied / delivered * 100",
+                    "type": "number",
+                    "example": 2.5
+                },
+                "sent_count": {
+                    "type": "integer",
+                    "example": 1450
+                },
+                "target_count": {
+                    "type": "integer",
+                    "example": 1500
+                },
+                "unsubscribe_rate": {
+                    "description": "退订率 = unsubscribed / delivered * 100",
+                    "type": "number",
+                    "example": 0.86
+                },
+                "unsubscribed_count": {
+                    "type": "integer",
+                    "example": 12
+                }
+            }
+        },
+        "dto.MarketingCampaignUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "content_template_id": {
+                    "type": "integer"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "六月会员关怀活动（更新）"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "draft",
+                        "scheduled",
+                        "active",
+                        "paused",
+                        "completed",
+                        "archived"
+                    ]
+                },
+                "target_segment_id": {
+                    "type": "integer"
+                },
+                "target_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "sms",
+                        "email",
+                        "push_notification",
+                        "wechat",
+                        "call"
+                    ]
+                }
+            }
+        },
+        "dto.MarketingRecordListResponse": {
+            "type": "object",
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.MarketingRecordResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 1500
+                }
+            }
+        },
+        "dto.MarketingRecordResponse": {
+            "type": "object",
+            "properties": {
+                "campaign_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "channel": {
+                    "type": "string",
+                    "example": "sms"
+                },
+                "clicked_at": {
+                    "type": "string",
+                    "example": "2024-06-10T10:16:00Z"
+                },
+                "contact_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2024-06-10T09:00:00Z"
+                },
+                "customer_id": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "delivered_at": {
+                    "type": "string",
+                    "example": "2024-06-10T09:06:00Z"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "opened_at": {
+                    "type": "string",
+                    "example": "2024-06-10T10:15:00Z"
+                },
+                "replied_at": {
+                    "type": "string"
+                },
+                "response": {
+                    "type": "string",
+                    "example": "{\"action\":\"click\",\"link_id\":\"promo123\"}"
+                },
+                "sent_at": {
+                    "type": "string",
+                    "example": "2024-06-10T09:05:00Z"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "delivered"
                 }
             }
         },
@@ -2953,6 +5103,115 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ProductAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "category_sales_distribution": {
+                    "description": "产品类别销售分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "example": "数码产品"
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 36.3
+                            },
+                            "products": {
+                                "type": "integer",
+                                "example": 23
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 890000
+                            }
+                        }
+                    }
+                },
+                "low_stock_products": {
+                    "description": "库存预警产品",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "example": "数码产品"
+                            },
+                            "current_stock": {
+                                "type": "integer",
+                                "example": 3
+                            },
+                            "id": {
+                                "type": "integer",
+                                "example": 45
+                            },
+                            "min_stock_level": {
+                                "type": "integer",
+                                "example": 10
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "MacBook Air M2"
+                            }
+                        }
+                    }
+                },
+                "product_sales_trend": {
+                    "description": "产品销售趋势",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "categories_active": {
+                                "type": "integer",
+                                "example": 12
+                            },
+                            "month": {
+                                "type": "string",
+                                "example": "2024-01"
+                            },
+                            "products_sold": {
+                                "type": "integer",
+                                "example": 1234
+                            }
+                        }
+                    }
+                },
+                "top_selling_products": {
+                    "description": "热销产品排行（Top 10）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "category": {
+                                "type": "string",
+                                "example": "数码产品"
+                            },
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "iPhone 15 Pro"
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 156000
+                            },
+                            "sold_quantity": {
+                                "type": "integer",
+                                "example": 156
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "dto.ProductBatchGetRequest": {
             "type": "object",
             "required": [
@@ -3058,6 +5317,35 @@ const docTemplate = `{
                 "stock": {
                     "type": "integer",
                     "minimum": 0
+                }
+            }
+        },
+        "dto.QuickStatsResponse": {
+            "type": "object",
+            "properties": {
+                "active_campaigns": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "last_updated": {
+                    "type": "string",
+                    "example": "2024-06-10T14:30:00Z"
+                },
+                "online_users": {
+                    "type": "integer",
+                    "example": 23
+                },
+                "pending_orders": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "system_alerts": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "today_revenue": {
+                    "type": "number",
+                    "example": 8500
                 }
             }
         },
@@ -3168,6 +5456,114 @@ const docTemplate = `{
                 },
                 "is_active": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.SalesAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "average_order_value": {
+                    "description": "客单价分析",
+                    "type": "object",
+                    "properties": {
+                        "current": {
+                            "type": "number",
+                            "example": 708.5
+                        },
+                        "growth_rate": {
+                            "type": "number",
+                            "example": 8.6
+                        },
+                        "previous": {
+                            "type": "number",
+                            "example": 652.2
+                        }
+                    }
+                },
+                "order_status_distribution": {
+                    "description": "订单状态分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "count": {
+                                "type": "integer",
+                                "example": 2896
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 83.8
+                            },
+                            "status": {
+                                "type": "string",
+                                "example": "completed"
+                            }
+                        }
+                    }
+                },
+                "repeat_purchase_rate": {
+                    "description": "复购率分析",
+                    "type": "object",
+                    "properties": {
+                        "rate": {
+                            "type": "number",
+                            "example": 32.5
+                        },
+                        "repeat_customers": {
+                            "type": "integer",
+                            "example": 406
+                        },
+                        "total_customers": {
+                            "type": "integer",
+                            "example": 1250
+                        }
+                    }
+                },
+                "sales_channel_distribution": {
+                    "description": "销售渠道分布",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "channel": {
+                                "type": "string",
+                                "example": "线上"
+                            },
+                            "orders": {
+                                "type": "integer",
+                                "example": 2134
+                            },
+                            "percentage": {
+                                "type": "number",
+                                "example": 77.1
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 1890000
+                            }
+                        }
+                    }
+                },
+                "sales_trend": {
+                    "description": "销售趋势（最近12个月）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "month": {
+                                "type": "string",
+                                "example": "2024-01"
+                            },
+                            "orders": {
+                                "type": "integer",
+                                "example": 289
+                            },
+                            "revenue": {
+                                "type": "number",
+                                "example": 156800
+                            }
+                        }
+                    }
                 }
             }
         },
