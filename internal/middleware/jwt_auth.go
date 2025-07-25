@@ -53,7 +53,8 @@ func NewJWTAuthMiddleware(resManager *resource.Manager) gin.HandlerFunc {
 		}
 
 		// 2.3 解析并校验 token
-		claims, err := utils.ParseToken("", config.JWTOptions{})
+		// 使用解析出的 Bearer token 进行校验，并读取全局配置中的 JWT 设置
+		claims, err := utils.ParseToken(parts[1], config.GetInstance().Auth.JWTOptions)
 		if err != nil {
 			resp.Error(c, resp.CodeUnauthorized, "invalid or expired token")
 			c.Abort()

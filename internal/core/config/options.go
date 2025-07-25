@@ -180,9 +180,14 @@ func GetInstance() *Options {
 
 // SetInstanceForTest 仅用于测试，允许重置配置实例
 func SetInstanceForTest(opts *Options) {
+	// 直接替换单例实例
 	instance = opts
-	// 重置 once，以便 GetInstance 可以在下次调用时重新初始化
+
+	// 重置并立即标记 sync.Once 已执行，
+	// 以防后续调用 GetInstance() 再次初始化覆盖测试配置。
 	once = sync.Once{}
+	// 调用一次空函数，使得 once 进入已执行状态
+	once.Do(func() {})
 }
 
 // ==================== 配置初始化 ====================
