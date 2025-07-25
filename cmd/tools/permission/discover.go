@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("Configuration loaded successfully.")
 
 	// 2. 初始化应用程序引导程序
-	resManager, cleanup, err := bootstrap.Bootstrap()
+	resManager, logCleaner, cleanup, err := bootstrap.Bootstrap()
 	if err != nil {
 		log.Fatalf("failed to bootstrap application: %v", err)
 	}
@@ -52,7 +52,7 @@ func main() {
 	// 4. 初始化一个临时的 Gin Router 来获取路由列表
 	// 注意：这里我们不需要启动 HTTP 服务器，只需要路由定义
 	gin.SetMode(gin.ReleaseMode)
-	router := routes.NewRouter(resManager)
+	router := routes.NewRouter(resManager, logCleaner)
 	fmt.Println("Router initialized for route discovery.")
 
 	// 5. 执行发现和写入操作

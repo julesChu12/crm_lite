@@ -4,9 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"crm_lite/internal/core/config"
 
+	rotatelogs "github.com/lestrrat-go/file-rotatelogs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -27,6 +29,7 @@ var (
 // InitGlobalLogger 初始化全局日志记录器
 func InitGlobalLogger(opts *config.LogOptions) {
 	once.Do(func() {
+
 		encoder := getEncoder(opts)
 		writer := getWriter(opts)
 		core := zapcore.NewCore(encoder, writer, zapcore.Level(opts.Level))
@@ -104,6 +107,22 @@ func getEncoder(opts *config.LogOptions) zapcore.Encoder {
 }
 
 func getWriter(opts *config.LogOptions) zapcore.WriteSyncer {
+	var fileSyncer zapcore.WriteSyncer
+
+	if opts.EnableTimeRotation {
+		// 使用按时间轮转的日志
+		fileSyncer = getTimeRotateWriter(opts)
+	} else {
+		// 使用按大小轮转的日志
+		fileSyncer = getSizeRotateWriter(opts)
+	}
+
+	// 同时输出到控制台和文件
+	return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), fileSyncer)
+}
+
+// getSizeRotateWriter 获取按大小轮转的Writer
+func getSizeRotateWriter(opts *config.LogOptions) zapcore.WriteSyncer {
 	lumberjackSyncer := &lumberjack.Logger{
 		Filename:   filepath.Join(opts.Dir, opts.Filename),
 		MaxSize:    opts.MaxSize,
@@ -111,8 +130,73 @@ func getWriter(opts *config.LogOptions) zapcore.WriteSyncer {
 		MaxAge:     opts.MaxAge,
 		Compress:   opts.Compress,
 	}
-	// 同时输出到控制台和文件
-	return zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumberjackSyncer))
+	return zapcore.AddSync(lumberjackSyncer)
+}
+
+// getTimeRotateWriter 获取按时间轮转的Writer
+func getTimeRotateWriter(opts *config.LogOptions) zapcore.WriteSyncer {
+	// 构建日志文件路径模式
+	baseFilename := filepath.Join(opts.Dir, getBaseFilename(opts.Filename))
+	extension := getFileExtension(opts.Filename)
+
+	var pattern string
+	var rotationTime time.Duration
+
+	switch opts.RotationTime {
+	case "hourly":
+		pattern = baseFilename + "-%Y%m%d-%H" + extension
+		rotationTime = time.Hour
+	case "weekly":
+		pattern = baseFilename + "-%Y%m%d" + extension
+		rotationTime = 7 * 24 * time.Hour
+	default: // daily
+		pattern = baseFilename + "-%Y%m%d" + extension
+		rotationTime = 24 * time.Hour
+	}
+
+	// 创建轮转日志
+	writer, err := rotatelogs.New(
+		pattern,
+		rotatelogs.WithMaxAge(time.Duration(opts.MaxAge)*24*time.Hour), // 文件最大保存时间
+		rotatelogs.WithRotationTime(rotationTime),                      // 轮转时间间隔
+	)
+
+	if err != nil {
+		// 如果创建失败，回退到普通的lumberjack
+		return getSizeRotateWriter(opts)
+	}
+
+	// 如果设置了软链接名称，创建软链接指向当前日志文件
+	if opts.LinkName != "" {
+		linkPath := filepath.Join(opts.Dir, opts.LinkName)
+		// 使用WithLinkName选项
+		writer, _ = rotatelogs.New(
+			pattern,
+			rotatelogs.WithMaxAge(time.Duration(opts.MaxAge)*24*time.Hour),
+			rotatelogs.WithRotationTime(rotationTime),
+			rotatelogs.WithLinkName(linkPath),
+		)
+	}
+
+	return zapcore.AddSync(writer)
+}
+
+// getBaseFilename 获取文件名的基础部分（不包含扩展名）
+func getBaseFilename(filename string) string {
+	ext := filepath.Ext(filename)
+	if ext == "" {
+		return filename
+	}
+	return filename[:len(filename)-len(ext)]
+}
+
+// getFileExtension 获取文件扩展名
+func getFileExtension(filename string) string {
+	ext := filepath.Ext(filename)
+	if ext == "" {
+		return ".log"
+	}
+	return ext
 }
 
 // ============== 包级快捷函数，便于直接调用 ==============

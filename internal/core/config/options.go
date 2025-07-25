@@ -41,14 +41,25 @@ type ServerOptions struct {
 
 // LogOptions 日志配置
 type LogOptions struct {
-	Dir        string `mapstructure:"dir"`        // 日志目录
-	Level      int8   `mapstructure:"level"`      // 日志级别
-	LineNum    bool   `mapstructure:"lineNum"`    // 是否显示行号
-	Filename   string `mapstructure:"filename"`   // 日志文件名
-	MaxSize    int    `mapstructure:"maxSize"`    // 单文件最大大小(字节)
-	MaxAge     int    `mapstructure:"maxAge"`     // 保存天数
-	MaxBackups int    `mapstructure:"maxBackups"` // 最大备份数
-	Compress   bool   `mapstructure:"compress"`   // 是否压缩
+	Dir                string `mapstructure:"dir"`                // 日志目录
+	Level              int8   `mapstructure:"level"`              // 日志级别
+	LineNum            bool   `mapstructure:"lineNum"`            // 是否显示行号
+	Filename           string `mapstructure:"filename"`           // 日志文件名
+	MaxSize            int    `mapstructure:"maxSize"`            // 单文件最大大小(字节)
+	MaxAge             int    `mapstructure:"maxAge"`             // 保存天数
+	MaxBackups         int    `mapstructure:"maxBackups"`         // 最大备份数
+	Compress           bool   `mapstructure:"compress"`           // 是否压缩
+	EnableTimeRotation bool   `mapstructure:"enableTimeRotation"` // 启用按时间轮转
+	RotationTime       string `mapstructure:"rotationTime"`       // 轮转间隔: hourly, daily, weekly
+	LinkName           string `mapstructure:"linkName"`           // 当前日志文件的软链接名称
+}
+
+// LogCleanupOptions 日志清理配置
+type LogCleanupOptions struct {
+	Mode         string        `mapstructure:"mode"`         // 清理模式: internal, external
+	Interval     time.Duration `mapstructure:"interval"`     // 检查间隔
+	RetentionDay int           `mapstructure:"retentionDay"` // 日志保留天数
+	DryRun       bool          `mapstructure:"dryRun"`       // 试运行模式
 }
 
 // DBOptions 数据库配置
@@ -142,13 +153,14 @@ type AuthOptions struct {
 type Options struct {
 	vp *viper.Viper // viper实例
 
-	Server   ServerOptions `mapstructure:"server"`   // 服务器配置
-	Logger   LogOptions    `mapstructure:"logger"`   // 日志配置
-	Database DBOptions     `mapstructure:"database"` // 数据库配置
-	Cache    CacheOptions  `mapstructure:"cache"`    // 缓存配置
-	Auth     AuthOptions   `mapstructure:"auth"`     // 认证配置
-	Email    EmailOptions  `mapstructure:"email"`    // 邮件服务配置
-	PprofOn  bool          `mapstructure:"pprofOn"`  // 性能分析开关
+	Server     ServerOptions     `mapstructure:"server"`     // 服务器配置
+	Logger     LogOptions        `mapstructure:"logger"`     // 日志配置
+	LogCleanup LogCleanupOptions `mapstructure:"logCleanup"` // 日志清理配置
+	Database   DBOptions         `mapstructure:"database"`   // 数据库配置
+	Cache      CacheOptions      `mapstructure:"cache"`      // 缓存配置
+	Auth       AuthOptions       `mapstructure:"auth"`       // 认证配置
+	Email      EmailOptions      `mapstructure:"email"`      // 邮件服务配置
+	PprofOn    bool              `mapstructure:"pprofOn"`    // 性能分析开关
 }
 
 // ==================== 单例模式 ====================
@@ -188,13 +200,12 @@ func InitOptions(configFile string) error {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 			return fmt.Errorf("读取配置文件失败: %v", err)
 		}
-		// 配置文件未找到，继续使用环境变量和默认值
 	}
 
 	// 启用环境变量自动映射
 	vp.AutomaticEnv()
+	// 开启环境变量自动映射后 优先级则从高到低为 Set() > 环境变量 > flag > 配置文件 > 默认值 ： db config 获取的是.env 中的值
 	vp.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
-
 	// 应用配置
 	opts.ConfigureWithViper(vp)
 	return nil

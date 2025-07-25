@@ -24,30 +24,47 @@ func Execute() error {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 	// 优先级：--config flag > ./.env file (for APP_ENV) > ./config/app.{env}.yaml default path
 	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file path (e.g. --config=config/app.prod.yaml)")
+	cobra.OnInitialize(initConfig)
 }
 
 // 初始化系统配置
 func initConfig() {
 	// 优先从 .env 文件加载环境变量 (例如 APP_ENV)
-	_ = godotenv.Load()
+	envFile, err := findConfigInProject("app.env")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot locate app.env: %v\n", err)
+	} else if err := godotenv.Load(envFile); err != nil {
+		fmt.Fprintf(os.Stderr, "failed to load app.env: %v\n", err)
+	}
 
 	// 只有当 --config flag 未被设置时，我们才进行自动查找
 	if configFile == "" {
-		// 1. 尝试从约定的容器路径加载
-		env := strings.ToLower(os.Getenv("ENV"))
-		if env == "" {
-			env = "dev" // 默认环境
+		env := "dev"
+		if loadedEnv := strings.ToLower(os.Getenv("ENV")); loadedEnv != "" {
+			env = loadedEnv
 		}
-		// 容器/生产环境的约定路径
-		containerConfigPath := fmt.Sprintf("/app/config/app.%s.yaml", env)
-		if _, err := os.Stat(containerConfigPath); err == nil {
-			configFile = containerConfigPath
-		} else {
-			// 2. 如果容器路径不存在，回退到基于 go.mod 的动态查找 (主要用于本地开发)
-			projectConfigPath, err := findConfigInProject(fmt.Sprintf("app.%s.yaml", env))
+		configName := fmt.Sprintf("app.%s.yaml", env)
+		// 优先级 1: 从 PROJECT_ROOT 环境变量指定的路径
+		if projectRoot := os.Getenv("PROJECT_ROOT"); projectRoot != "" {
+			path := filepath.Join(projectRoot, "config", configName)
+			if _, err := os.Stat(path); err == nil {
+				configFile = path
+			}
+		}
+
+		// 优先级 2: 从容器/生产环境的约定路径
+		if configFile == "" {
+			containerConfigPath := fmt.Sprintf("/app/config/%s", configName)
+			if _, err := os.Stat(containerConfigPath); err == nil {
+				configFile = containerConfigPath
+			}
+		}
+
+		// 优先级 3: 从项目根目录 (通过 go.mod 动态查找, 用于本地开发)
+		if configFile == "" {
+			projectConfigPath, err := findConfigInProject(configName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "config file not found in standard paths: %v\n", err)
 				os.Exit(1)

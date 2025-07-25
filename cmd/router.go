@@ -26,7 +26,7 @@ var routerListCmd = &cobra.Command{
 
 func listRoutes(cmd *cobra.Command, args []string) {
 	// 初始化资源管理器（仅用于路由列表，不需要完整启动）
-	resManager, cleanup, err := bootstrap.Bootstrap()
+	resManager, logCleaner, cleanup, err := bootstrap.Bootstrap()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to bootstrap application: %v\n", err)
 		os.Exit(1)
@@ -34,7 +34,7 @@ func listRoutes(cmd *cobra.Command, args []string) {
 	defer cleanup()
 
 	// 初始化 Gin 引擎并注册路由
-	r := routes.NewRouter(resManager)
+	r := routes.NewRouter(resManager, logCleaner)
 
 	// 获取所有路由
 	routesInfo := r.Routes()

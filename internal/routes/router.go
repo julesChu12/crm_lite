@@ -5,6 +5,7 @@ import (
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/middleware"
 	"crm_lite/pkg/resp"
+	"crm_lite/pkg/scheduler"
 
 	"github.com/gin-gonic/gin"
 
@@ -15,7 +16,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func NewRouter(resManager *resource.Manager) *gin.Engine {
+func NewRouter(resManager *resource.Manager, logCleaner *scheduler.LogCleaner) *gin.Engine {
 	// 1. 设置Gin模式
 	gin.SetMode(string(config.GetInstance().Server.Mode))
 	router := gin.New()
@@ -40,6 +41,9 @@ func NewRouter(resManager *resource.Manager) *gin.Engine {
 		RegisterWalletRoutes(apiV1, resManager)
 		RegisterMarketingRoutes(apiV1, resManager)
 		// RegisterDashboardRoutes(apiV1, resManager) // Temporarily disabled due to test issues
+
+		// 维护相关路由
+		SetupMaintenanceRoutes(apiV1, logCleaner)
 	}
 
 	// 5. 设置一些通用路由

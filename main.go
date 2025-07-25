@@ -8,11 +8,11 @@ import (
 // @title           CRM Lite API
 // @version         1.0
 // @description     This is a lightweight CRM system.
-// @termsOfService  http://swagger.io/terms/
+// @termsOfService  https://github.com/julesChu12/crm_lite/blob/main/LICENSE
 
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
+// @contact.name   Jules Chu
+// @contact.url    https://github.com/julesChu12
+// @contact.email  juleschu0929@gmail.com
 
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html

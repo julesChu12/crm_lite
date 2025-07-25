@@ -24,22 +24,25 @@ logger:
   level: -1 # Debug level
   lineNum: true
   maxSize: 10
-  maxAge: 3
+  maxAge: 1
   maxBackups: 5
   compress: false
+  enableTimeRotation: true    # 启用按时间轮转
+  rotationTime: "daily"       # 轮转间隔: hourly, daily, weekly
+  linkName: "current.log"     # 当前日志文件的软链接名称
 
 # ==================== 数据库配置 ====================
 db:
-  driver: mysql              # 数据库驱动: mysql, sqlite3
-  host: "127.0.0.1"          # 数据库服务器地址
-  port: 3306                 # 数据库端口 (MySQL/MariaDB 默认 3306)
-  user: "root"               # 数据库用户名
-  password: "root_password"  # 数据库密码
-  dbname: "crm_lite_dev"    # 数据库名称
-  sslmode: disable           # (主要用于PostgreSQL) SSL模式: disable, require, verify-ca, verify-full
-  timeZone: "Asia/Shanghai"  # 数据库时区设置
-  maxOpenConns: 10           # 最大活跃连接数
-  maxIdleConns: 5            # 最大空闲连接数
+  driver: mysql # 数据库驱动: mysql, sqlite3
+  host: mariadb # 数据库服务器地址
+  port: 3306 # 数据库端口 (MySQL/MariaDB 默认 3306)
+  user: "crm_user" # 数据库用户名
+  password: "crm_pass" # 数据库密码
+  dbname: "crm_db" # 数据库名称
+  sslmode: disable # (主要用于PostgreSQL) SSL模式: disable, require, verify-ca, verify-full
+  timeZone: "Asia/Shanghai" # 数据库时区设置
+  maxOpenConns: 10 # 最大活跃连接数
+  maxIdleConns: 5 # 最大空闲连接数
   connMaxLifetime: 1h
 
 # ==================== 缓存配置 ====================
@@ -72,15 +75,22 @@ auth:
   default_role: "authenticated_user"
 # ==================== 邮件服务配置 (SMTP) ====================
 email:
-  host: "smtp.gmail.com"         # SMTP 服务器地址
-  port: 587                      # SMTP 端口 (587 for TLS, 465 for SSL)
+  host: "smtp.gmail.com" # SMTP 服务器地址
+  port: 587 # SMTP 端口 (587 for TLS, 465 for SSL)
   username: "your-email@gmail.com" # 您的 Gmail 邮箱
   # 推荐使用环境变量设置密码: export EMAIL_PASSWORD=your_gmail_app_password
-  password: "your-gmail-app-password"                   # 您的 Gmail 应用专用密码 (App Password)
-  from: "your-email@gmail.com"   # 发件人邮箱，通常与 username 相同
-  fromName: "CRM Lite Support"   # 发件人显示名称
-  useTLS: true                   # 是否强制使用 STARTTLS
-  insecureSkip: false            # 在生产环境中应始终为 false
+  password: "your-gmail-app-password" # 您的 Gmail 应用专用密码 (App Password)
+  from: "your-email@gmail.com" # 发件人邮箱，通常与 username 相同
+  fromName: "CRM Lite Support" # 发件人显示名称
+  useTLS: true # 是否强制使用 STARTTLS
+  insecureSkip: false # 在生产环境中应始终为 false
+
+# ==================== 日志清理配置 ====================
+logCleanup:
+  mode: "internal" # internal: 内置调度器, external: 外部调度器
+  interval: "1h" # 检查间隔 (仅内置模式有效)
+  retentionDay: 1 # 日志保留天数
+  dryRun: false # 试运行模式
 
 # ==================== 性能监控配置 ====================
 pprofOn: true

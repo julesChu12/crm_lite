@@ -3,13 +3,13 @@ services:
     image: mariadb:10.8
     container_name: crm-mariadb
     ports:
-      - "3306:3306"
+      - ${DB_HOST_PORT}:3306
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${DB_DBNAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
-      TZ: 'Asia/Shanghai'
+      TZ: ${DB_TZ}
     volumes:
       - ./tmp/mariadb_data:/var/lib/mysql
     restart: always
@@ -20,7 +20,7 @@ services:
     image: redis:6-alpine
     container_name: crm-redis
     ports:
-      - "6379:6379"
+      - ${REDIS_PORT}:6379
     volumes:
       - ./tmp/redis_data:/data
     restart: always
@@ -31,11 +31,11 @@ services:
     image: phpmyadmin
     container_name: crm-phpmyadmin
     ports:
-      - "8081:80"
+      - ${PMA_PORT}:80
     environment:
-      - PMA_HOST=mariadb
-      - PMA_PORT=3306
-      - TZ=Asia/Shanghai
+      - PMA_HOST=${DB_HOST}
+      - PMA_PORT=${DB_HOST_PORT}
+      - TZ=${DB_TZ}
     restart: always
     networks:
       - crm-network
@@ -46,19 +46,24 @@ services:
       dockerfile: Dockerfile.dev
     container_name: crm-app
     ports:
-      - "8080:8080"
-      - "2345:2345" 
+      - ${CRM_APP_PORT}:8080
+      - "2345:2345"
     volumes:
       - ./:/app
     command: air
+    environment:
+      # 应用运行环境
+      ENV: ${ENV}
+      # 数据库连接配置
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_HOST_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DBNAME: ${DB_DBNAME}
+      DB_TZ: ${DB_TZ}
     depends_on:
       - mariadb
       - redis
-    env_file:
-      - .env
-    environment:
-      - ENV=dev
-      - TZ=Asia/Shanghai
     cap_add:
       - SYS_PTRACE
     security_opt:
