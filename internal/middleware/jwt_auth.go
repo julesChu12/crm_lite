@@ -76,12 +76,12 @@ func NewJWTAuthMiddleware(resManager *resource.Manager) gin.HandlerFunc {
 		}
 
 		// 2.5 将用户信息注入上下文，供后续业务使用
-		c.Set("claims", claims)
+		c.Set(ContextKeyClaims, claims)
 		ctx := utils.WithUser(c.Request.Context(), claims.UserID, claims.Username)
 		c.Request = c.Request.WithContext(ctx)
-		c.Set("user_id", claims.UserID)
-		c.Set("username", claims.Username)
-		c.Set("roles", claims.Roles)
+		c.Set(ContextKeyUserID, claims.UserID)
+		c.Set(ContextKeyUsername, claims.Username)
+		c.Set(ContextKeyRoles, claims.Roles)
 
 		c.Next()
 	}

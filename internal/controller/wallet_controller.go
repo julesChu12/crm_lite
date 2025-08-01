@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"crm_lite/internal/dto"
-
+	"crm_lite/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -84,7 +84,7 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 	}
 
 	// 2. 从上下文中获取操作员信息
-	operatorIDVal, _ := ctx.Get("user_id")
+	operatorIDVal, _ := ctx.Get(middleware.ContextKeyUserID)
 	operatorID := operatorIDVal.(int64)
 
 	// 3. 调用服务

@@ -3,6 +3,7 @@ package routes
 import (
 	"crm_lite/internal/controller"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +12,7 @@ import (
 func registerCustomerRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
 	customerController := controller.NewCustomerController(rm)
 
-	customers := rg.Group("/customers")
+	customers := rg.Group("/customers").Use(middleware.NewSimpleCustomerAccessMiddleware(rm))
 	{
 		customers.POST("", customerController.CreateCustomer)
 		customers.GET("", customerController.ListCustomers)

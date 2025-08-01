@@ -2,12 +2,14 @@ package middleware
 
 import (
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/dao/query"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // NewSimpleCustomerAccessMiddleware 返回一个基于 manager_id 简单层级的权限校验中间件。
@@ -30,15 +32,14 @@ func NewSimpleCustomerAccessMiddleware(resManager *resource.Manager) gin.Handler
 			return
 		}
 
-		userIDVal, exists := c.Get("user_id")
+		userIDVal, exists := c.Get(ContextKeyUserID)
 		if !exists {
 			resp.Error(c, http.StatusUnauthorized, "未登录")
 			c.Abort()
 			return
 		}
-		userID := userIDVal.(int64)
 
-		rolesVal, _ := c.Get("roles")
+		rolesVal, _ := c.Get(ContextKeyRoles)
 		var roles []string
 		if rolesVal != nil {
 			roles = rolesVal.([]string)
@@ -51,7 +52,26 @@ func NewSimpleCustomerAccessMiddleware(resManager *resource.Manager) gin.Handler
 				return
 			}
 		}
-
+		userUUID := userIDVal.(string)
+		// 根据UUID查询用户ID
+		dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+		if err != nil {
+			resp.Error(c, http.StatusInternalServerError, "数据库资源获取失败")
+			c.Abort()
+			return
+		}
+		q := query.Use(dbRes.DB)
+		user, err := q.AdminUser.WithContext(c.Request.Context()).Where(q.AdminUser.UUID.Eq(userUUID)).First()
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				resp.Error(c, http.StatusUnauthorized, "用户不存在")
+			} else {
+				resp.Error(c, http.StatusInternalServerError, "用户查询失败")
+			}
+			c.Abort()
+			return
+		}
+		userID := user.ID
 		// 如果是负责人本人或上级，放行
 		allowed, err := hierarchySvc.CanAccessCustomer(c.Request.Context(), userID, customerID)
 		if err != nil {

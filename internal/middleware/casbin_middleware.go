@@ -29,7 +29,7 @@ func NewCasbinMiddleware(rm *resource.Manager) gin.HandlerFunc {
 		}
 
 		// 2.2 从 context 中获取用户角色
-		rolesVal, exists := c.Get("roles")
+		rolesVal, exists := c.Get(ContextKeyRoles)
 		if !exists {
 			resp.Error(c, resp.CodeForbidden, "access denied: user roles not found in context")
 			c.Abort()

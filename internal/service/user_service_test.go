@@ -6,6 +6,7 @@ import (
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dto"
+	"fmt"
 	"testing"
 
 	"github.com/casbin/casbin/v2"
@@ -26,7 +27,7 @@ type UserServiceTestSuite struct {
 
 func (s *UserServiceTestSuite) SetupSuite() {
 	// Setup in-memory SQLite database
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 	})
 	s.Require().NoError(err)
@@ -53,7 +54,7 @@ func (s *UserServiceTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	err = db.Exec(`
-		CREATE TABLE roles (
+		CREATE TABLE IF NOT EXISTS roles (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			name VARCHAR(50) NOT NULL,
 			display_name VARCHAR(100) NOT NULL,
@@ -339,4 +340,159 @@ func (s *UserServiceTestSuite) TestDeleteUser_Success() {
 	casbinRoles, err := s.enforcer.GetRolesForUser(user.UUID)
 	s.NoError(err)
 	s.Empty(casbinRoles)
+}
+
+func (s *UserServiceTestSuite) TestDeleteUser_NotFound() {
+	err := s.service.DeleteUser(context.Background(), "non-existent-uuid")
+	s.Error(err)
+	s.Equal(ErrUserNotFound, err)
+}
+
+func (s *UserServiceTestSuite) TestUpdateUserByAdmin_NotFound() {
+	req := &dto.AdminUpdateUserRequest{
+		Email: "updated@example.com",
+	}
+
+	resp, err := s.service.UpdateUserByAdmin(context.Background(), "non-existent-uuid", req)
+	s.Error(err)
+	s.Nil(resp)
+	s.Equal(ErrUserNotFound, err)
+}
+
+func (s *UserServiceTestSuite) TestUpdateUserByAdmin_EmailAlreadyExists() {
+	// Create two users
+	user1 := model.AdminUser{UUID: "uuid-1", Username: "user1", Email: "user1@test.com"}
+	user2 := model.AdminUser{UUID: "uuid-2", Username: "user2", Email: "user2@test.com"}
+	s.db.Create(&user1)
+	s.db.Create(&user2)
+
+	// Try to update user2 with user1's email
+	req := &dto.AdminUpdateUserRequest{
+		Email: "user1@test.com",
+	}
+
+	resp, err := s.service.UpdateUserByAdmin(context.Background(), user2.UUID, req)
+	s.Error(err)
+	s.Nil(resp)
+	s.Equal(ErrEmailAlreadyExists, err)
+}
+
+func (s *UserServiceTestSuite) TestUpdateUserByAdmin_PhoneAlreadyExists() {
+	// Create two users
+	user1 := model.AdminUser{UUID: "uuid-1", Username: "user1", Phone: "1111111111"}
+	user2 := model.AdminUser{UUID: "uuid-2", Username: "user2", Phone: "2222222222"}
+	s.db.Create(&user1)
+	s.db.Create(&user2)
+
+	// Try to update user2 with user1's phone
+	req := &dto.AdminUpdateUserRequest{
+		Phone: "1111111111",
+	}
+
+	resp, err := s.service.UpdateUserByAdmin(context.Background(), user2.UUID, req)
+	s.Error(err)
+	s.Nil(resp)
+	s.Equal(ErrPhoneAlreadyExists, err)
+}
+
+func (s *UserServiceTestSuite) TestListUsers_WithPagination() {
+	// Create multiple users
+	for i := 1; i <= 15; i++ {
+		user := model.AdminUser{
+			Username: fmt.Sprintf("user%d", i),
+			Email:    fmt.Sprintf("user%d@test.com", i),
+		}
+		s.db.Create(&user)
+	}
+
+	// Test first page
+	req := &dto.UserListRequest{Page: 1, PageSize: 10}
+	resp, err := s.service.ListUsers(context.Background(), req)
+	s.NoError(err)
+	s.EqualValues(15, resp.Total)
+	s.Len(resp.Users, 10)
+
+	// Test second page
+	req = &dto.UserListRequest{Page: 2, PageSize: 10}
+	resp, err = s.service.ListUsers(context.Background(), req)
+	s.NoError(err)
+	s.EqualValues(15, resp.Total)
+	s.Len(resp.Users, 5)
+}
+
+func (s *UserServiceTestSuite) TestListUsers_WithFilters() {
+	// Create test users
+	users := []model.AdminUser{
+		{Username: "alice", Email: "alice@test.com", RealName: "Alice Smith", IsActive: true},
+		{Username: "bob", Email: "bob@test.com", RealName: "Bob Johnson", IsActive: false},
+		{Username: "charlie", Email: "charlie@test.com", RealName: "Charlie Brown", IsActive: true},
+	}
+	for _, user := range users {
+		s.db.Create(&user)
+	}
+
+	// Filter by username
+	req := &dto.UserListRequest{Page: 1, PageSize: 10, Username: "alice"}
+	resp, err := s.service.ListUsers(context.Background(), req)
+	s.NoError(err)
+	s.EqualValues(1, resp.Total)
+	s.Len(resp.Users, 1)
+	s.Equal("alice", resp.Users[0].Username)
+
+	// Filter by email
+	req = &dto.UserListRequest{Page: 1, PageSize: 10, Email: "bob@test.com"}
+	resp, err = s.service.ListUsers(context.Background(), req)
+	s.NoError(err)
+	s.EqualValues(1, resp.Total)
+	s.Equal("bob", resp.Users[0].Username)
+
+	// Filter by active status
+	isActive := true
+	req = &dto.UserListRequest{Page: 1, PageSize: 10, IsActive: &isActive}
+	resp, err = s.service.ListUsers(context.Background(), req)
+	s.NoError(err)
+	s.EqualValues(2, resp.Total) // alice and charlie
+	s.Len(resp.Users, 2)
+}
+
+func (s *UserServiceTestSuite) TestCreateUserByAdmin_PhoneAlreadyExists() {
+	// Pre-create a user with phone
+	existingUser := &model.AdminUser{
+		UUID:     "uuid-phone",
+		Username: "phoneuser",
+		Email:    "phone@example.com",
+		Phone:    "1234567890",
+		IsActive: true,
+	}
+	s.db.Create(existingUser)
+
+	ctx := context.Background()
+	req := &dto.AdminCreateUserRequest{
+		Username: "newuser",
+		Email:    "new@example.com",
+		Phone:    "1234567890", // Same phone
+		Password: "password",
+	}
+
+	_, err := s.service.CreateUserByAdmin(ctx, req)
+	s.Error(err)
+	s.ErrorIs(err, ErrPhoneAlreadyExists)
+}
+
+func (s *UserServiceTestSuite) TestCreateUserByAdmin_InvalidRoleID() {
+	ctx := context.Background()
+	req := &dto.AdminCreateUserRequest{
+		Username: "roleuser",
+		Email:    "role@example.com",
+		Phone:    "9876543210",
+		Password: "password123",
+		RoleIDs:  []int64{999}, // Non-existent role
+	}
+
+	// This should still succeed but only assign default role
+	resp, err := s.service.CreateUserByAdmin(ctx, req)
+	s.NoError(err)
+	s.NotNil(resp)
+	s.Contains(resp.Roles, "default-role")
+	s.NotContains(resp.Roles, "non-existent")
 }

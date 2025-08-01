@@ -26,7 +26,7 @@ func NewRouter(resManager *resource.Manager, logCleaner *scheduler.LogCleaner) *
 
 	// 3. 创建 /api/v1 路由组并应用安全中间件
 	apiV1 := router.Group("/api/v1")
-	apiV1.Use(middleware.NewJWTAuthMiddleware(resManager), middleware.NewCasbinMiddleware(resManager), middleware.NewSimpleCustomerAccessMiddleware(resManager))
+	apiV1.Use(middleware.NewJWTAuthMiddleware(resManager), middleware.NewCasbinMiddleware(resManager))
 	{
 		// 所有 v1 路由都在这里注册。
 		// 中间件内部的白名单会负责放行登录、注册等公开路由。

@@ -6,6 +6,7 @@ type RoleCreateRequest struct {
 	Name        string `json:"name" binding:"required,min=2,max=50"`
 	DisplayName string `json:"display_name" binding:"required,min=2,max=100"`
 	Description string `json:"description"`
+	IsActive    bool   `json:"is_active"`
 }
 
 type RoleUpdateRequest struct {

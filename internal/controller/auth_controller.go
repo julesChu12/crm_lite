@@ -4,6 +4,7 @@ import (
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dto"
+	"crm_lite/internal/middleware"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"crm_lite/pkg/utils"
@@ -148,7 +149,7 @@ func (c *AuthController) UpdateProfile(ctx *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /auth/profile [get]
 func (ac *AuthController) GetProfile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, _ := c.Get(middleware.ContextKeyUserID)
 	user, err := ac.authService.GetProfile(c.Request.Context(), userID.(string))
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) {
@@ -168,7 +169,7 @@ func (ac *AuthController) ChangePassword(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	userID, _ := c.Get("user_id")
+	userID, _ := c.Get(middleware.ContextKeyUserID)
 	err := ac.authService.ChangePassword(c.Request.Context(), userID.(string), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidPassword) {

@@ -3,6 +3,7 @@ package routes
 import (
 	"crm_lite/internal/controller"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/middleware"
 	"crm_lite/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ func RegisterWalletRoutes(router *gin.RouterGroup, resourceManager *resource.Man
 	walletCtl := controller.NewWalletController(walletSvc)
 
 	// 创建一个 "wallets" 路由组
-	walletRoutes := router.Group("/customers/:id")
+	walletRoutes := router.Group("/customers/:id").Use(middleware.NewSimpleCustomerAccessMiddleware(resourceManager))
 	{
 		// GET /v1/customers/:id/wallet
 		walletRoutes.GET("/wallet", walletCtl.GetWalletByCustomerID)

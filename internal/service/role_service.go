@@ -45,7 +45,7 @@ func (s *RoleService) CreateRole(ctx context.Context, req *dto.RoleCreateRequest
 		Name:        req.Name,
 		DisplayName: req.DisplayName,
 		Description: req.Description,
-		IsActive:    true,
+		IsActive:    req.IsActive,
 	}
 	if err := s.q.Role.WithContext(ctx).Create(role); err != nil {
 		return nil, err
