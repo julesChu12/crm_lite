@@ -36,11 +36,11 @@ func NewRouter(resManager *resource.Manager, logCleaner *scheduler.LogCleaner) *
 		registerPermissionRoutes(apiV1, resManager)
 		registerCustomerRoutes(apiV1, resManager)
 		RegisterContactRoutes(apiV1, resManager)
-		registerProductRoutes(apiV1, resManager)
-		registerOrderRoutes(apiV1, resManager)
+        registerProductRoutes(apiV1, resManager)
+        // registerOrderRoutes(apiV1, resManager) // hidden for MVP
 		RegisterWalletRoutes(apiV1, resManager)
-		RegisterMarketingRoutes(apiV1, resManager)
-		// RegisterDashboardRoutes(apiV1, resManager) // Temporarily disabled due to test issues
+        RegisterMarketingRoutes(apiV1, resManager)
+        RegisterDashboardRoutes(apiV1, resManager)
 
 		// 维护相关路由
 		SetupMaintenanceRoutes(apiV1, logCleaner)

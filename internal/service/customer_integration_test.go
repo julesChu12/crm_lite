@@ -15,7 +15,6 @@ import (
 type CustomerIntegrationTestSuite struct {
 	suite.Suite
 	resManager *resource.Manager
-	cleanup    func()
 	service    *CustomerService
 	db         *resource.DBResource
 }

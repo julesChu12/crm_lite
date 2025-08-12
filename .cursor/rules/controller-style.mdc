@@ -3,6 +3,7 @@
 本规则适用于 `internal/controller` 目录下的所有 Go 语言文件，用于统一控制器层代码的编写风格。
 
 ## 1. 结构体命名
+
 - 控制器结构体必须以 `Controller` 结尾，例如 `UserController`, `ContactController`。
 - 必须通过 `NewXxxController` 构造函数接收 `*resource.Manager` 作为唯一参数。
 
@@ -13,6 +14,7 @@ func NewUserController(rm *resource.Manager) *UserController {
 ```
 
 ## 2. gin.Context 命名
+
 - 统一使用 `c *gin.Context` 作为方法接收的上下文变量名，避免混用 `ctx`/`context` 等。
 
 ```go
@@ -20,6 +22,7 @@ func (uc *UserController) CreateUser(c *gin.Context) { /* ... */ }
 ```
 
 ## 3. Swagger 注释规范
+
 - 每个处理函数顶部使用多行注释，首行以 `// Xxx godoc` 开头，其中 `Xxx` 与函数名一致。
 - 标签顺序示例：`@Summary`、`@Description`、`@Tags`、`@Accept`、`@Produce`、`@Param`、`@Success`、`@Failure`、`@Security`、`@Router`。
 - 参数中的路径变量统一使用 `id`，例如：
@@ -29,6 +32,7 @@ func (uc *UserController) CreateUser(c *gin.Context) { /* ... */ }
 ```
 
 ## 4. 错误处理与响应
+
 - 必须使用 [`pkg/resp/resp.go`](mdc:pkg/resp/resp.go) 中定义的响应封装函数：
   - 成功：`resp.Success(c, data)` / `resp.SuccessWithCode(c, resp.CodeCreated, data)`
   - 业务错误：`resp.Error(c, resp.CodeInvalidParam, "error message")`
@@ -36,16 +40,20 @@ func (uc *UserController) CreateUser(c *gin.Context) { /* ... */ }
 - 禁止直接使用 `c.JSON` 返回原始响应。
 
 ## 5. 函数命名
+
 - 使用动宾结构且语义清晰：`CreateUser`、`ListContacts`、`UpdateOrder`，避免简写如 `Create`、`List`。
 - 与路由及 Swagger 文档保持一致。
 
 ## 6. 依赖注入
+
 - 控制器只能依赖 Service 层，不允许直接操作 DAO 或 Resource。
 
 ## 7. 示例
+
 查看示例实现：[UserController](mdc:internal/controller/user_controller.go)。
 
-description:
+Description:
 globs:
 alwaysApply: false
+
 ---

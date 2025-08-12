@@ -1,6 +1,6 @@
 # CRM Lite - 轻量级客户关系管理系统
 
-[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?style=for-the-badge&logo=go)](https://go.dev/)
 [![Gin](https://img.shields.io/badge/Gin-v1.9-0089D6?style=for-the-badge)](https://gin-gonic.com/)
 [![GORM](https://img.shields.io/badge/GORM-v1.25-9B4F96?style=for-the-badge)](https://gorm.io/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker)](https://www.docker.com/)
@@ -9,31 +9,31 @@
 
 ## ✨ 核心功能
 
--   **身份认证与授权**: 基于 JWT 的用户认证和 Casbin 的 RBAC 权限控制。
--   **用户与角色管理**: 支持多用户、多角色的管理体系。
--   **客户管理**: 完整的客户信息 CRUD 和批量查询功能。
--   **产品管理**: 管理可销售的产品或服务，包括库存。
--   **订单管理**: 支持事务性的订单创建和丰富的查询功能。
--   **API 文档**: 通过 Swagger (OpenAPI) 自动生成并提供交互式 API 文档。
--   **其他模块**: 包含钱包、营销等模块的基础结构，可按需扩展。
+- **身份认证与授权**: 基于 JWT 的用户认证和 Casbin 的 RBAC 权限控制。
+- **用户与角色管理**: 支持多用户、多角色的管理体系。
+- **客户管理**: 完整的客户信息 CRUD 和批量查询功能。
+- **产品管理**: 管理可销售的产品或服务，包括库存。
+- **订单管理**: 支持事务性的订单创建和丰富的查询功能。
+- **API 文档**: 通过 Swagger (OpenAPI) 自动生成并提供交互式 API 文档。
+- **其他模块**: 包含钱包、营销等模块的基础结构，可按需扩展。
 
 ## 🛠️ 技术栈
 
--   **后端**: Go, Gin
--   **数据库**: GORM, MariaDB
--   **缓存**: Redis
--   **命令行**: Cobra
--   **安全**: JWT, Casbin
--   **日志**: Zap
--   **容器化**: Docker, Docker Compose
+- **后端**: Go, Gin
+- **数据库**: GORM, MariaDB
+- **缓存**: Redis
+- **命令行**: Cobra
+- **安全**: JWT, Casbin
+- **日志**: Zap
+- **容器化**: Docker, Docker Compose
 
 ## 🚀 快速开始
 
 ### 1. 环境准备
 
--   [Go](https://go.dev/doc/install) 1.24+
--   [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
--   [swag](https://github.com/swaggo/swag) CLI (用于生成 API 文档)
+- [Go](https://go.dev/doc/install) 1.24+
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- [swag](https://github.com/swaggo/swag) CLI (用于生成 API 文档)
 
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
@@ -57,6 +57,7 @@ cp config/app.test.yaml config/app.prod.yaml
 ```bash
 docker-compose up -d
 ```
+
 这将启动 MariaDB, Redis, 和一个可选的 phpMyAdmin。
 
 ### 4. 数据库迁移
@@ -93,7 +94,7 @@ swag init
 
 CRM Lite 遵循了清晰的分层架构，主要的应用逻辑位于 `internal/` 目录下：
 
-```
+```text
 internal/
 ├── bootstrap/     # 应用启动和初始化逻辑
 ├── controller/    # HTTP 控制器，处理请求和响应
@@ -110,7 +111,7 @@ internal/
 
 想深入了解每个模块的设计细节吗？请查阅我们的**架构文档**：
 
--   [**`docs/architecture/README.md`**](./docs/architecture/README.md)
+- [**`docs/architecture/README.md`**](./docs/architecture/README.md)
 
 ## 🤝 贡献
 
@@ -118,4 +119,4 @@ internal/
 
 ## 📄 许可证
 
-本项目基于 [MIT License](./LICENSE) 开源。
+本项目基于 MIT License 开源。
