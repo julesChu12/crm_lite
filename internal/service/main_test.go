@@ -23,17 +23,20 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	if err := setup(); err != nil {
-		log.Fatalf("Failed to setup test environment: %v", err)
-	}
+    // 通过环境变量控制是否运行需要 Docker 的集成测试
+    if os.Getenv("RUN_DB_TESTS") == "1" {
+        if err := setup(); err != nil {
+            log.Fatalf("Failed to setup test environment: %v", err)
+        }
+        code := m.Run()
+        if err := teardown(); err != nil {
+            log.Printf("Failed to teardown test environment: %v", err)
+        }
+        os.Exit(code)
+    }
 
-	code := m.Run()
-
-	if err := teardown(); err != nil {
-		log.Printf("Failed to teardown test environment: %v", err)
-	}
-
-	os.Exit(code)
+    log.Println("RUN_DB_TESTS is not set; skipping integration setup and running unit tests only")
+    os.Exit(m.Run())
 }
 
 func setup() error {
