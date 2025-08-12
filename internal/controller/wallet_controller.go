@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+    "strings"
 
 	"crm_lite/internal/dto"
 	"crm_lite/internal/middleware"
@@ -93,6 +94,8 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 		switch {
 		case errors.Is(err, service.ErrCustomerNotFound), errors.Is(err, service.ErrWalletNotFound):
 			resp.Error(ctx, http.StatusNotFound, err.Error())
+        case strings.Contains(err.Error(), "phone last4"):
+            resp.Error(ctx, http.StatusForbidden, err.Error())
 		case errors.Is(err, service.ErrInsufficientBalance):
 			resp.Error(ctx, http.StatusUnprocessableEntity, err.Error())
 		default:
@@ -102,4 +105,45 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 	}
 
 	resp.Success(ctx, nil)
+}
+
+// ListTransactions @Summary 获取客户钱包流水
+// @Description 查询客户钱包的交易流水
+// @Tags Wallets
+// @Produce json
+// @Param id path int true "客户ID"
+// @Param type query string false "交易类型"
+// @Param source query string false "来源"
+// @Param start_date query string false "开始日期(YYYY-MM-DD)"
+// @Param end_date query string false "结束日期(YYYY-MM-DD)"
+// @Param page query int false "页码"
+// @Param page_size query int false "每页数量"
+// @Success 200 {object} resp.Response{data=dto.WalletTransactionListResponse} "成功"
+// @Failure 404 {object} resp.Response "钱包未找到"
+// @Router /v1/customers/{id}/wallet/transactions [get]
+func (c *WalletController) ListTransactions(ctx *gin.Context) {
+    customerIDStr := ctx.Param("id")
+    customerID, err := strconv.ParseInt(customerIDStr, 10, 64)
+    if err != nil {
+        resp.Error(ctx, http.StatusBadRequest, "无效的客户ID")
+        return
+    }
+
+    var req dto.WalletTransactionListRequest
+    if err := ctx.ShouldBindQuery(&req); err != nil {
+        resp.Error(ctx, http.StatusBadRequest, err.Error())
+        return
+    }
+
+    result, err := c.walletSvc.ListTransactions(ctx.Request.Context(), customerID, &req)
+    if err != nil {
+        if errors.Is(err, service.ErrWalletNotFound) {
+            resp.Error(ctx, http.StatusNotFound, err.Error())
+            return
+        }
+        resp.Error(ctx, http.StatusInternalServerError, err.Error())
+        return
+    }
+
+    resp.Success(ctx, result)
 }

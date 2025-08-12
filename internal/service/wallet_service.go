@@ -7,6 +7,7 @@ import (
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"errors"
+    "time"
 
 	"gorm.io/gorm"
 )
@@ -14,8 +15,9 @@ import (
 // IWalletService 定义了钱包服务的接口
 type IWalletService interface {
 	CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error)
-	CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error
+    CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error
 	GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error)
+    ListTransactions(ctx context.Context, customerID int64, req *dto.WalletTransactionListRequest) (*dto.WalletTransactionListResponse, error)
 }
 
 // WalletService 提供了钱包相关的服务
@@ -83,7 +85,28 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 	}
 	_ = customer // 当前逻辑中仅验证存在性，可根据需要扩展
 
-	// 2. 在事务中执行交易
+    // 2. consume 时校验手机号后四位
+    if req.Type == "consume" {
+        // 获取客户手机号做后四位校验
+        customerPhone := ""
+        cust, err := s.q.Customer.WithContext(ctx).Select(s.q.Customer.Phone).Where(s.q.Customer.ID.Eq(customerID)).First()
+        if err != nil {
+            if errors.Is(err, gorm.ErrRecordNotFound) {
+                return ErrCustomerNotFound
+            }
+            return err
+        }
+        customerPhone = cust.Phone
+        if len(req.PhoneLast4) > 0 {
+            if len(customerPhone) < 4 || req.PhoneLast4 != customerPhone[len(customerPhone)-4:] {
+                return errors.New("phone last4 verification failed")
+            }
+        } else {
+            return errors.New("phone last4 is required for consume")
+        }
+    }
+
+    // 3. 在事务中执行交易
 	return s.q.Transaction(func(tx *query.Query) error {
 		// a. 锁定钱包记录以防止并发问题
 		wallet, err := tx.Wallet.WithContext(ctx).
@@ -103,7 +126,7 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 		var newTotalConsumed float64 = wallet.TotalConsumed
 		var newTotalRecharged float64 = wallet.TotalRecharged
 
-		switch req.Type {
+        switch req.Type {
 		case "consume":
 			transactionAmount = -req.Amount
 			newBalance = balanceBefore - req.Amount
@@ -115,6 +138,10 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 			transactionAmount = req.Amount
 			newBalance = balanceBefore + req.Amount
 			newTotalRecharged += req.Amount
+        case "refund":
+            // 退款按正向增加余额处理
+            transactionAmount = req.Amount
+            newBalance = balanceBefore + req.Amount
 		default:
 			return errors.New("unsupported transaction type")
 		}
@@ -136,13 +163,45 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 		}
 
 		// d. 更新钱包余额和累计数据
-		_, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
+        _, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
 			Updates(map[string]interface{}{
 				"balance":         newBalance,
 				"total_consumed":  newTotalConsumed,
 				"total_recharged": newTotalRecharged,
 			})
-		return err
+        if err != nil {
+            return err
+        }
+
+        // 满赠：bonus_amount > 0 时，追加一条 correction 正向流水，不计入 total_recharged
+        if req.Type == "recharge" && req.BonusAmount > 0 {
+            bonusBefore := newBalance
+            bonusAfter := bonusBefore + req.BonusAmount
+            bonusTx := &model.WalletTransaction{
+                WalletID:      wallet.ID,
+                Type:          "correction",
+                Amount:        req.BonusAmount,
+                BalanceBefore: bonusBefore,
+                BalanceAfter:  bonusAfter,
+                Source:        "promotion",
+                RelatedID:     req.RelatedID,
+                Remark:        req.Remark,
+                OperatorID:    operatorID,
+            }
+            if err := tx.WalletTransaction.WithContext(ctx).Create(bonusTx); err != nil {
+                return err
+            }
+            // 更新余额
+            _, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
+                Updates(map[string]interface{}{
+                    "balance": bonusAfter,
+                })
+            if err != nil {
+                return err
+            }
+        }
+
+        return nil
 	})
 }
 
@@ -160,6 +219,87 @@ func (s *WalletService) GetWalletByCustomerID(ctx context.Context, customerID in
 	}
 
 	return s.toWalletResponse(wallet), nil
+}
+
+// ListTransactions 查询钱包交易流水
+func (s *WalletService) ListTransactions(ctx context.Context, customerID int64, req *dto.WalletTransactionListRequest) (*dto.WalletTransactionListResponse, error) {
+    // 获取钱包
+    wallet, err := s.q.Wallet.WithContext(ctx).
+        Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq("balance")).
+        First()
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrWalletNotFound
+        }
+        return nil, err
+    }
+
+    q := s.q.WalletTransaction.WithContext(ctx).Where(s.q.WalletTransaction.WalletID.Eq(wallet.ID))
+    if req.Type != "" {
+        q = q.Where(s.q.WalletTransaction.Type.Eq(req.Type))
+    }
+    if req.Source != "" {
+        q = q.Where(s.q.WalletTransaction.Source.Eq(req.Source))
+    }
+    // 日期筛选
+    if req.StartDate != "" {
+        if t, e := time.Parse("2006-01-02", req.StartDate); e == nil {
+            q = q.Where(s.q.WalletTransaction.CreatedAt.Gte(t))
+        }
+    }
+    if req.EndDate != "" {
+        if t, e := time.Parse("2006-01-02", req.EndDate); e == nil {
+            t = t.Add(24 * time.Hour).Add(-time.Second)
+            q = q.Where(s.q.WalletTransaction.CreatedAt.Lte(t))
+        }
+    }
+
+    // 分页
+    page := req.Page
+    if page <= 0 {
+        page = 1
+    }
+    pageSize := req.PageSize
+    if pageSize <= 0 {
+        pageSize = 10
+    }
+
+    total, err := q.Count()
+    if err != nil {
+        return nil, err
+    }
+
+    items, err := q.Order(s.q.WalletTransaction.CreatedAt.Desc()).
+        Limit(pageSize).
+        Offset((page-1)*pageSize).
+        Find()
+    if err != nil {
+        return nil, err
+    }
+
+    list := make([]*dto.WalletTransactionItem, 0, len(items))
+    for _, it := range items {
+        list = append(list, &dto.WalletTransactionItem{
+            ID:            it.ID,
+            WalletID:      it.WalletID,
+            Type:          it.Type,
+            Amount:        it.Amount,
+            BalanceBefore: it.BalanceBefore,
+            BalanceAfter:  it.BalanceAfter,
+            Source:        it.Source,
+            RelatedID:     it.RelatedID,
+            Remark:        it.Remark,
+            OperatorID:    it.OperatorID,
+            CreatedAt:     it.CreatedAt,
+        })
+    }
+
+    return &dto.WalletTransactionListResponse{
+        Total:        total,
+        Page:         page,
+        PageSize:     pageSize,
+        Transactions: list,
+    }, nil
 }
 
 // toWalletResponse 将 model.Wallet 转换为 dto.WalletResponse
