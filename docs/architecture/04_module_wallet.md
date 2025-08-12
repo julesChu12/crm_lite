@@ -65,21 +65,23 @@
 }
 ```
 
-#### POST `/api/v1/customers/:id/wallet/transactions`  （充值、消费等统一使用该接口）
+#### POST `/api/v1/customers/:id/wallet/transactions`  （充值、消费、退款等统一使用该接口）
 
-- 描述：为客户指定类型的钱包充值。
+- 描述：为客户指定类型的钱包创建一笔交易（充值/消费/退款）。
 - 请求体 (JSON)：
 
 ```json
 {
-  "wallet_type": "balance", // 或 "points"
-  "amount": 100.00,
-  "source": "manual_recharge", // 或 "payment_gateway_xyz"
-  "remark": "线下充值100元现金"
+  "type": "recharge",            // recharge | consume | refund
+  "amount": 100.00,               // 金额为正数，方向由 type 决定
+  "source": "manual_recharge",  // 来源，如 promotion:FULL_100_GET_20
+  "remark": "线下充值100元现金",
+  "bonus_amount": 20.00,          // 可选：当 type=recharge 时传入，自动追加一条 correction 赠送流水
+  "phone_last4": "6789"          // 可选：当 type=consume 时必填，用于手机号后四位校验
 }
 ```
 
-- 返回：成功时返回新的交易流水记录和更新后的钱包信息。
+- 返回：成功时返回操作成功。
 
 ```json
 {
@@ -108,7 +110,7 @@
 - 描述：获取某客户特定类型钱包的交易流水，或所有类型钱包的交易流水（如果 `wallet_type` 未指定）。
 - 请求参数：
   - `wallet_type` (string, 可选)：钱包类型（如 `balance`, `points`）进行筛选。
-  - `transaction_type` (string, 可选): 交易类型 (`recharge`, `consume`, `refund`) 筛选。
+  - `type` (string, 可选): 交易类型 (`recharge`, `consume`, `refund`, `correction`) 筛选。
   - `start_date` (date, 可选)：起始日期。
   - `end_date` (date, 可选)：结束日期。
   - `page` (int, 可选)：页码。
@@ -119,21 +121,27 @@
 {
   "transactions": [
     {
-      "id": "trans-uuid-1",
-      "wallet_id": "wallet-uuid-balance",
+      "id": 1,
+      "wallet_id": 10,
       "type": "recharge",
       "amount": 100.00,
       "source": "manual_recharge",
       "remark": "首次充值",
+      "balance_before": 0,
+      "balance_after": 100.00,
+      "operator_id": 1001,
       "created_at": "2024-01-01T10:00:00Z"
     },
     {
-      "id": "trans-uuid-2",
-      "wallet_id": "wallet-uuid-balance",
+      "id": 2,
+      "wallet_id": 10,
       "type": "consume",
       "amount": -20.50,
-      "source": "order:order-uuid-abc",
-      "remark": "购买商品A",
+      "source": "manual_consume",
+      "remark": "剪发",
+      "balance_before": 100.00,
+      "balance_after": 79.50,
+      "operator_id": 1001,
       "created_at": "2024-01-01T12:00:00Z"
     }
   ],
@@ -151,7 +159,9 @@
 
 - 所有资金操作（充值、消费等）均需用户具备如 `wallet:recharge`, `wallet:consume` 等精细化权限，或统一的 `wallet:write` 权限。
 - 消费金额不可超出当前钱包类型的可用余额。
-- 所有交易操作均记录在 `wallet_transaction` 表中，作为资金流转的审计日志。
+- 消费必须同时提供客户手机号后四位 `phone_last4`，与客户档案手机号做一致性校验，用于现场核对人物。
+- 充值支持携带 `bonus_amount`，系统会自动追加一条 `correction` 赠送流水；累计 `total_recharged` 仅统计实付，不包含赠送。
+- 所有交易操作均记录在 `wallet_transactions` 表中，作为资金流转的审计日志。
 - 关键操作（如修改余额）应考虑并发控制，例如使用数据库事务和乐观锁/悲观锁。
 
 ---

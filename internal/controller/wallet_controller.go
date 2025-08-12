@@ -56,12 +56,12 @@ func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
 }
 
 // CreateTransaction @Summary 创建钱包交易
-// @Description 为客户的钱包创建一笔交易（充值或消费）
+// @Description 为客户的钱包创建一笔交易（充值/消费/退款）。\n- 规则：\n- 1) 充值 (type=recharge)：支持可选字段 bonus_amount>0，将自动追加一条 correction 赠送流水；\n- 2) 消费 (type=consume)：必须提供客户手机号后四位 phone_last4 以做现场核对；\n- 3) 退款 (type=refund)：正向增加余额；\n- 4) 累计统计：total_recharged 仅统计实付充值金额（不含赠送）。
 // @Tags Wallets
 // @Accept json
 // @Produce json
 // @Param id path int true "客户ID"
-// @Param transaction body dto.WalletTransactionRequest true "交易信息"
+// @Param transaction body dto.WalletTransactionRequest true "交易信息 (type: recharge|consume|refund; bonus_amount 可选; consume 时需 phone_last4)"
 // @Success 200 {object} resp.Response "操作成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
 // @Failure 403 {object} resp.Response "无权操作"
