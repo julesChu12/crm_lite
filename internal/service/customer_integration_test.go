@@ -5,6 +5,7 @@ import (
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dto"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -55,6 +56,10 @@ func (s *CustomerIntegrationTestSuite) BeforeTest(suiteName, testName string) {
 
 // TestRunner 是启动测试套件的入口
 func TestCustomerIntegration(t *testing.T) {
+	if os.Getenv("RUN_DB_TESTS") != "1" {
+		t.Skip("Skipping integration tests because RUN_DB_TESTS is not set")
+		return
+	}
 	suite.Run(t, new(CustomerIntegrationTestSuite))
 }
 

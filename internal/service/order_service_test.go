@@ -7,6 +7,7 @@ import (
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dto"
 	"fmt"
+    "os"
 	"testing"
 	"time"
 
@@ -108,7 +109,11 @@ func (s *OrderServiceSuite) SetupTest() {
 }
 
 func TestOrderService(t *testing.T) {
-	suite.Run(t, new(OrderServiceSuite))
+    if os.Getenv("RUN_DB_TESTS") != "1" {
+        t.Skip("Skipping integration-like order tests because RUN_DB_TESTS is not set")
+        return
+    }
+    suite.Run(t, new(OrderServiceSuite))
 }
 
 // Helper method to create test customer

@@ -7,6 +7,7 @@ import (
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dto"
 	"fmt"
+    "os"
 	"testing"
 
 	"github.com/casbin/casbin/v2"
@@ -134,7 +135,11 @@ func (s *UserServiceTestSuite) TearDownTest() {
 }
 
 func TestUserService(t *testing.T) {
-	suite.Run(t, new(UserServiceTestSuite))
+    if os.Getenv("RUN_DB_TESTS") != "1" {
+        t.Skip("Skipping user service suite because RUN_DB_TESTS is not set")
+        return
+    }
+    suite.Run(t, new(UserServiceTestSuite))
 }
 
 func (s *UserServiceTestSuite) TestCreateUserByAdmin_NewUser() {

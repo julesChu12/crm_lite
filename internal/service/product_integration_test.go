@@ -1,13 +1,14 @@
 package service
 
 import (
-	"context"
-	"crm_lite/internal/core/resource"
-	"crm_lite/internal/dao/model"
-	"crm_lite/internal/dto"
-	"testing"
+    "context"
+    "crm_lite/internal/core/resource"
+    "crm_lite/internal/dao/model"
+    "crm_lite/internal/dto"
+    "os"
+    "testing"
 
-	"github.com/stretchr/testify/suite"
+    "github.com/stretchr/testify/suite"
 )
 
 // ProductIntegrationTestSuite 是产品服务集成测试的测试套件
@@ -47,7 +48,11 @@ func (s *ProductIntegrationTestSuite) BeforeTest(suiteName, testName string) {
 
 // TestRunner 是启动测试套件的入口
 func TestProductIntegration(t *testing.T) {
-	suite.Run(t, new(ProductIntegrationTestSuite))
+    if os.Getenv("RUN_DB_TESTS") != "1" {
+        t.Skip("Skipping integration tests because RUN_DB_TESTS is not set")
+        return
+    }
+    suite.Run(t, new(ProductIntegrationTestSuite))
 }
 
 // TestCreateProductIntegration 是一个端到端的集成测试用例
