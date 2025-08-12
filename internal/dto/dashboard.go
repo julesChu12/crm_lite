@@ -21,9 +21,19 @@ type DashboardOverviewResponse struct {
 	RevenueGrowthRate  float64 `json:"revenue_growth_rate" example:"15.2"`  // 收入增长率
 
 	// 今日数据
-	TodayNewCustomers int64   `json:"today_new_customers" example:"3"`
-	TodayOrders       int64   `json:"today_orders" example:"12"`
-	TodayRevenue      float64 `json:"today_revenue" example:"8500.00"`
+    TodayNewCustomers int64   `json:"today_new_customers" example:"3"`
+    TodayOrders       int64   `json:"today_orders" example:"12"`
+    TodayRevenue      float64 `json:"today_revenue" example:"8500.00"`
+
+    // 钱包相关统计（以钱包消费作为收入口径）
+    TotalWallets     int64   `json:"total_wallets" example:"1180"`
+    TotalBalance     float64 `json:"total_balance" example:"125600.00"`
+    TotalRecharge    float64 `json:"total_recharge" example:"356000.00"`
+    TotalConsumption float64 `json:"total_consumption" example:"230400.00"`
+
+    // 收入同比/环比（以本月为周期，来源：钱包消费）
+    RevenueMoMRate float64 `json:"revenue_mom_rate" example:"8.6"`  // 月环比
+    RevenueYoYRate float64 `json:"revenue_yoy_rate" example:"12.3"` // 年同比
 
 	// 活跃度指标
 	ActiveMarketingCampaigns int64 `json:"active_marketing_campaigns" example:"5"`

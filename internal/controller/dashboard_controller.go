@@ -1,20 +1,20 @@
 package controller
 
 import (
-    "crm_lite/internal/core/resource"
-    "crm_lite/internal/dto"
-    "crm_lite/internal/service"
-    "crm_lite/pkg/resp"
+	"crm_lite/internal/core/resource"
+	"crm_lite/internal/dto"
+	"crm_lite/internal/service"
+	"crm_lite/pkg/resp"
 
-    "github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin"
 )
 
 type DashboardController struct {
-    svc *service.DashboardService
+	svc *service.DashboardService
 }
 
 func NewDashboardController(res *resource.Manager) *DashboardController {
-    return &DashboardController{svc: service.NewDashboardService(res)}
+	return &DashboardController{svc: service.NewDashboardService(res)}
 }
 
 // GetOverview godoc
@@ -26,17 +26,15 @@ func NewDashboardController(res *resource.Manager) *DashboardController {
 // @Success      200 {object} resp.Response{data=dto.DashboardOverviewResponse}
 // @Router       /dashboard/overview [get]
 func (dc *DashboardController) GetOverview(c *gin.Context) {
-    var req dto.DashboardRequest
-    if err := c.ShouldBindQuery(&req); err != nil {
-        resp.Error(c, resp.CodeInvalidParam, err.Error())
-        return
-    }
-    data, err := dc.svc.GetOverview(c.Request.Context(), &req)
-    if err != nil {
-        resp.SystemError(c, err)
-        return
-    }
-    resp.Success(c, data)
+	var req dto.DashboardRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		resp.Error(c, resp.CodeInvalidParam, err.Error())
+		return
+	}
+	data, err := dc.svc.GetOverview(c.Request.Context(), &req)
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+	resp.Success(c, data)
 }
-
-
