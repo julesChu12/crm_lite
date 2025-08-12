@@ -1,90 +1,5 @@
 basePath: /api/v1
 definitions:
-  dto.ActivitySummaryResponse:
-    properties:
-      activity_type_distribution:
-        description: 活动类型分布
-        items:
-          properties:
-            count:
-              example: 156
-              type: integer
-            percentage:
-              example: 35.2
-              type: number
-            type:
-              example: call
-              type: string
-          type: object
-        type: array
-      pending_activities:
-        description: 待办活动统计
-        properties:
-          due_today:
-            example: 8
-            type: integer
-          high_priority:
-            example: 5
-            type: integer
-          overdue:
-            example: 3
-            type: integer
-          total:
-            example: 23
-            type: integer
-        type: object
-      recent_activities:
-        description: 最近活动列表（最近10条）
-        items:
-          properties:
-            assigned_to_name:
-              example: 李销售
-              type: string
-            customer_name:
-              example: 张三
-              type: string
-            id:
-              example: 1
-              type: integer
-            priority:
-              example: high
-              type: string
-            scheduled_at:
-              example: "2024-06-10T09:00:00Z"
-              type: string
-            status:
-              example: completed
-              type: string
-            title:
-              example: 客户回访电话
-              type: string
-            type:
-              example: call
-              type: string
-          type: object
-        type: array
-      staff_activity_stats:
-        description: 员工活动统计（Top 5）
-        items:
-          properties:
-            completed_activities:
-              example: 45
-              type: integer
-            completion_rate:
-              example: 84.9
-              type: number
-            pending_activities:
-              example: 8
-              type: integer
-            staff_id:
-              example: 1
-              type: integer
-            staff_name:
-              example: 李销售
-              type: string
-          type: object
-        type: array
-    type: object
   dto.AdminCreateUserRequest:
     properties:
       avatar:
@@ -185,84 +100,6 @@ definitions:
       position:
         type: string
     type: object
-  dto.CustomerAnalyticsResponse:
-    properties:
-      customer_age_distribution:
-        description: 客户年龄分布
-        items:
-          properties:
-            age_range:
-              example: 18-25
-              type: string
-            count:
-              example: 234
-              type: integer
-            percentage:
-              example: 18.7
-              type: number
-          type: object
-        type: array
-      customer_gender_distribution:
-        description: 客户性别分布
-        items:
-          properties:
-            count:
-              example: 687
-              type: integer
-            gender:
-              example: male
-              type: string
-            percentage:
-              example: 55
-              type: number
-          type: object
-        type: array
-      customer_level_distribution:
-        description: 客户等级分布
-        items:
-          properties:
-            count:
-              example: 125
-              type: integer
-            level:
-              example: VIP
-              type: string
-            percentage:
-              example: 10
-              type: number
-          type: object
-        type: array
-      customer_source_distribution:
-        description: 客户来源分布
-        items:
-          properties:
-            count:
-              example: 356
-              type: integer
-            percentage:
-              example: 28.5
-              type: number
-            source:
-              example: 微信
-              type: string
-          type: object
-        type: array
-      customer_trend:
-        description: 新客户趋势（最近12个月）
-        items:
-          properties:
-            month:
-              example: 2024-01
-              type: string
-            new_customers:
-              example: 45
-              type: integer
-            total_customers:
-              example: 1205
-              type: integer
-          type: object
-        type: array
-    type: object
   dto.CustomerBatchGetRequest:
     properties:
       ids:
@@ -342,6 +179,9 @@ definitions:
         type: string
       updated_at:
         type: string
+      wallet_balance:
+        description: 兼容测试字段
+        type: number
     type: object
   dto.CustomerSegmentRequest:
     properties:
@@ -421,138 +261,6 @@ definitions:
         description: 标签，逗号分隔
         type: string
     type: object
-  dto.DashboardOverviewResponse:
-    properties:
-      active_marketing_campaigns:
-        description: 活跃度指标
-        example: 5
-        type: integer
-      customer_growth_rate:
-        description: 增长率（与上月对比）
-        example: 12.5
-        type: number
-      low_stock_products:
-        example: 7
-        type: integer
-      monthly_new_customers:
-        description: 本月数据
-        example: 56
-        type: integer
-      monthly_orders:
-        example: 234
-        type: integer
-      monthly_revenue:
-        example: 186500
-        type: number
-      order_growth_rate:
-        description: 订单增长率
-        example: 8.3
-        type: number
-      pending_activities:
-        example: 23
-        type: integer
-      revenue_growth_rate:
-        description: 收入增长率
-        example: 15.2
-        type: number
-      today_new_customers:
-        description: 今日数据
-        example: 3
-        type: integer
-      today_orders:
-        example: 12
-        type: integer
-      today_revenue:
-        example: 8500
-        type: number
-      total_customers:
-        description: 总体统计
-        example: 1250
-        type: integer
-      total_orders:
-        example: 3456
-        type: integer
-      total_products:
-        example: 89
-        type: integer
-      total_revenue:
-        example: 2450000
-        type: number
-    type: object
-  dto.FinancialAnalyticsResponse:
-    properties:
-      financial_trend:
-        description: 财务趋势（最近12个月）
-        items:
-          properties:
-            cost:
-              example: 89600
-              type: number
-            month:
-              example: 2024-01
-              type: string
-            profit:
-              example: 67200
-              type: number
-            profit_rate:
-              example: 42.9
-              type: number
-            revenue:
-              example: 156800
-              type: number
-          type: object
-        type: array
-      revenue_overview:
-        description: 收入概览
-        properties:
-          daily_revenue:
-            example: 8500
-            type: number
-          growth_rate:
-            example: 15.2
-            type: number
-          monthly_revenue:
-            example: 186500
-            type: number
-          total_revenue:
-            example: 2450000
-            type: number
-        type: object
-      revenue_source_distribution:
-        description: 收入来源分布
-        items:
-          properties:
-            percentage:
-              example: 77.1
-              type: number
-            revenue:
-              example: 1890000
-              type: number
-            source:
-              example: 产品销售
-              type: string
-          type: object
-        type: array
-      wallet_stats:
-        description: 钱包统计
-        properties:
-          active_wallets:
-            example: 856
-            type: integer
-          total_balance:
-            example: 125600
-            type: number
-          total_consumption:
-            example: 230400
-            type: number
-          total_recharge:
-            example: 356000
-            type: number
-          total_wallets:
-            example: 1180
-            type: integer
-        type: object
-    type: object
   dto.ForgotPasswordRequest:
     properties:
       email:
@@ -586,97 +294,6 @@ definitions:
       token_type:
         description: 令牌类型, 通常是 "Bearer"
         type: string
-    type: object
-  dto.MarketingAnalyticsResponse:
-    properties:
-      campaign_overview:
-        description: 营销活动概览
-        properties:
-          active_campaigns:
-            example: 5
-            type: integer
-          completed_campaigns:
-            example: 20
-            type: integer
-          total_campaigns:
-            example: 28
-            type: integer
-          total_reach:
-            example: 15600
-            type: integer
-        type: object
-      campaign_roi:
-        description: 营销活动ROI排行
-        items:
-          properties:
-            cost:
-              example: 5000
-              type: number
-            id:
-              example: 1
-              type: integer
-            name:
-              example: 春季促销活动
-              type: string
-            reach:
-              example: 1200
-              type: integer
-            revenue:
-              example: 35000
-              type: number
-            roi:
-              example: 600
-              type: number
-            type:
-              example: sms
-              type: string
-          type: object
-        type: array
-      channel_performance:
-        description: 营销渠道效果
-        items:
-          properties:
-            campaigns:
-              example: 12
-              type: integer
-            channel:
-              example: sms
-              type: string
-            click_rate:
-              example: 8.9
-              type: number
-            delivery_rate:
-              example: 96.5
-              type: number
-            open_rate:
-              example: 32.1
-              type: number
-            reach:
-              example: 5600
-              type: integer
-          type: object
-        type: array
-      marketing_trend:
-        description: 营销效果趋势
-        items:
-          properties:
-            campaigns:
-              example: 5
-              type: integer
-            conversion_rate:
-              example: 7.5
-              type: number
-            conversions:
-              example: 256
-              type: integer
-            month:
-              example: 2024-01
-              type: string
-            total_reach:
-              example: 3400
-              type: integer
-          type: object
-        type: array
     type: object
   dto.MarketingCampaignCreateRequest:
     properties:
@@ -1077,84 +694,6 @@ definitions:
     - path
     - role
     type: object
-  dto.ProductAnalyticsResponse:
-    properties:
-      category_sales_distribution:
-        description: 产品类别销售分布
-        items:
-          properties:
-            category:
-              example: 数码产品
-              type: string
-            percentage:
-              example: 36.3
-              type: number
-            products:
-              example: 23
-              type: integer
-            revenue:
-              example: 890000
-              type: number
-          type: object
-        type: array
-      low_stock_products:
-        description: 库存预警产品
-        items:
-          properties:
-            category:
-              example: 数码产品
-              type: string
-            current_stock:
-              example: 3
-              type: integer
-            id:
-              example: 45
-              type: integer
-            min_stock_level:
-              example: 10
-              type: integer
-            name:
-              example: MacBook Air M2
-              type: string
-          type: object
-        type: array
-      product_sales_trend:
-        description: 产品销售趋势
-        items:
-          properties:
-            categories_active:
-              example: 12
-              type: integer
-            month:
-              example: 2024-01
-              type: string
-            products_sold:
-              example: 1234
-              type: integer
-          type: object
-        type: array
-      top_selling_products:
-        description: 热销产品排行（Top 10）
-        items:
-          properties:
-            category:
-              example: 数码产品
-              type: string
-            id:
-              example: 1
-              type: integer
-            name:
-              example: iPhone 15 Pro
-              type: string
-            revenue:
-              example: 156000
-              type: number
-            sold_quantity:
-              example: 156
-              type: integer
-          type: object
-        type: array
-    type: object
   dto.ProductBatchGetRequest:
     properties:
       ids:
@@ -1229,27 +768,6 @@ definitions:
         minimum: 0
         type: integer
     type: object
-  dto.QuickStatsResponse:
-    properties:
-      active_campaigns:
-        example: 5
-        type: integer
-      last_updated:
-        example: "2024-06-10T14:30:00Z"
-        type: string
-      online_users:
-        example: 23
-        type: integer
-      pending_orders:
-        example: 12
-        type: integer
-      system_alerts:
-        example: 2
-        type: integer
-      today_revenue:
-        example: 8500
-        type: number
-    type: object
   dto.RefreshTokenRequest:
     properties:
       refresh_token:
@@ -1291,6 +809,8 @@ definitions:
         maxLength: 100
         minLength: 2
         type: string
+      is_active:
+        type: boolean
       name:
         maxLength: 50
         minLength: 2
@@ -1324,83 +844,6 @@ definitions:
         type: boolean
     required:
     - display_name
-    type: object
-  dto.SalesAnalyticsResponse:
-    properties:
-      average_order_value:
-        description: 客单价分析
-        properties:
-          current:
-            example: 708.5
-            type: number
-          growth_rate:
-            example: 8.6
-            type: number
-          previous:
-            example: 652.2
-            type: number
-        type: object
-      order_status_distribution:
-        description: 订单状态分布
-        items:
-          properties:
-            count:
-              example: 2896
-              type: integer
-            percentage:
-              example: 83.8
-              type: number
-            status:
-              example: completed
-              type: string
-          type: object
-        type: array
-      repeat_purchase_rate:
-        description: 复购率分析
-        properties:
-          rate:
-            example: 32.5
-            type: number
-          repeat_customers:
-            example: 406
-            type: integer
-          total_customers:
-            example: 1250
-            type: integer
-        type: object
-      sales_channel_distribution:
-        description: 销售渠道分布
-        items:
-          properties:
-            channel:
-              example: 线上
-              type: string
-            orders:
-              example: 2134
-              type: integer
-            percentage:
-              example: 77.1
-              type: number
-            revenue:
-              example: 1890000
-              type: number
-          type: object
-        type: array
-      sales_trend:
-        description: 销售趋势（最近12个月）
-        items:
-          properties:
-            month:
-              example: 2024-01
-              type: string
-            orders:
-              example: 289
-              type: integer
-            revenue:
-              example: 156800
-              type: number
-          type: object
-        type: array
     type: object
   dto.UserBatchGetRequest:
     properties:
@@ -1476,11 +919,55 @@ definitions:
       updated_at:
         type: string
     type: object
+  dto.WalletTransactionItem:
+    properties:
+      amount:
+        type: number
+      balance_after:
+        type: number
+      balance_before:
+        type: number
+      created_at:
+        type: string
+      id:
+        type: integer
+      operator_id:
+        type: integer
+      related_id:
+        type: integer
+      remark:
+        type: string
+      source:
+        type: string
+      type:
+        type: string
+      wallet_id:
+        type: integer
+    type: object
+  dto.WalletTransactionListResponse:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      transactions:
+        items:
+          $ref: '#/definitions/dto.WalletTransactionItem'
+        type: array
+    type: object
   dto.WalletTransactionRequest:
     properties:
       amount:
-        description: 交易金额，必须为正数
+        description: 金额为正数，方向由类型决定
         type: number
+      bonus_amount:
+        description: 充值满赠的赠送金额（可选）；>0 时将追加一条 correction 流水
+        type: number
+      phone_last4:
+        description: 消费校验：客户手机号后四位（consume 时必填，用于现场核对）
+        type: string
       related_id:
         description: 关联ID（如订单ID等）
         type: integer
@@ -1488,13 +975,14 @@ definitions:
         description: 备注
         type: string
       source:
-        description: '交易来源: manual, system 等'
+        description: '交易来源: manual_recharge, manual_consume, promotion 等'
         type: string
       type:
-        description: '交易类型: recharge (充值), consume (消费)'
+        description: '交易类型: recharge(充值) / consume(消费) / refund(退款)'
         enum:
         - recharge
         - consume
+        - refund
         type: string
     required:
     - amount
@@ -1512,17 +1000,56 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@swagger.io
-    name: API Support
-    url: http://www.swagger.io/support
+    email: juleschu0929@gmail.com
+    name: Jules Chu
+    url: https://github.com/julesChu12
   description: This is a lightweight CRM system.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: http://swagger.io/terms/
+  termsOfService: https://github.com/julesChu12/crm_lite/blob/main/LICENSE
   title: CRM Lite API
   version: "1.0"
 paths:
+  /api/maintenance/logs/cleanup:
+    post:
+      consumes:
+      - application/json
+      description: 手动执行日志清理操作，通常由外部调度器调用
+      parameters:
+      - description: 是否为试运行模式
+        in: query
+        name: dry_run
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 清理成功
+          schema:
+            $ref: '#/definitions/resp.Response'
+        "500":
+          description: 清理失败
+          schema:
+            $ref: '#/definitions/resp.Response'
+      summary: 手动触发日志清理
+      tags:
+      - 维护管理
+  /api/maintenance/logs/status:
+    get:
+      consumes:
+      - application/json
+      description: 获取当前日志清理器的运行状态和配置信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/resp.Response'
+      summary: 获取日志清理器状态
+      tags:
+      - 维护管理
   /auth/forgot-password:
     post:
       consumes:
@@ -2125,219 +1652,6 @@ paths:
       summary: Batch get customers
       tags:
       - Customers
-  /dashboard/activities:
-    get:
-      description: 获取客户活动相关的摘要数据，包括待办活动统计、活动类型分布、最近活动等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.ActivitySummaryResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取活动摘要数据
-      tags:
-      - Dashboard
-  /dashboard/analytics/customers:
-    get:
-      description: 获取客户相关的分析数据，包括客户等级分布、来源分布、增长趋势等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.CustomerAnalyticsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取客户分析数据
-      tags:
-      - Dashboard
-  /dashboard/analytics/financial:
-    get:
-      description: 获取财务相关的分析数据，包括收入概览、钱包统计、收入来源分布等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.FinancialAnalyticsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取财务分析数据
-      tags:
-      - Dashboard
-  /dashboard/analytics/marketing:
-    get:
-      description: 获取营销相关的分析数据，包括营销活动概览、渠道效果、ROI排行等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.MarketingAnalyticsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取营销分析数据
-      tags:
-      - Dashboard
-  /dashboard/analytics/products:
-    get:
-      description: 获取产品相关的分析数据，包括热销产品排行、类别销售分布、库存预警等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.ProductAnalyticsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取产品分析数据
-      tags:
-      - Dashboard
-  /dashboard/analytics/sales:
-    get:
-      description: 获取销售相关的分析数据，包括销售趋势、订单状态分布、客单价、复购率等
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.SalesAnalyticsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取销售分析数据
-      tags:
-      - Dashboard
-  /dashboard/overview:
-    get:
-      description: 获取CRM系统工作台的总览统计数据，包括客户、订单、收入等核心指标
-      parameters:
-      - default: month
-        description: 时间范围
-        enum:
-        - today
-        - week
-        - month
-        - quarter
-        - year
-        in: query
-        name: date_range
-        type: string
-      - default: Asia/Shanghai
-        description: 时区
-        in: query
-        name: timezone
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.DashboardOverviewResponse'
-              type: object
-        "400":
-          description: 请求参数错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取工作台总览数据
-      tags:
-      - Dashboard
-  /dashboard/quick-stats:
-    get:
-      description: 获取实时快速统计数据，用于工作台实时刷新显示
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 获取成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.QuickStatsResponse'
-              type: object
-        "500":
-          description: 服务器内部错误
-          schema:
-            $ref: '#/definitions/resp.Response'
-      security:
-      - ApiKeyAuth: []
-      summary: 获取快速统计数据
-      tags:
-      - Dashboard
   /marketing/campaigns:
     get:
       description: 获取营销活动列表，支持分页和筛选
@@ -3653,17 +2967,71 @@ paths:
       tags:
       - Wallets
   /v1/customers/{id}/wallet/transactions:
-    post:
-      consumes:
-      - application/json
-      description: 为客户的钱包创建一笔交易（充值或消费）
+    get:
+      description: 查询客户钱包的交易流水
       parameters:
       - description: 客户ID
         in: path
         name: id
         required: true
         type: integer
-      - description: 交易信息
+      - description: 交易类型
+        in: query
+        name: type
+        type: string
+      - description: 来源
+        in: query
+        name: source
+        type: string
+      - description: 开始日期(YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: 结束日期(YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      - description: 页码
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.WalletTransactionListResponse'
+              type: object
+        "404":
+          description: 钱包未找到
+          schema:
+            $ref: '#/definitions/resp.Response'
+      tags:
+      - Wallets
+    post:
+      consumes:
+      - application/json
+      description: 为客户的钱包创建一笔交易（充值/消费/退款）。\n- 规则：\n- 1) 充值 (type=recharge)：支持可选字段
+        bonus_amount>0，将自动追加一条 correction 赠送流水；\n- 2) 消费 (type=consume)：必须提供客户手机号后四位
+        phone_last4 以做现场核对；\n- 3) 退款 (type=refund)：正向增加余额；\n- 4) 累计统计：total_recharged
+        仅统计实付充值金额（不含赠送）。
+      parameters:
+      - description: 客户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: '交易信息 (type: recharge|consume|refund; bonus_amount 可选; consume
+          时需 phone_last4)'
         in: body
         name: transaction
         required: true
