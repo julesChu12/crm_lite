@@ -3838,6 +3838,16 @@ const docTemplate = `{
                     "type": "number",
                     "example": 15.2
                 },
+                "revenue_mom_rate": {
+                    "description": "收入同比/环比（以本月为周期，来源：钱包消费）",
+                    "type": "number",
+                    "example": 8.6
+                },
+                "revenue_yoy_rate": {
+                    "description": "年同比",
+                    "type": "number",
+                    "example": 12.3
+                },
                 "today_new_customers": {
                     "description": "今日数据",
                     "type": "integer",
@@ -3850,6 +3860,14 @@ const docTemplate = `{
                 "today_revenue": {
                     "type": "number",
                     "example": 8500
+                },
+                "total_balance": {
+                    "type": "number",
+                    "example": 125600
+                },
+                "total_consumption": {
+                    "type": "number",
+                    "example": 230400
                 },
                 "total_customers": {
                     "description": "总体统计",
@@ -3864,9 +3882,18 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 89
                 },
+                "total_recharge": {
+                    "type": "number",
+                    "example": 356000
+                },
                 "total_revenue": {
                     "type": "number",
                     "example": 2450000
+                },
+                "total_wallets": {
+                    "description": "钱包相关统计（以钱包消费作为收入口径）",
+                    "type": "integer",
+                    "example": 1180
                 }
             }
         },

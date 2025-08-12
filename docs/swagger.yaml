@@ -295,6 +295,14 @@ definitions:
         description: 收入增长率
         example: 15.2
         type: number
+      revenue_mom_rate:
+        description: 收入同比/环比（以本月为周期，来源：钱包消费）
+        example: 8.6
+        type: number
+      revenue_yoy_rate:
+        description: 年同比
+        example: 12.3
+        type: number
       today_new_customers:
         description: 今日数据
         example: 3
@@ -304,6 +312,12 @@ definitions:
         type: integer
       today_revenue:
         example: 8500
+        type: number
+      total_balance:
+        example: 125600
+        type: number
+      total_consumption:
+        example: 230400
         type: number
       total_customers:
         description: 总体统计
@@ -315,9 +329,16 @@ definitions:
       total_products:
         example: 89
         type: integer
+      total_recharge:
+        example: 356000
+        type: number
       total_revenue:
         example: 2450000
         type: number
+      total_wallets:
+        description: 钱包相关统计（以钱包消费作为收入口径）
+        example: 1180
+        type: integer
     type: object
   dto.ForgotPasswordRequest:
     properties:
