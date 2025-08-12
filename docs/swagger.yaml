@@ -261,6 +261,64 @@ definitions:
         description: 标签，逗号分隔
         type: string
     type: object
+  dto.DashboardOverviewResponse:
+    properties:
+      active_marketing_campaigns:
+        description: 活跃度指标
+        example: 5
+        type: integer
+      customer_growth_rate:
+        description: 增长率（与上月对比）
+        example: 12.5
+        type: number
+      low_stock_products:
+        example: 7
+        type: integer
+      monthly_new_customers:
+        description: 本月数据
+        example: 56
+        type: integer
+      monthly_orders:
+        example: 234
+        type: integer
+      monthly_revenue:
+        example: 186500
+        type: number
+      order_growth_rate:
+        description: 订单增长率
+        example: 8.3
+        type: number
+      pending_activities:
+        example: 23
+        type: integer
+      revenue_growth_rate:
+        description: 收入增长率
+        example: 15.2
+        type: number
+      today_new_customers:
+        description: 今日数据
+        example: 3
+        type: integer
+      today_orders:
+        example: 12
+        type: integer
+      today_revenue:
+        example: 8500
+        type: number
+      total_customers:
+        description: 总体统计
+        example: 1250
+        type: integer
+      total_orders:
+        example: 3456
+        type: integer
+      total_products:
+        example: 89
+        type: integer
+      total_revenue:
+        example: 2450000
+        type: number
+    type: object
   dto.ForgotPasswordRequest:
     properties:
       email:
@@ -1652,6 +1710,39 @@ paths:
       summary: Batch get customers
       tags:
       - Customers
+  /dashboard/overview:
+    get:
+      description: 返回客户与基础统计的总览数据（MVP 版，不含订单指标）
+      parameters:
+      - enum:
+        - today
+        - week
+        - month
+        - quarter
+        - year
+        example: month
+        in: query
+        name: date_range
+        type: string
+      - example: Asia/Shanghai
+        in: query
+        name: timezone
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.DashboardOverviewResponse'
+              type: object
+      summary: 工作台总览
+      tags:
+      - Dashboard
   /marketing/campaigns:
     get:
       description: 获取营销活动列表，支持分页和筛选

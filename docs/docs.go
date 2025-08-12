@@ -1044,6 +1044,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/dashboard/overview": {
+            "get": {
+                "description": "返回客户与基础统计的总览数据（MVP 版，不含订单指标）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "工作台总览",
+                "parameters": [
+                    {
+                        "enum": [
+                            "today",
+                            "week",
+                            "month",
+                            "quarter",
+                            "year"
+                        ],
+                        "type": "string",
+                        "example": "month",
+                        "name": "date_range",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "Asia/Shanghai",
+                        "name": "timezone",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.DashboardOverviewResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
         "/marketing/campaigns": {
             "get": {
                 "security": [
@@ -3738,6 +3791,82 @@ const docTemplate = `{
                 "tags": {
                     "description": "标签，逗号分隔",
                     "type": "string"
+                }
+            }
+        },
+        "dto.DashboardOverviewResponse": {
+            "type": "object",
+            "properties": {
+                "active_marketing_campaigns": {
+                    "description": "活跃度指标",
+                    "type": "integer",
+                    "example": 5
+                },
+                "customer_growth_rate": {
+                    "description": "增长率（与上月对比）",
+                    "type": "number",
+                    "example": 12.5
+                },
+                "low_stock_products": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "monthly_new_customers": {
+                    "description": "本月数据",
+                    "type": "integer",
+                    "example": 56
+                },
+                "monthly_orders": {
+                    "type": "integer",
+                    "example": 234
+                },
+                "monthly_revenue": {
+                    "type": "number",
+                    "example": 186500
+                },
+                "order_growth_rate": {
+                    "description": "订单增长率",
+                    "type": "number",
+                    "example": 8.3
+                },
+                "pending_activities": {
+                    "type": "integer",
+                    "example": 23
+                },
+                "revenue_growth_rate": {
+                    "description": "收入增长率",
+                    "type": "number",
+                    "example": 15.2
+                },
+                "today_new_customers": {
+                    "description": "今日数据",
+                    "type": "integer",
+                    "example": 3
+                },
+                "today_orders": {
+                    "type": "integer",
+                    "example": 12
+                },
+                "today_revenue": {
+                    "type": "number",
+                    "example": 8500
+                },
+                "total_customers": {
+                    "description": "总体统计",
+                    "type": "integer",
+                    "example": 1250
+                },
+                "total_orders": {
+                    "type": "integer",
+                    "example": 3456
+                },
+                "total_products": {
+                    "type": "integer",
+                    "example": 89
+                },
+                "total_revenue": {
+                    "type": "number",
+                    "example": 2450000
                 }
             }
         },
