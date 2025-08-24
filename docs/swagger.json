@@ -1040,31 +1040,43 @@
         },
         "/dashboard/overview": {
             "get": {
+<<<<<<< HEAD
                 "description": "返回客户与基础统计的总览数据（MVP 版，不含订单指标）",
+=======
+                "description": "获取客户、订单、收入等汇总统计",
+                "consumes": [
+                    "application/json"
+                ],
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Dashboard"
                 ],
+<<<<<<< HEAD
                 "summary": "工作台总览",
+=======
+                "summary": "工作台总览数据",
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "parameters": [
                     {
-                        "enum": [
-                            "today",
-                            "week",
-                            "month",
-                            "quarter",
-                            "year"
-                        ],
                         "type": "string",
+<<<<<<< HEAD
                         "example": "month",
+=======
+                        "description": "时间范围: today/week/month/quarter/year",
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                         "name": "date_range",
                         "in": "query"
                     },
                     {
                         "type": "string",
+<<<<<<< HEAD
                         "example": "Asia/Shanghai",
+=======
+                        "description": "时区",
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                         "name": "timezone",
                         "in": "query"
                     }
@@ -1087,6 +1099,15 @@
                                 }
                             ]
                         }
+<<<<<<< HEAD
+=======
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                     }
                 }
             }
@@ -3254,6 +3275,7 @@
                 }
             }
         },
+<<<<<<< HEAD
         "/v1/customers/{id}/wallet/transactions": {
             "get": {
                 "description": "查询客户钱包的交易流水",
@@ -3337,6 +3359,154 @@
             },
             "post": {
                 "description": "为客户的钱包创建一笔交易（充值/消费/退款）。\\n- 规则：\\n- 1) 充值 (type=recharge)：支持可选字段 bonus_amount\u003e0，将自动追加一条 correction 赠送流水；\\n- 2) 消费 (type=consume)：必须提供客户手机号后四位 phone_last4 以做现场核对；\\n- 3) 退款 (type=refund)：正向增加余额；\\n- 4) 累计统计：total_recharged 仅统计实付充值金额（不含赠送）。",
+=======
+        "/v1/customers/{id}/wallet/refund": {
+            "post": {
+                "description": "为客户处理订单退款，将金额退回到钱包",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "退款信息",
+                        "name": "refund",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.WalletRefundRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "退款成功",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "客户或订单未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务逻辑错误（如订单状态不允许退款）",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/customers/{id}/wallet/transactions": {
+            "get": {
+                "description": "根据客户ID获取其钱包交易记录，支持分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Wallets"
+                ],
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "客户ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页数量",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/resp.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.ListWalletTransactionsResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "钱包未找到",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/resp.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "为客户的钱包创建一笔交易（充值、消费或退款）",
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "consumes": [
                     "application/json"
                 ],
@@ -3883,11 +4053,14 @@
                 "total_revenue": {
                     "type": "number",
                     "example": 2450000
+<<<<<<< HEAD
                 },
                 "total_wallets": {
                     "description": "钱包相关统计（以钱包消费作为收入口径）",
                     "type": "integer",
                     "example": 1180
+=======
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 }
             }
         },
@@ -3902,13 +4075,32 @@
                 }
             }
         },
+        "dto.ListWalletTransactionsResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
+                },
+                "transactions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.WalletTransactionResponse"
+                    }
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
+                "captcha_token",
                 "password",
                 "username"
             ],
             "properties": {
+                "captcha_token": {
+                    "description": "Turnstile Token",
+                    "type": "string"
+                },
                 "password": {
                     "description": "密码，必须提供",
                     "type": "string"
@@ -4792,6 +4984,32 @@
                 }
             }
         },
+        "dto.WalletRefundRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "order_id",
+                "reason"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "退款金额，必须为正数",
+                    "type": "number"
+                },
+                "order_id": {
+                    "description": "关联订单ID",
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "退款原因",
+                    "type": "string"
+                },
+                "remark": {
+                    "description": "备注",
+                    "type": "string"
+                }
+            }
+        },
         "dto.WalletResponse": {
             "type": "object",
             "properties": {
@@ -4911,17 +5129,63 @@
                     "type": "string"
                 },
                 "source": {
+<<<<<<< HEAD
                     "description": "交易来源: manual_recharge, manual_consume, promotion 等",
                     "type": "string"
                 },
                 "type": {
                     "description": "交易类型: recharge(充值) / consume(消费) / refund(退款)",
+=======
+                    "description": "交易来源: manual, order, refund, system 等",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "交易类型: recharge (充值), consume (消费), refund (退款)",
+>>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                     "type": "string",
                     "enum": [
                         "recharge",
                         "consume",
                         "refund"
                     ]
+                }
+            }
+        },
+        "dto.WalletTransactionResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "balance_after": {
+                    "type": "number"
+                },
+                "balance_before": {
+                    "type": "number"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "operator_id": {
+                    "type": "integer"
+                },
+                "related_id": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "wallet_id": {
+                    "type": "integer"
                 }
             }
         },

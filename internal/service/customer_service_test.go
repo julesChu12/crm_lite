@@ -103,14 +103,18 @@ func (m *MockWalletService) GetWalletByCustomerID(ctx context.Context, customerI
 	return r0, args.Error(1)
 }
 
-// Satisfy IWalletService: ListTransactions
-func (m *MockWalletService) ListTransactions(ctx context.Context, customerID int64, req *dto.WalletTransactionListRequest) (*dto.WalletTransactionListResponse, error) {
-	args := m.Called(ctx, customerID, req)
-	var r0 *dto.WalletTransactionListResponse
+func (m *MockWalletService) GetTransactions(ctx context.Context, customerID int64, page, limit int) ([]*dto.WalletTransactionResponse, int64, error) {
+	args := m.Called(ctx, customerID, page, limit)
+	var r0 []*dto.WalletTransactionResponse
 	if args.Get(0) != nil {
-		r0 = args.Get(0).(*dto.WalletTransactionListResponse)
+		r0 = args.Get(0).([]*dto.WalletTransactionResponse)
 	}
-	return r0, args.Error(1)
+	return r0, args.Get(1).(int64), args.Error(2)
+}
+
+func (m *MockWalletService) ProcessRefund(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletRefundRequest) error {
+	args := m.Called(ctx, customerID, operatorID, req)
+	return args.Error(0)
 }
 
 func TestCreateCustomer_NewCustomer(t *testing.T) {

@@ -22,7 +22,7 @@ func NewRouter(resManager *resource.Manager, logCleaner *scheduler.LogCleaner) *
 	router := gin.New()
 
 	// 2. 注册通用中间件
-	router.Use(middleware.GinLogger(), gin.Recovery())
+	router.Use(middleware.NewCorsMiddleware(), middleware.GinLogger(), gin.Recovery())
 
 	// 3. 创建 /api/v1 路由组并应用安全中间件
 	apiV1 := router.Group("/api/v1")

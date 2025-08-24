@@ -69,7 +69,7 @@ func (s *CustomerIntegrationTestSuite) TestCreateCustomerIntegration() {
 		Name:  "Integration Test User",
 		Phone: "9876543210",
 		Email: "integration@example.com",
-		Tags:  "[]", // 提供一个有效的JSON数组作为默认值
+		Tags:  []string{}, // 提供一个有效的JSON数组作为默认值
 	}
 
 	// 1. 调用服务创建客户

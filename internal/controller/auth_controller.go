@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crm_lite/internal/captcha"
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dto"
@@ -10,6 +11,8 @@ import (
 	"crm_lite/pkg/utils"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -70,6 +73,17 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		resp.Error(ctx, resp.CodeInvalidParam, err.Error())
 		return
 	}
+	// 1. 先校验 Turnstile Token
+	success, err := captcha.VerifyTurnstile(ctx.Request.Context(), req.CaptchaToken, ctx.ClientIP())
+	if err != nil {
+		resp.SystemError(ctx, err)
+		return
+	}
+
+	if !success {
+		resp.Error(ctx, resp.CodeInvalidParam, "captcha verification failed")
+		return
+	}
 
 	response, err := c.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
@@ -83,7 +97,25 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		return
 	}
 
-	resp.Success(ctx, response)
+	// 将 refreshToken 写入安全 Cookie
+	opts := config.GetInstance()
+	secure := opts.Server.Mode == config.ReleaseMode
+	http.SetCookie(ctx.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    response.RefreshToken,
+		Path:     "/api/v1/auth",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(opts.Auth.JWTOptions.RefreshTokenExpire.Seconds()),
+	})
+
+	// 构造响应体，不包含 refresh_token
+	resp.Success(ctx, gin.H{
+		"access_token": response.AccessToken,
+		"token_type":   response.TokenType,
+		"expires_in":   response.ExpiresIn,
+	})
 }
 
 // Register 用户注册
@@ -182,8 +214,6 @@ func (ac *AuthController) ChangePassword(c *gin.Context) {
 	resp.Success(c, nil)
 }
 
-// --- 以下为待实现功能 ---
-
 // Logout godoc
 // @Summary      用户登出
 // @Description  将当前用户的JWT加入黑名单以实现登出
@@ -195,20 +225,36 @@ func (ac *AuthController) ChangePassword(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /auth/logout [post]
 func (ac *AuthController) Logout(c *gin.Context) {
-	// 从中间件获取解析后的 claims
-	claims, exists := c.Get("claims")
-	if !exists {
-		resp.Error(c, resp.CodeUnauthorized, "invalid token claims")
+	refreshToken, errCookie := c.Cookie("refreshToken")
+	if errCookie != nil || refreshToken == "" {
+		resp.Error(c, resp.CodeUnauthorized, "refresh token not found in cookie")
 		return
 	}
 
-	// 调用服务层将 token 加入黑名单
-	// 注意: claims 需要断言为正确的类型
-	err := ac.authService.Logout(c.Request.Context(), claims.(*utils.CustomClaims))
+	// 解析 refreshToken 以获取 claims，进而可以将其 jti 加入黑名单
+	opts := config.GetInstance()
+	claims, err := utils.ParseToken(refreshToken, opts.Auth.JWTOptions)
 	if err != nil {
+		resp.Error(c, resp.CodeUnauthorized, "invalid or expired refresh token")
+		return
+	}
+
+	// 调用服务层将 refreshToken 加入黑名单
+	if err := ac.authService.Logout(c.Request.Context(), claims); err != nil {
 		resp.SystemError(c, err)
 		return
 	}
+
+	// 清除 Cookie
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    "",
+		Path:     "/api/v1/auth",
+		HttpOnly: true,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+	})
+
 	resp.Success(c, gin.H{"message": "logout success"})
 }
 
@@ -224,12 +270,13 @@ func (ac *AuthController) Logout(c *gin.Context) {
 // @Failure      401            {object}  resp.Response
 // @Router       /auth/refresh [post]
 func (ac *AuthController) RefreshToken(c *gin.Context) {
-	var req dto.RefreshTokenRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		resp.Error(c, resp.CodeInvalidParam, err.Error())
+	refreshToken, errCookie := c.Cookie("refreshToken")
+	if errCookie != nil || refreshToken == "" {
+		resp.Error(c, resp.CodeUnauthorized, "refresh token not found in cookie")
 		return
 	}
 
+	req := dto.RefreshTokenRequest{RefreshToken: refreshToken}
 	response, err := ac.authService.RefreshToken(c.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrInvalidToken) {
@@ -239,7 +286,24 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		}
 		return
 	}
-	resp.Success(c, response)
+	// 更新新的 refreshToken Cookie
+	opts := config.GetInstance()
+	secure := opts.Server.Mode == config.ReleaseMode
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refreshToken",
+		Value:    response.RefreshToken,
+		Path:     "/api/v1/auth",
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: http.SameSiteStrictMode,
+		MaxAge:   int(opts.Auth.JWTOptions.RefreshTokenExpire.Seconds()),
+	})
+
+	resp.Success(c, gin.H{
+		"access_token": response.AccessToken,
+		"token_type":   response.TokenType,
+		"expires_in":   response.ExpiresIn,
+	})
 }
 
 // ForgotPassword godoc

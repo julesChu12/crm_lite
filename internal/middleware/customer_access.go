@@ -5,6 +5,7 @@ import (
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -44,10 +45,10 @@ func NewSimpleCustomerAccessMiddleware(resManager *resource.Manager) gin.Handler
 		if rolesVal != nil {
 			roles = rolesVal.([]string)
 		}
-
+		fmt.Println("roles", roles)
 		// admin 角色放行
 		for _, r := range roles {
-			if r == "admin" {
+			if r == "super_admin" {
 				c.Next()
 				return
 			}

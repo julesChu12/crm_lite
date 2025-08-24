@@ -6,6 +6,7 @@ import (
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"crm_lite/pkg/utils"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -161,17 +162,34 @@ func (s *CustomerService) toCustomerResponse(customer *model.Customer) *dto.Cust
 	if customer != nil && !customer.Birthday.IsZero() {
 		birthday = customer.Birthday.Format("2006-01-02")
 	}
+
+	var tags []string
+	if customer.Tags != "" {
+		// 忽略 unmarshal 错误，如果解析失败则返回空数组
+		_ = json.Unmarshal([]byte(customer.Tags), &tags)
+	}
+
+	// Map source and gender to display values
+	sourceDisplay := dto.SourceMap[customer.Source]
+	if sourceDisplay == "" {
+		sourceDisplay = customer.Source // Fallback to original value if not in map
+	}
+	genderDisplay := dto.GenderMap[customer.Gender]
+	if genderDisplay == "" {
+		genderDisplay = customer.Gender // Fallback
+	}
+
 	return &dto.CustomerResponse{
 		ID:         customer.ID,
 		Name:       customer.Name,
 		Phone:      customer.Phone,
 		Email:      customer.Email,
-		Gender:     customer.Gender,
+		Gender:     genderDisplay,
 		Birthday:   birthday,
 		Level:      customer.Level,
-		Tags:       customer.Tags,
+		Tags:       tags,
 		Note:       customer.Note,
-		Source:     customer.Source,
+		Source:     sourceDisplay,
 		AssignedTo: customer.AssignedTo,
 		CreatedAt:  utils.FormatTime(customer.CreatedAt),
 		UpdatedAt:  utils.FormatTime(customer.UpdatedAt),
@@ -185,6 +203,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 
 	if req.Phone != "" {
 		existingCustomer, err := s.repo.FindByPhoneUnscoped(ctx, req.Phone)
+		fmt.Println("existingCustomer", existingCustomer)
 		if err == nil {
 			if existingCustomer.DeletedAt.Valid {
 				// 恢复并更新
@@ -192,7 +211,13 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 				existingCustomer.Email = req.Email
 				existingCustomer.Gender = req.Gender
 				existingCustomer.Level = req.Level
-				existingCustomer.Tags = req.Tags
+
+				tagsJSON, err := json.Marshal(req.Tags)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal tags: %w", err)
+				}
+				existingCustomer.Tags = string(tagsJSON)
+
 				existingCustomer.Note = req.Note
 				existingCustomer.Source = req.Source
 				existingCustomer.AssignedTo = req.AssignedTo
@@ -219,16 +244,23 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, req *dto.CustomerC
 
 	if customerToReturn == nil {
 		customer := &model.Customer{
-			Name:       req.Name,
-			Phone:      req.Phone,
-			Email:      req.Email,
-			Gender:     req.Gender,
-			Level:      req.Level,
-			Tags:       req.Tags,
+			Name:   req.Name,
+			Phone:  req.Phone,
+			Email:  req.Email,
+			Gender: req.Gender,
+			Level:  req.Level,
+			// Tags:       strings.Join(req.Tags, ","), //
 			Note:       req.Note,
 			Source:     req.Source,
 			AssignedTo: req.AssignedTo,
 		}
+
+		tagsJSON, err := json.Marshal(req.Tags)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tags: %w", err)
+		}
+		customer.Tags = string(tagsJSON)
+
 		if req.Birthday != "" {
 			birthday, err := time.Parse("2006-01-02", req.Birthday)
 			if err != nil {
@@ -328,9 +360,13 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 	if req.Level != "" {
 		updates["level"] = req.Level
 	}
-	if req.Tags != "" {
-		updates["tags"] = req.Tags
+	// 注意：这里允许传入空数组来清空Tags
+	tagsJSON, err := json.Marshal(req.Tags)
+	if err != nil {
+		return fmt.Errorf("failed to marshal tags: %w", err)
 	}
+	updates["tags"] = string(tagsJSON)
+
 	if req.Note != "" {
 		updates["note"] = req.Note
 	}

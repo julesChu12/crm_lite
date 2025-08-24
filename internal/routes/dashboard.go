@@ -7,11 +7,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// RegisterDashboardRoutes 注册工作台路由
-func RegisterDashboardRoutes(r *gin.RouterGroup, res *resource.Manager) {
-	ctl := controller.NewDashboardController(res)
-	dash := r.Group("/dashboard")
+// RegisterDashboardRoutes 注册工作台相关路由
+func RegisterDashboardRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
+	dashboardController := controller.NewDashboardController(resManager)
+
+	dashboard := rg.Group("/dashboard")
 	{
-		dash.GET("/overview", ctl.GetOverview)
+		dashboard.GET("/overview", dashboardController.Overview)
 	}
 }

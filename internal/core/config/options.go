@@ -145,6 +145,22 @@ type AuthOptions struct {
 	SuperAdmin   SuperAdminOptions     `mapstructure:"superAdmin"`   // 超级管理员配置
 	Email        EmailOptions          `mapstructure:"email"`        // 邮件服务配置
 	DefaultRole  string                `mapstructure:"defaultRole"`  // 默认角色名称
+	Captcha      CaptchaOptions        `mapstructure:"captcha"`      // 人机验证配置
+}
+
+// CORSOptions 前后端跨域配置
+type CORSOptions struct {
+	AllowOrigins     []string      `mapstructure:"allowOrigins"`
+	AllowMethods     []string      `mapstructure:"allowMethods"`
+	AllowHeaders     []string      `mapstructure:"allowHeaders"`
+	ExposeHeaders    []string      `mapstructure:"exposeHeaders"`
+	AllowCredentials bool          `mapstructure:"allowCredentials"`
+	MaxAge           time.Duration `mapstructure:"maxAge"`
+}
+
+// CaptchaOptions 人机验证配置
+type CaptchaOptions struct {
+	TurnstileSecret string `mapstructure:"turnstileSecret"` // Cloudflare Turnstile Secret Key
 }
 
 // ==================== 主配置结构体 ====================
@@ -160,6 +176,7 @@ type Options struct {
 	Cache      CacheOptions      `mapstructure:"cache"`      // 缓存配置
 	Auth       AuthOptions       `mapstructure:"auth"`       // 认证配置
 	Email      EmailOptions      `mapstructure:"email"`      // 邮件服务配置
+	CORS       CORSOptions       `mapstructure:"cors"`       // CORS配置
 	PprofOn    bool              `mapstructure:"pprofOn"`    // 性能分析开关
 }
 
@@ -315,7 +332,20 @@ func (o *Options) ConfigureWithViper(vp *viper.Viper) {
 			InsecureSkip: o.getBoolWithDefault("email.insecureSkip", true),
 		},
 		DefaultRole: o.getStringWithDefault("auth.defaultRole", ""),
+		Captcha: CaptchaOptions{
+			TurnstileSecret: o.getStringWithDefault("auth.captcha.turnstileSecret", ""),
+		},
 	}
+	// CORS配置
+	o.CORS = CORSOptions{
+		AllowOrigins:     o.getStringSliceWithDefault("cors.allowOrigins", []string{"*"}),
+		AllowMethods:     o.getStringSliceWithDefault("cors.allowMethods", []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"}),
+		AllowHeaders:     o.getStringSliceWithDefault("cors.allowHeaders", []string{"Origin", "Content-Type", "Authorization", "X-Requested-With"}),
+		ExposeHeaders:    o.getStringSliceWithDefault("cors.exposeHeaders", []string{"Content-Length", "Content-Type"}),
+		AllowCredentials: o.getBoolWithDefault("cors.allowCredentials", true),
+		MaxAge:           o.getDurationWithDefault("cors.maxAge", 12*time.Hour),
+	}
+
 	// 其他配置
 	o.PprofOn = o.getBoolWithDefault("pprofOn", false)
 }
@@ -366,6 +396,14 @@ func (o *Options) getDurationWithDefault(key string, defaultValue time.Duration)
 func (o *Options) getBoolWithDefault(key string, defaultValue bool) bool {
 	if o.vp.IsSet(key) {
 		return o.vp.GetBool(key)
+	}
+	return defaultValue
+}
+
+// getStringSliceWithDefault 获取字符串切片配置值，提供默认值
+func (o *Options) getStringSliceWithDefault(key string, defaultValue []string) []string {
+	if o.vp.IsSet(key) {
+		return o.vp.GetStringSlice(key)
 	}
 	return defaultValue
 }

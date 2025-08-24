@@ -5,114 +5,105 @@ import (
 	"time"
 
 	"crm_lite/internal/core/resource"
-    "crm_lite/internal/dao/model"
+	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
-    "gorm.io/gorm"
+
+	"gorm.io/gorm"
 )
 
+// DashboardService 聚合工作台统计数据的服务
+// 大部分统计都是使用数据库简单聚合实现，
+// 若后续性能不足可引入缓存层或异步任务更新。
+
 type DashboardService struct {
-    q  *query.Query
-    db *gorm.DB
+	q  *query.Query
+	db *gorm.DB
 }
 
+// NewDashboardService 创建实例并注入资源
 func NewDashboardService(resManager *resource.Manager) *DashboardService {
-    dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
-		panic("Failed to init DashboardService: " + err.Error())
+		panic("Failed to get DB resource for DashboardService: " + err.Error())
 	}
-    return &DashboardService{q: query.Use(dbRes.DB), db: dbRes.DB}
+	return &DashboardService{q: query.Use(dbRes.DB), db: dbRes.DB}
 }
 
-// GetOverview 计算基础总览指标（MVP 版：不依赖订单与产品）
-func (s *DashboardService) GetOverview(ctx context.Context, _ *dto.DashboardRequest) (*dto.DashboardOverviewResponse, error) {
-	// 总客户数
-	totalCustomers, _ := s.q.Customer.WithContext(ctx).Where(s.q.Customer.DeletedAt.IsNull()).Count()
+// GetOverview 返回工作台总览数据
+func (s *DashboardService) GetOverview(ctx context.Context) (*dto.DashboardOverviewResponse, error) {
+	var resp dto.DashboardOverviewResponse
 
-	// 本月新增客户
+	// 总体统计
+	totalCustomers, _ := s.q.Customer.WithContext(ctx).Count()
+	totalOrders, _ := s.q.Order.WithContext(ctx).Count()
+	totalProducts, _ := s.q.Product.WithContext(ctx).Count()
+
+	var totalRevenue float64
+	_ = s.db.WithContext(ctx).Model(&model.Order{}).Select("COALESCE(SUM(final_amount),0)").Scan(&totalRevenue)
+
+	resp.TotalCustomers = totalCustomers
+	resp.TotalOrders = totalOrders
+	resp.TotalProducts = totalProducts
+	resp.TotalRevenue = totalRevenue
+
+	// 当月统计
 	now := time.Now()
-	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	monthlyNewCustomers, _ := s.q.Customer.WithContext(ctx).
-		Where(s.q.Customer.DeletedAt.IsNull(), s.q.Customer.CreatedAt.Gte(monthStart)).
-		Count()
+	firstOfMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+	monthlyNewCustomers, _ := s.q.Customer.WithContext(ctx).Where(s.q.Customer.CreatedAt.Gte(firstOfMonth)).Count()
+	monthlyOrders, _ := s.q.Order.WithContext(ctx).Where(s.q.Order.OrderDate.Gte(firstOfMonth)).Count()
 
-	// 今日新增客户
-	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	todayNewCustomers, _ := s.q.Customer.WithContext(ctx).
-		Where(s.q.Customer.DeletedAt.IsNull(), s.q.Customer.CreatedAt.Gte(todayStart)).
-		Count()
+	var monthlyRevenue float64
+	_ = s.db.WithContext(ctx).Model(&model.Order{}).Where("order_date >= ?", firstOfMonth).Select("COALESCE(SUM(final_amount),0)").Scan(&monthlyRevenue)
 
-    // 钱包指标（以 wallet 与 wallet_transactions 汇总）
-    totalWallets, _ := s.q.Wallet.WithContext(ctx).Count()
-    // 余额汇总
-    var totalBalance float64
-    s.db.WithContext(ctx).Model(&model.Wallet{}).Select("COALESCE(SUM(balance),0)").Scan(&totalBalance)
-    // 汇总充值与消费（总口径，来自 wallets 汇总字段，避免复杂查询）
-    var totalRecharge, totalConsume float64
-    s.db.WithContext(ctx).Model(&model.Wallet{}).Select("COALESCE(SUM(total_recharged),0)").Scan(&totalRecharge)
-    s.db.WithContext(ctx).Model(&model.Wallet{}).Select("COALESCE(SUM(total_consumed),0)").Scan(&totalConsume)
-    // 本月消费（以交易表 type=consume，消费金额为负数，使用 -amount 求和）
-    var monthConsume float64
-    s.db.WithContext(ctx).Model(&model.WalletTransaction{}).
-        Where("type = ? AND created_at >= ?", "consume", monthStart).
-        Select("COALESCE(SUM(-amount),0)").Scan(&monthConsume)
+	resp.MonthlyNewCustomers = monthlyNewCustomers
+	resp.MonthlyOrders = monthlyOrders
+	resp.MonthlyRevenue = monthlyRevenue
 
-    // 今日收入（以消费为收入）
-    var todayRevenue float64
-    s.db.WithContext(ctx).Model(&model.WalletTransaction{}).
-        Where("type = ? AND created_at >= ?", "consume", todayStart).
-        Select("COALESCE(SUM(-amount),0)").Scan(&todayRevenue)
+	// 今日统计
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	todayNewCustomers, _ := s.q.Customer.WithContext(ctx).Where(s.q.Customer.CreatedAt.Gte(startOfDay)).Count()
+	todayOrders, _ := s.q.Order.WithContext(ctx).Where(s.q.Order.OrderDate.Gte(startOfDay)).Count()
 
-    // 环比/同比（以月为周期，来源：消费）
-    prevMonthStart := monthStart.AddDate(0, -1, 0)
-    prevMonthEnd := monthStart.Add(-time.Nanosecond)
-    var prevMonthConsume float64
-    s.db.WithContext(ctx).Model(&model.WalletTransaction{}).
-        Where("type = ? AND created_at >= ? AND created_at <= ?", "consume", prevMonthStart, prevMonthEnd).
-        Select("COALESCE(SUM(-amount),0)").Scan(&prevMonthConsume)
+	var todayRevenue float64
+	_ = s.db.WithContext(ctx).Model(&model.Order{}).Where("order_date >= ?", startOfDay).Select("COALESCE(SUM(final_amount),0)").Scan(&todayRevenue)
 
-    lastYearMonthStart := monthStart.AddDate(-1, 0, 0)
-    lastYearMonthEnd := lastYearMonthStart.AddDate(0, 1, 0).Add(-time.Nanosecond)
-    var lastYearMonthConsume float64
-    s.db.WithContext(ctx).Model(&model.WalletTransaction{}).
-        Where("type = ? AND created_at >= ? AND created_at <= ?", "consume", lastYearMonthStart, lastYearMonthEnd).
-        Select("COALESCE(SUM(-amount),0)").Scan(&lastYearMonthConsume)
+	resp.TodayNewCustomers = todayNewCustomers
+	resp.TodayOrders = todayOrders
+	resp.TodayRevenue = todayRevenue
 
-    // 计算同比/环比
-    calcRate := func(current, base float64) float64 {
-        if base <= 0 {
-            if current > 0 {
-                return 100
-            }
-            return 0
-        }
-        return (current - base) / base * 100
-    }
+	// 活跃度指标
+	activeCampaigns, _ := s.q.MarketingCampaign.WithContext(ctx).Where(s.q.MarketingCampaign.Status.Eq("active")).Count()
+	pendingActivities, _ := s.q.Activity.WithContext(ctx).Where(s.q.Activity.Status.In("planned", "in_progress")).Count()
+	lowStockProducts, _ := s.q.Product.WithContext(ctx).Where(s.q.Product.StockQuantity.LtCol(s.q.Product.MinStockLevel)).Count()
 
-    // 填充响应（订单/产品相关指标置 0）
-	resp := &dto.DashboardOverviewResponse{
-		TotalCustomers:           totalCustomers,
-		TotalOrders:              0,
-        TotalRevenue:             monthConsume, // 本月“收入”口径取消费额
-		TotalProducts:            0,
-		MonthlyNewCustomers:      monthlyNewCustomers,
-        MonthlyOrders:            0,
-        MonthlyRevenue:           monthConsume,
-		CustomerGrowthRate:       0,
-		OrderGrowthRate:          0,
-        RevenueGrowthRate:        calcRate(monthConsume, prevMonthConsume),
-		TodayNewCustomers:        todayNewCustomers,
-		TodayOrders:              0,
-        TodayRevenue:             todayRevenue,
-		ActiveMarketingCampaigns: 0,
-		PendingActivities:        0,
-		LowStockProducts:         0,
-        TotalWallets:             totalWallets,
-        TotalBalance:             totalBalance,
-        TotalRecharge:            totalRecharge,
-        TotalConsumption:         totalConsume,
-        RevenueMoMRate:           calcRate(monthConsume, prevMonthConsume),
-        RevenueYoYRate:           calcRate(monthConsume, lastYearMonthConsume),
+	resp.ActiveMarketingCampaigns = activeCampaigns
+	resp.PendingActivities = pendingActivities
+	resp.LowStockProducts = lowStockProducts
+
+	// 增长率 (简单计算：与上月对比)
+	prevMonth := firstOfMonth.AddDate(0, -1, 0)
+	prevMonthStart := prevMonth
+	prevMonthEnd := firstOfMonth
+
+	prevCustomers, _ := s.q.Customer.WithContext(ctx).Where(s.q.Customer.CreatedAt.Gte(prevMonthStart), s.q.Customer.CreatedAt.Lt(prevMonthEnd)).Count()
+	prevOrders, _ := s.q.Order.WithContext(ctx).Where(s.q.Order.OrderDate.Gte(prevMonthStart), s.q.Order.OrderDate.Lt(prevMonthEnd)).Count()
+	var prevRevenue float64
+	_ = s.db.WithContext(ctx).Model(&model.Order{}).Where("order_date >= ? AND order_date < ?", prevMonthStart, prevMonthEnd).Select("COALESCE(SUM(final_amount),0)").Scan(&prevRevenue)
+
+	resp.CustomerGrowthRate = calcGrowthRate(float64(prevCustomers), float64(monthlyNewCustomers))
+	resp.OrderGrowthRate = calcGrowthRate(float64(prevOrders), float64(monthlyOrders))
+	resp.RevenueGrowthRate = calcGrowthRate(prevRevenue, monthlyRevenue)
+
+	return &resp, nil
+}
+
+func calcGrowthRate(prev, current float64) float64 {
+	if prev == 0 {
+		if current == 0 {
+			return 0
+		}
+		return 100 // 从0 增长到 current
 	}
-	return resp, nil
+	return ((current - prev) / prev) * 100
 }

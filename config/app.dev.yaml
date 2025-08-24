@@ -73,6 +73,9 @@ auth:
     role: "super_admin"
   # 默认角色配置
   default_role: "authenticated_user"
+  # 人机验证配置
+  captcha:
+    turnstileSecret: "0x4AAAAAABsyBjbCi0HbkwiODK_DYzLyn3Q" # Cloudflare Turnstile Secret Key
 # ==================== 邮件服务配置 (SMTP) ====================
 email:
   host: "smtp.gmail.com" # SMTP 服务器地址
