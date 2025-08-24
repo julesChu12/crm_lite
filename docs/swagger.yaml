@@ -138,9 +138,12 @@ definitions:
         type: string
       tags:
         description: 标签，逗号分隔
-        type: string
+        items:
+          type: string
+        type: array
     required:
     - name
+    - phone
     type: object
   dto.CustomerListResponse:
     properties:
@@ -153,6 +156,8 @@ definitions:
     type: object
   dto.CustomerResponse:
     properties:
+      address:
+        type: string
       assigned_to:
         type: integer
       birthday:
@@ -176,7 +181,10 @@ definitions:
       source:
         type: string
       tags:
-        type: string
+        description: 标签列表
+        items:
+          type: string
+        type: array
       updated_at:
         type: string
       wallet_balance:
@@ -259,7 +267,9 @@ definitions:
         type: string
       tags:
         description: 标签，逗号分隔
-        type: string
+        items:
+          type: string
+        type: array
     type: object
   dto.DashboardOverviewResponse:
     properties:
@@ -335,13 +345,10 @@ definitions:
       total_revenue:
         example: 2450000
         type: number
-<<<<<<< HEAD
       total_wallets:
         description: 钱包相关统计（以钱包消费作为收入口径）
         example: 1180
         type: integer
-=======
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
     type: object
   dto.ForgotPasswordRequest:
     properties:
@@ -1033,54 +1040,16 @@ definitions:
       updated_at:
         type: string
     type: object
-  dto.WalletTransactionItem:
-    properties:
-      amount:
-        type: number
-      balance_after:
-        type: number
-      balance_before:
-        type: number
-      created_at:
-        type: string
-      id:
-        type: integer
-      operator_id:
-        type: integer
-      related_id:
-        type: integer
-      remark:
-        type: string
-      source:
-        type: string
-      type:
-        type: string
-      wallet_id:
-        type: integer
-    type: object
-  dto.WalletTransactionListResponse:
-    properties:
-      page:
-        type: integer
-      page_size:
-        type: integer
-      total:
-        type: integer
-      transactions:
-        items:
-          $ref: '#/definitions/dto.WalletTransactionItem'
-        type: array
-    type: object
   dto.WalletTransactionRequest:
     properties:
       amount:
-        description: 金额为正数，方向由类型决定
+        description: 交易金额，必须为正数
         type: number
       bonus_amount:
-        description: 充值满赠的赠送金额（可选）；>0 时将追加一条 correction 流水
+        description: 赠送金额
         type: number
-      phone_last4:
-        description: 消费校验：客户手机号后四位（consume 时必填，用于现场核对）
+      phone_last:
+        description: 手机号后四位
         type: string
       related_id:
         description: 关联ID（如订单ID等）
@@ -1089,17 +1058,10 @@ definitions:
         description: 备注
         type: string
       source:
-<<<<<<< HEAD
-        description: '交易来源: manual_recharge, manual_consume, promotion 等'
-        type: string
-      type:
-        description: '交易类型: recharge(充值) / consume(消费) / refund(退款)'
-=======
         description: '交易来源: manual, order, refund, system 等'
         type: string
       type:
         description: '交易类型: recharge (充值), consume (消费), refund (退款)'
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
         enum:
         - recharge
         - consume
@@ -1800,21 +1762,6 @@ paths:
       - Customers
   /dashboard/overview:
     get:
-<<<<<<< HEAD
-      description: 返回客户与基础统计的总览数据（MVP 版，不含订单指标）
-      parameters:
-      - enum:
-        - today
-        - week
-        - month
-        - quarter
-        - year
-        example: month
-        in: query
-        name: date_range
-        type: string
-      - example: Asia/Shanghai
-=======
       consumes:
       - application/json
       description: 获取客户、订单、收入等汇总统计
@@ -1824,7 +1771,6 @@ paths:
         name: date_range
         type: string
       - description: 时区
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
         in: query
         name: timezone
         type: string
@@ -1840,15 +1786,11 @@ paths:
                 data:
                   $ref: '#/definitions/dto.DashboardOverviewResponse'
               type: object
-<<<<<<< HEAD
-      summary: 工作台总览
-=======
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/resp.Response'
       summary: 工作台总览数据
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
       tags:
       - Dashboard
   /marketing/campaigns:
@@ -3165,11 +3107,6 @@ paths:
             $ref: '#/definitions/resp.Response'
       tags:
       - Wallets
-<<<<<<< HEAD
-  /v1/customers/{id}/wallet/transactions:
-    get:
-      description: 查询客户钱包的交易流水
-=======
   /v1/customers/{id}/wallet/refund:
     post:
       consumes:
@@ -3267,62 +3204,6 @@ paths:
       consumes:
       - application/json
       description: 为客户的钱包创建一笔交易（充值、消费或退款）
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
-      parameters:
-      - description: 客户ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      - description: 交易类型
-        in: query
-        name: type
-        type: string
-      - description: 来源
-        in: query
-        name: source
-        type: string
-      - description: 开始日期(YYYY-MM-DD)
-        in: query
-        name: start_date
-        type: string
-      - description: 结束日期(YYYY-MM-DD)
-        in: query
-        name: end_date
-        type: string
-      - description: 页码
-        in: query
-        name: page
-        type: integer
-      - description: 每页数量
-        in: query
-        name: page_size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 成功
-          schema:
-            allOf:
-            - $ref: '#/definitions/resp.Response'
-            - properties:
-                data:
-                  $ref: '#/definitions/dto.WalletTransactionListResponse'
-              type: object
-        "404":
-          description: 钱包未找到
-          schema:
-            $ref: '#/definitions/resp.Response'
-      tags:
-      - Wallets
-    post:
-      consumes:
-      - application/json
-      description: 为客户的钱包创建一笔交易（充值/消费/退款）。\n- 规则：\n- 1) 充值 (type=recharge)：支持可选字段
-        bonus_amount>0，将自动追加一条 correction 赠送流水；\n- 2) 消费 (type=consume)：必须提供客户手机号后四位
-        phone_last4 以做现场核对；\n- 3) 退款 (type=refund)：正向增加余额；\n- 4) 累计统计：total_recharged
-        仅统计实付充值金额（不含赠送）。
       parameters:
       - description: 客户ID
         in: path

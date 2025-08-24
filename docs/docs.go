@@ -1046,43 +1046,27 @@ const docTemplate = `{
         },
         "/dashboard/overview": {
             "get": {
-<<<<<<< HEAD
-                "description": "返回客户与基础统计的总览数据（MVP 版，不含订单指标）",
-=======
                 "description": "获取客户、订单、收入等汇总统计",
                 "consumes": [
                     "application/json"
                 ],
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Dashboard"
                 ],
-<<<<<<< HEAD
-                "summary": "工作台总览",
-=======
                 "summary": "工作台总览数据",
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "parameters": [
                     {
                         "type": "string",
-<<<<<<< HEAD
-                        "example": "month",
-=======
                         "description": "时间范围: today/week/month/quarter/year",
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                         "name": "date_range",
                         "in": "query"
                     },
                     {
                         "type": "string",
-<<<<<<< HEAD
-                        "example": "Asia/Shanghai",
-=======
                         "description": "时区",
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                         "name": "timezone",
                         "in": "query"
                     }
@@ -1105,15 +1089,12 @@ const docTemplate = `{
                                 }
                             ]
                         }
-<<<<<<< HEAD
-=======
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/resp.Response"
                         }
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                     }
                 }
             }
@@ -3281,91 +3262,6 @@ const docTemplate = `{
                 }
             }
         },
-<<<<<<< HEAD
-        "/v1/customers/{id}/wallet/transactions": {
-            "get": {
-                "description": "查询客户钱包的交易流水",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Wallets"
-                ],
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "客户ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "交易类型",
-                        "name": "type",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "来源",
-                        "name": "source",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "开始日期(YYYY-MM-DD)",
-                        "name": "start_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "结束日期(YYYY-MM-DD)",
-                        "name": "end_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页数量",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "成功",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/resp.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/dto.WalletTransactionListResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "404": {
-                        "description": "钱包未找到",
-                        "schema": {
-                            "$ref": "#/definitions/resp.Response"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "为客户的钱包创建一笔交易（充值/消费/退款）。\\n- 规则：\\n- 1) 充值 (type=recharge)：支持可选字段 bonus_amount\u003e0，将自动追加一条 correction 赠送流水；\\n- 2) 消费 (type=consume)：必须提供客户手机号后四位 phone_last4 以做现场核对；\\n- 3) 退款 (type=refund)：正向增加余额；\\n- 4) 累计统计：total_recharged 仅统计实付充值金额（不含赠送）。",
-=======
         "/v1/customers/{id}/wallet/refund": {
             "post": {
                 "description": "为客户处理订单退款，将金额退回到钱包",
@@ -3512,7 +3408,6 @@ const docTemplate = `{
             },
             "post": {
                 "description": "为客户的钱包创建一笔交易（充值、消费或退款）",
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 "consumes": [
                     "application/json"
                 ],
@@ -3749,7 +3644,8 @@ const docTemplate = `{
         "dto.CustomerCreateRequest": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "phone"
             ],
             "properties": {
                 "assigned_to": {
@@ -3788,7 +3684,10 @@ const docTemplate = `{
                 },
                 "tags": {
                     "description": "标签，逗号分隔",
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -3809,6 +3708,9 @@ const docTemplate = `{
         "dto.CustomerResponse": {
             "type": "object",
             "properties": {
+                "address": {
+                    "type": "string"
+                },
                 "assigned_to": {
                     "type": "integer"
                 },
@@ -3843,7 +3745,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tags": {
-                    "type": "string"
+                    "description": "标签列表",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -3960,7 +3866,10 @@ const docTemplate = `{
                 },
                 "tags": {
                     "description": "标签，逗号分隔",
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -4059,14 +3968,11 @@ const docTemplate = `{
                 "total_revenue": {
                     "type": "number",
                     "example": 2450000
-<<<<<<< HEAD
                 },
                 "total_wallets": {
                     "description": "钱包相关统计（以钱包消费作为收入口径）",
                     "type": "integer",
                     "example": 1180
-=======
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                 }
             }
         },
@@ -5048,64 +4954,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.WalletTransactionItem": {
-            "type": "object",
-            "properties": {
-                "amount": {
-                    "type": "number"
-                },
-                "balance_after": {
-                    "type": "number"
-                },
-                "balance_before": {
-                    "type": "number"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "operator_id": {
-                    "type": "integer"
-                },
-                "related_id": {
-                    "type": "integer"
-                },
-                "remark": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "type": {
-                    "type": "string"
-                },
-                "wallet_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "dto.WalletTransactionListResponse": {
-            "type": "object",
-            "properties": {
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "transactions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.WalletTransactionItem"
-                    }
-                }
-            }
-        },
         "dto.WalletTransactionRequest": {
             "type": "object",
             "required": [
@@ -5115,15 +4963,15 @@ const docTemplate = `{
             ],
             "properties": {
                 "amount": {
-                    "description": "金额为正数，方向由类型决定",
+                    "description": "交易金额，必须为正数",
                     "type": "number"
                 },
                 "bonus_amount": {
-                    "description": "充值满赠的赠送金额（可选）；\u003e0 时将追加一条 correction 流水",
+                    "description": "赠送金额",
                     "type": "number"
                 },
-                "phone_last4": {
-                    "description": "消费校验：客户手机号后四位（consume 时必填，用于现场核对）",
+                "phone_last": {
+                    "description": "手机号后四位",
                     "type": "string"
                 },
                 "related_id": {
@@ -5135,19 +4983,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "source": {
-<<<<<<< HEAD
-                    "description": "交易来源: manual_recharge, manual_consume, promotion 等",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "交易类型: recharge(充值) / consume(消费) / refund(退款)",
-=======
                     "description": "交易来源: manual, order, refund, system 等",
                     "type": "string"
                 },
                 "type": {
                     "description": "交易类型: recharge (充值), consume (消费), refund (退款)",
->>>>>>> 3dfbfeb (feat: implement comprehensive auth and dashboard enhancements)
                     "type": "string",
                     "enum": [
                         "recharge",
