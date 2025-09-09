@@ -19,6 +19,7 @@ import (
 
 type AuthController struct {
 	authService *service.AuthService
+	cache       *resource.CacheResource
 }
 
 func NewAuthController(resManager *resource.Manager) *AuthController {
@@ -53,6 +54,7 @@ func NewAuthController(resManager *resource.Manager) *AuthController {
 
 	return &AuthController{
 		authService: authService,
+		cache:       cache,
 	}
 }
 
@@ -91,14 +93,11 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrInvalidPassword) {
 			fmt.Println(err.Error())
-			// 登录失败后，设置需要验证码标记（短期）
-			http.SetCookie(ctx.Writer, &http.Cookie{
-				Name:     "need_captcha",
-				Value:    "1",
-				Path:     "/",
-				HttpOnly: true,
-				MaxAge:   600, // 10分钟
-			})
+			// 登录失败后，设置需要验证码标记（短期，存入 Redis，以 IP 维度）
+			if c.cache != nil && c.cache.Client != nil {
+				key := fmt.Sprintf("risk:captcha:ip:%s", ctx.ClientIP())
+				_ = c.cache.Client.Set(ctx.Request.Context(), key, "1", 10*time.Minute).Err()
+			}
 			resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
 			return
 		}

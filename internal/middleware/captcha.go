@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"crm_lite/internal/core/resource"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -10,46 +12,39 @@ import (
 
 const CtxKeyCaptchaRequired = "captcha_required"
 
-// SimpleCaptchaGuard 根据登录失败情况动态要求验证码。
-// 规则：
-// - 默认不要求
-// - 当上一次响应包含风控/429/提示关键词时，要求验证码一段时间
-// - 这里用简单的基于 cookie 的标记模拟（生产建议放 Redis）
-func SimpleCaptchaGuard() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 默认不要求
-		reqCaptcha := false
+// SimpleCaptchaGuard 根据登录失败/风控动态要求验证码（使用 Redis 存储标记）。
+func SimpleCaptchaGuard(resManager *resource.Manager) gin.HandlerFunc {
+	// 获取 Redis 客户端
+	cacheRes, err := resource.Get[*resource.CacheResource](resManager, resource.CacheServiceKey)
+	if err != nil || cacheRes == nil || cacheRes.Client == nil {
+		panic("captcha guard requires redis cache resource")
+	}
+	client := cacheRes.Client
 
-		// 1) 通过一个短期 cookie 标记需要验证码
-		if cookie, err := c.Cookie("need_captcha"); err == nil && cookie == "1" {
+	return func(c *gin.Context) {
+		ip := c.ClientIP()
+		cacheKey := fmt.Sprintf("risk:captcha:ip:%s", ip)
+
+		// 1) 读取是否要求验证码
+		reqCaptcha := false
+		if n, _ := client.Exists(c.Request.Context(), cacheKey).Result(); n > 0 {
 			reqCaptcha = true
 		}
-
 		c.Set(CtxKeyCaptchaRequired, reqCaptcha)
+
 		c.Next()
 
-		// 如果本次返回状态是 429 或消息包含关键字，则设置标记（10 分钟）
+		// 2) 若返回 429 或风控提示，则设置标记（10 分钟）
 		status := c.Writer.Status()
 		if status == http.StatusTooManyRequests {
-			setNeedCaptchaCookie(c)
+			_ = client.Set(c.Request.Context(), cacheKey, "1", 10*time.Minute).Err()
 			return
 		}
-		// 简易从 Header 提示关键词（实际可在业务中统一设置）
 		if msg := c.Writer.Header().Get("X-Risk-Message"); msg != "" {
 			lower := strings.ToLower(msg)
 			if strings.Contains(lower, "captcha") || strings.Contains(lower, "验证") || strings.Contains(lower, "turnstile") {
-				setNeedCaptchaCookie(c)
+				_ = client.Set(c.Request.Context(), cacheKey, "1", 10*time.Minute).Err()
 			}
 		}
 	}
-}
-
-func setNeedCaptchaCookie(c *gin.Context) {
-	http.SetCookie(c.Writer, &http.Cookie{
-		Name:     "need_captcha",
-		Value:    "1",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   int((10 * time.Minute).Seconds()),
-	})
 }

@@ -13,8 +13,8 @@ func registerAuthRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
 	authController := controller.NewAuthController(resManager)
 	auth := rg.Group("/auth")
 	{
-		// 登录使用动态风控中间件，首次不要求验证码，失败后要求
-		auth.POST("/login", middleware.SimpleCaptchaGuard(), authController.Login)
+		// 登录使用动态风控中间件（Redis 存储），首次不要求验证码，失败后要求
+		auth.POST("/login", middleware.SimpleCaptchaGuard(resManager), authController.Login)
 		auth.POST("/register", middleware.TurnstileMiddleware(), authController.Register)
 		auth.POST("/refresh", authController.RefreshToken)
 		auth.POST("/forgot-password", middleware.TurnstileMiddleware(), authController.ForgotPassword)
