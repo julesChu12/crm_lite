@@ -73,22 +73,32 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		resp.Error(ctx, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	// 1. 先校验 Turnstile Token
-	success, err := captcha.VerifyTurnstile(ctx.Request.Context(), req.CaptchaToken, ctx.ClientIP())
-	if err != nil {
-		resp.SystemError(ctx, err)
-		return
-	}
 
-	if !success {
-		resp.Error(ctx, resp.CodeInvalidParam, "captcha verification failed")
-		return
+	// 1. 仅在需要时校验 Turnstile Token（首次不要求）
+	if need, ok := ctx.Get(middleware.CtxKeyCaptchaRequired); ok && need.(bool) {
+		ok2, err := captcha.VerifyTurnstile(ctx.Request.Context(), req.CaptchaToken, ctx.ClientIP())
+		if err != nil {
+			resp.SystemError(ctx, err)
+			return
+		}
+		if !ok2 {
+			resp.Error(ctx, resp.CodeInvalidParam, "captcha verification failed")
+			return
+		}
 	}
 
 	response, err := c.authService.Login(ctx.Request.Context(), &req)
 	if err != nil {
 		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrInvalidPassword) {
 			fmt.Println(err.Error())
+			// 登录失败后，设置需要验证码标记（短期）
+			http.SetCookie(ctx.Writer, &http.Cookie{
+				Name:     "need_captcha",
+				Value:    "1",
+				Path:     "/",
+				HttpOnly: true,
+				MaxAge:   600, // 10分钟
+			})
 			resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
 			return
 		}
