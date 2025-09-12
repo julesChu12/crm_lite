@@ -11,6 +11,7 @@ import (
 	"crm_lite/internal/core/logger"
 	"crm_lite/internal/core/resource"
 	"crm_lite/pkg/scheduler"
+	"crm_lite/pkg/validator"
 
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -37,6 +38,9 @@ func Bootstrap() (*resource.Manager, *scheduler.LogCleaner, func(), error) {
 		}
 	}
 	logger.InitGlobalLogger(&opts.Logger)
+
+	// 注册自定义验证器
+	validator.RegisterMobileValidator()
 
 	logger.Info("Bootstrap process started", zap.String("env", getEnvFromConfig()))
 

@@ -3,7 +3,7 @@ package dto
 // CustomerCreateRequest 创建客户的请求
 type CustomerCreateRequest struct {
 	Name       string   `json:"name" binding:"required"`
-	Phone      string   `json:"phone" binding:"required"` // 使用e164格式校验手机号
+	Phone      string   `json:"phone" binding:"required,mobile"` // 支持中国大陆手机号格式
 	Email      string   `json:"email" binding:"omitempty,email"`
 	Gender     string   `json:"gender"`                                           // 性别: male, female, unknown
 	Birthday   string   `json:"birthday" binding:"omitempty,datetime=2006-01-02"` // 生日，格式：YYYY-MM-DD
@@ -17,7 +17,7 @@ type CustomerCreateRequest struct {
 // CustomerUpdateRequest 更新客户的请求
 type CustomerUpdateRequest struct {
 	Name       string   `json:"name"`
-	Phone      string   `json:"phone" binding:"omitempty,e164"`
+	Phone      string   `json:"phone" binding:"omitempty,mobile"`
 	Email      string   `json:"email" binding:"omitempty,email"`
 	Gender     string   `json:"gender"`                                           // 性别: male, female, unknown
 	Birthday   string   `json:"birthday" binding:"omitempty,datetime=2006-01-02"` // 生日，格式：YYYY-MM-DD
