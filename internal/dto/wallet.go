@@ -39,8 +39,13 @@ type WalletTransactionResponse struct {
 }
 
 type ListWalletTransactionsRequest struct {
-	Page  int `form:"page" binding:"min=1"`
-	Limit int `form:"limit" binding:"min=1,max=100"`
+	Page      int    `form:"page" binding:"min=1"`
+	Limit     int    `form:"limit" binding:"min=1,max=100"`
+	Source    string `form:"source"`                          // 按交易来源筛选
+	Type      string `form:"type"`                            // 按交易类型筛选: recharge, consume, refund
+	StartDate string `form:"start_date"`                      // 开始日期 YYYY-MM-DD
+	EndDate   string `form:"end_date"`                        // 结束日期 YYYY-MM-DD
+	RelatedID int64  `form:"related_id"`                      // 按关联ID筛选
 }
 
 type ListWalletTransactionsResponse struct {

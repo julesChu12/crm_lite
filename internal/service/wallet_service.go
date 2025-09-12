@@ -8,6 +8,7 @@ import (
 	"crm_lite/internal/dto"
 	"errors"
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -17,7 +18,7 @@ type IWalletService interface {
 	CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error)
 	CreateTransaction(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletTransactionRequest) error
 	GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error)
-	GetTransactions(ctx context.Context, customerID int64, page, limit int) ([]*dto.WalletTransactionResponse, int64, error)
+	GetTransactions(ctx context.Context, customerID int64, req *dto.ListWalletTransactionsRequest) ([]*dto.WalletTransactionResponse, int64, error)
 	ProcessRefund(ctx context.Context, customerID int64, operatorID int64, req *dto.WalletRefundRequest) error
 }
 
@@ -223,7 +224,7 @@ func (s *WalletService) GetWalletByCustomerID(ctx context.Context, customerID in
 }
 
 // GetTransactions 获取客户的交易流水列表
-func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, page, limit int) ([]*dto.WalletTransactionResponse, int64, error) {
+func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, req *dto.ListWalletTransactionsRequest) ([]*dto.WalletTransactionResponse, int64, error) {
 	// 1. 获取钱包ID
 	wallet, err := s.q.Wallet.WithContext(ctx).
 		Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq("balance")).
@@ -236,23 +237,54 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, p
 	}
 
 	// 2. 计算偏移量
-	offset := (page - 1) * limit
+	offset := (req.Page - 1) * req.Limit
 
-	// 3. 查询交易记录
-	transactions, err := s.q.WalletTransaction.WithContext(ctx).
-		Where(s.q.WalletTransaction.WalletID.Eq(wallet.ID)).
+	// 3. 构建查询条件
+	query := s.q.WalletTransaction.WithContext(ctx).Where(s.q.WalletTransaction.WalletID.Eq(wallet.ID))
+	countQuery := s.q.WalletTransaction.WithContext(ctx).Where(s.q.WalletTransaction.WalletID.Eq(wallet.ID))
+
+	// 添加筛选条件
+	if req.Source != "" {
+		query = query.Where(s.q.WalletTransaction.Source.Eq(req.Source))
+		countQuery = countQuery.Where(s.q.WalletTransaction.Source.Eq(req.Source))
+	}
+	if req.Type != "" {
+		query = query.Where(s.q.WalletTransaction.Type.Eq(req.Type))
+		countQuery = countQuery.Where(s.q.WalletTransaction.Type.Eq(req.Type))
+	}
+	if req.RelatedID > 0 {
+		query = query.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))
+		countQuery = countQuery.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))
+	}
+	if req.StartDate != "" {
+		startDateTime, err := time.Parse("2006-01-02", req.StartDate)
+		if err == nil {
+			query = query.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime))
+			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime))
+		}
+	}
+	if req.EndDate != "" {
+		endDateTime, err := time.Parse("2006-01-02", req.EndDate)
+		if err == nil {
+			// 设置为当天的 23:59:59
+			endDateTime = endDateTime.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
+			query = query.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime))
+			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime))
+		}
+	}
+
+	// 4. 查询交易记录
+	transactions, err := query.
 		Order(s.q.WalletTransaction.CreatedAt.Desc()).
-		Limit(limit).
+		Limit(req.Limit).
 		Offset(offset).
 		Find()
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// 4. 获取总数
-	total, err := s.q.WalletTransaction.WithContext(ctx).
-		Where(s.q.WalletTransaction.WalletID.Eq(wallet.ID)).
-		Count()
+	// 5. 获取总数
+	total, err := countQuery.Count()
 	if err != nil {
 		return nil, 0, err
 	}

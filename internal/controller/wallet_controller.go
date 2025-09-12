@@ -143,13 +143,18 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 }
 
 // GetTransactions @Summary 获取客户钱包交易流水列表
-// @Description 根据客户ID获取其钱包交易记录，支持分页
+// @Description 根据客户ID获取其钱包交易记录，支持分页和多条件筛选
 // @Tags Wallets
 // @Accept json
 // @Produce json
 // @Param id path int true "客户ID"
 // @Param page query int false "页码" default(1)
 // @Param limit query int false "每页数量" default(20)
+// @Param source query string false "交易来源筛选"
+// @Param type query string false "交易类型筛选: recharge, consume, refund"
+// @Param start_date query string false "开始日期 YYYY-MM-DD"
+// @Param end_date query string false "结束日期 YYYY-MM-DD"
+// @Param related_id query int false "关联ID筛选"
 // @Success 200 {object} resp.Response{data=dto.ListWalletTransactionsResponse} "成功"
 // @Failure 400 {object} resp.Response "请求参数错误"
 // @Failure 404 {object} resp.Response "钱包未找到"
@@ -176,7 +181,7 @@ func (c *WalletController) GetTransactions(ctx *gin.Context) {
 		req.Limit = 20
 	}
 
-	transactions, total, err := c.walletSvc.GetTransactions(ctx.Request.Context(), customerID, req.Page, req.Limit)
+	transactions, total, err := c.walletSvc.GetTransactions(ctx.Request.Context(), customerID, &req)
 	if err != nil {
 		if errors.Is(err, service.ErrWalletNotFound) {
 			resp.Error(ctx, http.StatusNotFound, err.Error())
