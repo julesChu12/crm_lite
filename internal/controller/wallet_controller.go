@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"crm_lite/internal/dto"
+	"crm_lite/internal/core/resource"
+	"crm_lite/internal/dao/query"
 	"crm_lite/internal/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +18,13 @@ import (
 
 // WalletController 负责处理钱包相关的 API 请求
 type WalletController struct {
-	walletSvc service.IWalletService
+	walletSvc  service.IWalletService
+	resManager *resource.Manager
 }
 
 // NewWalletController 创建一个新的 WalletController
-func NewWalletController(walletSvc service.IWalletService) *WalletController {
-	return &WalletController{walletSvc: walletSvc}
+func NewWalletController(walletSvc service.IWalletService, resManager *resource.Manager) *WalletController {
+	return &WalletController{walletSvc: walletSvc, resManager: resManager}
 }
 
 // GetWalletByCustomerID @Summary 获取客户钱包信息
@@ -85,22 +88,38 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 		return
 	}
 
-	// 2. 从上下文中获取操作员信息
+	// 2. 从上下文中获取操作员信息（支持 UUID → 数值ID 回退）
 	operatorIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
 	if !exists {
 		resp.Error(ctx, http.StatusUnauthorized, "操作员信息不存在")
 		return
 	}
-	
-	operatorIDStr, ok := operatorIDVal.(string)
-	if !ok {
-		resp.Error(ctx, http.StatusInternalServerError, "操作员ID类型错误")
-		return
-	}
-	
-	operatorID, err := strconv.ParseInt(operatorIDStr, 10, 64)
-	if err != nil {
-		resp.Error(ctx, http.StatusInternalServerError, "操作员ID格式错误")
+
+	var operatorID int64
+	switch v := operatorIDVal.(type) {
+	case int64:
+		operatorID = v
+	case string:
+		if id, errConv := strconv.ParseInt(v, 10, 64); errConv == nil {
+			operatorID = id
+		} else {
+			// 视为 UUID，从 DB 查询对应的数值 ID
+			dbRes, errDB := resource.Get[*resource.DBResource](c.resManager, resource.DBServiceKey)
+			if errDB != nil {
+				resp.SystemError(ctx, errDB)
+				return
+			}
+			q := query.Use(dbRes.DB)
+			admin, errFind := q.AdminUser.WithContext(ctx.Request.Context()).
+				Where(q.AdminUser.UUID.Eq(v)).First()
+			if errFind != nil {
+				resp.Error(ctx, http.StatusUnauthorized, "无效的操作员身份")
+				return
+			}
+			operatorID = admin.ID
+		}
+	default:
+		resp.Error(ctx, http.StatusUnauthorized, "未知的操作员身份")
 		return
 	}
 
@@ -201,22 +220,37 @@ func (c *WalletController) ProcessRefund(ctx *gin.Context) {
 		return
 	}
 
-	// 从上下文中获取操作员信息
+	// 从上下文中获取操作员信息（支持 UUID → 数值ID 回退）
 	operatorIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
 	if !exists {
 		resp.Error(ctx, http.StatusUnauthorized, "操作员信息不存在")
 		return
 	}
-	
-	operatorIDStr, ok := operatorIDVal.(string)
-	if !ok {
-		resp.Error(ctx, http.StatusInternalServerError, "操作员ID类型错误")
-		return
-	}
-	
-	operatorID, err := strconv.ParseInt(operatorIDStr, 10, 64)
-	if err != nil {
-		resp.Error(ctx, http.StatusInternalServerError, "操作员ID格式错误")
+
+	var operatorID int64
+	switch v := operatorIDVal.(type) {
+	case int64:
+		operatorID = v
+	case string:
+		if id, errConv := strconv.ParseInt(v, 10, 64); errConv == nil {
+			operatorID = id
+		} else {
+			dbRes, errDB := resource.Get[*resource.DBResource](c.resManager, resource.DBServiceKey)
+			if errDB != nil {
+				resp.SystemError(ctx, errDB)
+				return
+			}
+			q := query.Use(dbRes.DB)
+			admin, errFind := q.AdminUser.WithContext(ctx.Request.Context()).
+				Where(q.AdminUser.UUID.Eq(v)).First()
+			if errFind != nil {
+				resp.Error(ctx, http.StatusUnauthorized, "无效的操作员身份")
+				return
+			}
+			operatorID = admin.ID
+		}
+	default:
+		resp.Error(ctx, http.StatusUnauthorized, "未知的操作员身份")
 		return
 	}
 

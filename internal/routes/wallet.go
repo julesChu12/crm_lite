@@ -12,7 +12,7 @@ import (
 func RegisterWalletRoutes(router *gin.RouterGroup, resourceManager *resource.Manager) {
 	// 初始化 Service 和 Controller
 	walletSvc := service.NewWalletService(resourceManager)
-	walletCtl := controller.NewWalletController(walletSvc)
+	walletCtl := controller.NewWalletController(walletSvc, resourceManager)
 
 	// 创建一个 "wallets" 路由组
 	walletRoutes := router.Group("/customers/:id").Use(middleware.NewSimpleCustomerAccessMiddleware(resourceManager))
