@@ -252,6 +252,12 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, r
 		query = query.Where(s.q.WalletTransaction.Type.Eq(req.Type))
 		countQuery = countQuery.Where(s.q.WalletTransaction.Type.Eq(req.Type))
 	}
+	if req.Remark != "" {
+		// 使用模糊匹配查询备注
+		likePattern := "%" + req.Remark + "%"
+		query = query.Where(s.q.WalletTransaction.Remark.Like(likePattern))
+		countQuery = countQuery.Where(s.q.WalletTransaction.Remark.Like(likePattern))
+	}
 	if req.RelatedID > 0 {
 		query = query.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))
 		countQuery = countQuery.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))

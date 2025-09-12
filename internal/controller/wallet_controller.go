@@ -152,6 +152,7 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 // @Param limit query int false "每页数量" default(20)
 // @Param source query string false "交易来源筛选"
 // @Param type query string false "交易类型筛选: recharge, consume, refund"
+// @Param remark query string false "备注内容筛选（模糊匹配）"
 // @Param start_date query string false "开始日期 YYYY-MM-DD"
 // @Param end_date query string false "结束日期 YYYY-MM-DD"
 // @Param related_id query int false "关联ID筛选"
