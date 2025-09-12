@@ -132,8 +132,8 @@ func (s *ProductService) toProductResponse(p *model.Product) *dto.ProductRespons
 		Price:       p.Price,
 		SKU:         p.Category,
 		Stock:       int(p.StockQuantity),
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
+		CreatedAt:   p.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:   p.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

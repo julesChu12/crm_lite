@@ -271,7 +271,7 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, p
 			RelatedID:     t.RelatedID,
 			Remark:        t.Remark,
 			OperatorID:    t.OperatorID,
-			CreatedAt:     t.CreatedAt,
+			CreatedAt:     t.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 
@@ -324,7 +324,7 @@ func (s *WalletService) toWalletResponse(wallet *model.Wallet) *dto.WalletRespon
 		FrozenBalance:  wallet.FrozenBalance,
 		TotalRecharged: wallet.TotalRecharged,
 		TotalConsumed:  wallet.TotalConsumed,
-		CreatedAt:      wallet.CreatedAt,
-		UpdatedAt:      wallet.UpdatedAt,
+		CreatedAt:      wallet.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      wallet.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

@@ -1,18 +1,16 @@
 package dto
 
-import "time"
-
 // WalletResponse 钱包信息的响应
 type WalletResponse struct {
-	ID             int64     `json:"id"`
-	CustomerID     int64     `json:"customer_id"`
-	Type           string    `json:"type"`
-	Balance        float64   `json:"balance"`
-	FrozenBalance  float64   `json:"frozen_balance"`
-	TotalRecharged float64   `json:"total_recharged"`
-	TotalConsumed  float64   `json:"total_consumed"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID             int64   `json:"id"`
+	CustomerID     int64   `json:"customer_id"`
+	Type           string  `json:"type"`
+	Balance        float64 `json:"balance"`
+	FrozenBalance  float64 `json:"frozen_balance"`
+	TotalRecharged float64 `json:"total_recharged"`
+	TotalConsumed  float64 `json:"total_consumed"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
 }
 
 // WalletTransactionRequest 创建钱包交易的请求
@@ -27,17 +25,17 @@ type WalletTransactionRequest struct {
 }
 
 type WalletTransactionResponse struct {
-	ID            int64     `json:"id"`
-	WalletID      int64     `json:"wallet_id"`
-	Type          string    `json:"type"`
-	Amount        float64   `json:"amount"`
-	BalanceBefore float64   `json:"balance_before"`
-	BalanceAfter  float64   `json:"balance_after"`
-	Source        string    `json:"source"`
-	RelatedID     int64     `json:"related_id"`
-	Remark        string    `json:"remark"`
-	OperatorID    int64     `json:"operator_id"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            int64   `json:"id"`
+	WalletID      int64   `json:"wallet_id"`
+	Type          string  `json:"type"`
+	Amount        float64 `json:"amount"`
+	BalanceBefore float64 `json:"balance_before"`
+	BalanceAfter  float64 `json:"balance_after"`
+	Source        string  `json:"source"`
+	RelatedID     int64   `json:"related_id"`
+	Remark        string  `json:"remark"`
+	OperatorID    int64   `json:"operator_id"`
+	CreatedAt     string  `json:"created_at"`
 }
 
 type ListWalletTransactionsRequest struct {

@@ -1,17 +1,15 @@
 package dto
 
-import "time"
-
 // ProductResponse 用于 API 响应的单个产品数据。
 type ProductResponse struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"`        // 产品名称
-	Description string    `json:"description"` // 产品描述
-	Price       float64   `json:"price"`       // 价格
-	SKU         string    `json:"sku"`         // 库存单位
-	Stock       int       `json:"stock"`       // 库存数量
-	CreatedAt   time.Time `json:"created_at"`  // 创建时间
-	UpdatedAt   time.Time `json:"updated_at"`  // 更新时间
+	ID          int64   `json:"id"`
+	Name        string  `json:"name"`        // 产品名称
+	Description string  `json:"description"` // 产品描述
+	Price       float64 `json:"price"`       // 价格
+	SKU         string  `json:"sku"`         // 库存单位
+	Stock       int     `json:"stock"`       // 库存数量
+	CreatedAt   string  `json:"created_at"`  // 创建时间
+	UpdatedAt   string  `json:"updated_at"`  // 更新时间
 }
 
 // ProductCreateRequest 定义了创建新产品的请求体。

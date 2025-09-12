@@ -58,7 +58,7 @@ func (s *OrderService) toOrderResponse(o *model.Order) *dto.OrderResponse {
 		TotalAmount: o.TotalAmount,
 		FinalAmount: o.FinalAmount,
 		Remark:      o.Remark,
-		CreatedAt:   o.CreatedAt,
+		CreatedAt:   o.CreatedAt.Format("2006-01-02 15:04:05"),
 		Items:       items,
 	}
 }

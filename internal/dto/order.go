@@ -44,7 +44,7 @@ type OrderResponse struct {
 	TotalAmount  float64              `json:"total_amount"`            // 订单总金额
 	FinalAmount  float64              `json:"final_amount"`            // 最终成交金额
 	Remark       string               `json:"remark"`                  // 备注
-	CreatedAt    time.Time            `json:"created_at"`              // 创建时间
+	CreatedAt    string               `json:"created_at"`              // 创建时间
 	Items        []*OrderItemResponse `json:"items"`                   // 订单项列表
 }
 

@@ -17,7 +17,7 @@ type CustomerCreateRequest struct {
 // CustomerUpdateRequest 更新客户的请求
 type CustomerUpdateRequest struct {
 	Name       string   `json:"name"`
-	Phone      string   `json:"phone" binding:"omitempty,mobile"`
+	Phone      string   `json:"phone" binding:"required,mobile"`
 	Email      string   `json:"email" binding:"omitempty,email"`
 	Gender     string   `json:"gender"`                                           // 性别: male, female, unknown
 	Birthday   string   `json:"birthday" binding:"omitempty,datetime=2006-01-02"` // 生日，格式：YYYY-MM-DD
