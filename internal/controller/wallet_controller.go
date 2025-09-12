@@ -86,8 +86,23 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 	}
 
 	// 2. 从上下文中获取操作员信息
-	operatorIDVal, _ := ctx.Get(middleware.ContextKeyUserID)
-	operatorID := operatorIDVal.(int64)
+	operatorIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
+	if !exists {
+		resp.Error(ctx, http.StatusUnauthorized, "操作员信息不存在")
+		return
+	}
+	
+	operatorIDStr, ok := operatorIDVal.(string)
+	if !ok {
+		resp.Error(ctx, http.StatusInternalServerError, "操作员ID类型错误")
+		return
+	}
+	
+	operatorID, err := strconv.ParseInt(operatorIDStr, 10, 64)
+	if err != nil {
+		resp.Error(ctx, http.StatusInternalServerError, "操作员ID格式错误")
+		return
+	}
 
 	// 3. 调用服务
 	err = c.walletSvc.CreateTransaction(ctx.Request.Context(), customerID, operatorID, &req)
@@ -187,8 +202,23 @@ func (c *WalletController) ProcessRefund(ctx *gin.Context) {
 	}
 
 	// 从上下文中获取操作员信息
-	operatorIDVal, _ := ctx.Get(middleware.ContextKeyUserID)
-	operatorID := operatorIDVal.(int64)
+	operatorIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
+	if !exists {
+		resp.Error(ctx, http.StatusUnauthorized, "操作员信息不存在")
+		return
+	}
+	
+	operatorIDStr, ok := operatorIDVal.(string)
+	if !ok {
+		resp.Error(ctx, http.StatusInternalServerError, "操作员ID类型错误")
+		return
+	}
+	
+	operatorID, err := strconv.ParseInt(operatorIDStr, 10, 64)
+	if err != nil {
+		resp.Error(ctx, http.StatusInternalServerError, "操作员ID格式错误")
+		return
+	}
 
 	// 调用服务处理退款
 	err = c.walletSvc.ProcessRefund(ctx.Request.Context(), customerID, operatorID, &req)
