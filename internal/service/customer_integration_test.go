@@ -94,5 +94,7 @@ func (s *CustomerIntegrationTestSuite) TestCreateCustomerIntegration() {
 	var dbWallet model.Wallet
 	walletResult := s.db.DB.Where("customer_id = ?", dbCustomer.ID).First(&dbWallet)
 	s.NoError(walletResult.Error)
-	s.Equal("balance", dbWallet.Type)
+	// 注意：新钱包模型中已删除Type字段，统一为balance类型
+	// s.Equal("balance", dbWallet.Type) // 已删除
+	s.Equal(int64(999), dbWallet.CustomerID) // 验证客户ID正确
 }

@@ -4,25 +4,22 @@
 
 package model
 
-import (
-	"time"
-)
-
 const TableNameWalletTransaction = "wallet_transactions"
 
 // WalletTransaction mapped from table <wallet_transactions>
 type WalletTransaction struct {
-	ID            int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
-	WalletID      int64     `gorm:"column:wallet_id;type:bigint(20);not null;index:idx_wallet_transactions_wallet_id,priority:1" json:"wallet_id"`
-	Type          string    `gorm:"column:type;type:varchar(20);not null;index:idx_wallet_transactions_type,priority:1;comment:交易类型: recharge, consume, refund, freeze, unfreeze, correction" json:"type"` // 交易类型: recharge, consume, refund, freeze, unfreeze, correction
-	Amount        float64   `gorm:"column:amount;type:decimal(10,2);not null;comment:正数表示增加，负数表示减少" json:"amount"`                                                                                         // 正数表示增加，负数表示减少
-	BalanceBefore float64   `gorm:"column:balance_before;type:decimal(10,2);not null;comment:交易前余额" json:"balance_before"`                                                                                 // 交易前余额
-	BalanceAfter  float64   `gorm:"column:balance_after;type:decimal(10,2);not null;comment:交易后余额" json:"balance_after"`                                                                                   // 交易后余额
-	Source        string    `gorm:"column:source;type:varchar(50);not null;index:idx_wallet_transactions_source,priority:1;comment:交易来源：manual, order, refund, system等" json:"source"`                     // 交易来源：manual, order, refund, system等
-	RelatedID     int64     `gorm:"column:related_id;type:bigint(20);index:idx_wallet_transactions_related_id,priority:1;comment:关联ID（如订单ID、退款ID等）" json:"related_id"`                                     // 关联ID（如订单ID、退款ID等）
-	Remark        string    `gorm:"column:remark;type:text" json:"remark"`
-	OperatorID    int64     `gorm:"column:operator_id;type:bigint(20);index:idx_wallet_transactions_operator_id,priority:1;comment:操作人员" json:"operator_id"` // 操作人员
-	CreatedAt     time.Time `gorm:"column:created_at;type:timestamp;index:idx_wallet_transactions_created_at,priority:1;default:current_timestamp()" json:"created_at"`
+	ID             int64  `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	WalletID       int64  `gorm:"column:wallet_id;type:bigint(20);not null;index:idx_wallet_time,priority:1;comment:钱包ID" json:"wallet_id"`                                          // 钱包ID
+	Direction      string `gorm:"column:direction;type:enum('credit','debit');not null;comment:资金方向：credit-入账，debit-出账" json:"direction"`                                            // 资金方向：credit-入账，debit-出账
+	Amount         int64  `gorm:"column:amount;type:bigint(20);not null;comment:交易金额（分），始终为正数" json:"amount"`                                                                        // 交易金额（分），始终为正数
+	Type           string `gorm:"column:type;type:enum('recharge','order_pay','order_refund','adjust_in','adjust_out');not null;index:idx_type,priority:1;comment:交易类型" json:"type"` // 交易类型
+	BizRefType     string `gorm:"column:biz_ref_type;type:varchar(32);index:idx_biz_ref,priority:1;comment:业务引用类型：order/refund/manual等" json:"biz_ref_type"`                         // 业务引用类型：order/refund/manual等
+	BizRefID       int64  `gorm:"column:biz_ref_id;type:bigint(20);index:idx_biz_ref,priority:2;comment:业务引用ID，如订单ID" json:"biz_ref_id"`                                             // 业务引用ID，如订单ID
+	IdempotencyKey string `gorm:"column:idempotency_key;type:varchar(64);not null;uniqueIndex:uk_idempotency,priority:1;comment:幂等键，防止重复交易" json:"idempotency_key"`                  // 幂等键，防止重复交易
+	OperatorID     int64  `gorm:"column:operator_id;type:bigint(20);index:idx_operator,priority:1;comment:操作员ID" json:"operator_id"`                                                 // 操作员ID
+	ReasonCode     string `gorm:"column:reason_code;type:varchar(32);comment:交易原因代码" json:"reason_code"`                                                                             // 交易原因代码
+	Note           string `gorm:"column:note;type:varchar(255);comment:备注信息" json:"note"`                                                                                            // 备注信息
+	CreatedAt      int64  `gorm:"column:created_at;type:bigint(20);not null;index:idx_wallet_time,priority:2;comment:创建时间（Unix时间戳）" json:"created_at"`                               // 创建时间（Unix时间戳）
 }
 
 // TableName WalletTransaction's table name

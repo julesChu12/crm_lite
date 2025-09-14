@@ -2,6 +2,8 @@ package controller
 
 import (
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/identity"
+	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
@@ -10,16 +12,34 @@ import (
 )
 
 type PermissionController struct {
-	permService *service.PermissionService
+	permService     *service.PermissionService
+	identityService identity.Service
 }
 
 func NewPermissionController(rm *resource.Manager) *PermissionController {
+	// 获取必要的资源
+	db, err := resource.Get[*resource.DBResource](rm, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for PermissionController: " + err.Error())
+	}
+	casbinRes, err := resource.Get[*resource.CasbinResource](rm, resource.CasbinServiceKey)
+	if err != nil {
+		panic("Failed to get casbin resource for PermissionController: " + err.Error())
+	}
+
+	// 创建Identity域服务
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+
+	// 创建旧的PermissionService（保持兼容性）
 	ps, err := service.NewPermissionService(rm)
 	if err != nil {
-		// 在启动时就应该 panic，因为这是一个关键服务的依赖问题
 		panic("failed to initialize permission service: " + err.Error())
 	}
-	return &PermissionController{permService: ps}
+
+	return &PermissionController{
+		permService:     ps,
+		identityService: identityService,
+	}
 }
 
 // AddPermission godoc
@@ -40,7 +60,15 @@ func (pc *PermissionController) AddPermission(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	if err := pc.permService.AddPermission(c.Request.Context(), &req); err != nil {
+
+	// 转换为Identity域请求
+	permReq := identity.PermissionRequest{
+		Role:   req.Role,
+		Path:   req.Path,
+		Method: req.Method,
+	}
+
+	if err := pc.identityService.AddPermission(c.Request.Context(), permReq); err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to add permission")
 		return
 	}
@@ -65,7 +93,15 @@ func (pc *PermissionController) RemovePermission(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	if err := pc.permService.RemovePermission(c.Request.Context(), &req); err != nil {
+
+	// 转换为Identity域请求
+	permReq := identity.PermissionRequest{
+		Role:   req.Role,
+		Path:   req.Path,
+		Method: req.Method,
+	}
+
+	if err := pc.identityService.RemovePermission(c.Request.Context(), permReq); err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to remove permission")
 		return
 	}
@@ -84,12 +120,19 @@ func (pc *PermissionController) RemovePermission(c *gin.Context) {
 // @Router /permissions/{role} [get]
 func (pc *PermissionController) ListPermissionsByRole(c *gin.Context) {
 	role := c.Param("role")
-	permissions, err := pc.permService.ListPermissionsByRole(c.Request.Context(), role)
+	permissions, err := pc.identityService.ListRolePermissions(c.Request.Context(), role)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to list permissions")
 		return
 	}
-	resp.Success(c, permissions)
+
+	// 转换为简单格式
+	permissionResponses := make([][]string, len(permissions))
+	for i, perm := range permissions {
+		permissionResponses[i] = []string{perm.Role, perm.Path, perm.Method, perm.Action}
+	}
+
+	resp.Success(c, permissionResponses)
 }
 
 // AssignRoleToUser godoc
@@ -110,7 +153,8 @@ func (pc *PermissionController) AssignRoleToUser(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	if err := pc.permService.AssignRoleToUser(c.Request.Context(), &req); err != nil {
+
+	if err := pc.identityService.AssignRoleToUser(c.Request.Context(), req.UserID, []string{req.Role}); err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to assign role to user")
 		return
 	}
@@ -135,7 +179,8 @@ func (pc *PermissionController) RemoveRoleFromUser(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	if err := pc.permService.RemoveRoleFromUser(c.Request.Context(), &req); err != nil {
+
+	if err := pc.identityService.RemoveRoleFromUser(c.Request.Context(), req.UserID, req.Role); err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to remove role from user")
 		return
 	}
@@ -154,7 +199,7 @@ func (pc *PermissionController) RemoveRoleFromUser(c *gin.Context) {
 // @Router /user-roles/roles/{user_id} [get]
 func (pc *PermissionController) GetRolesForUser(c *gin.Context) {
 	userID := c.Param("user_id")
-	roles, err := pc.permService.GetRolesForUser(c.Request.Context(), userID)
+	roles, err := pc.identityService.GetRolesForUser(c.Request.Context(), userID)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to get roles for user")
 		return
@@ -174,7 +219,7 @@ func (pc *PermissionController) GetRolesForUser(c *gin.Context) {
 // @Router /user-roles/users/{role} [get]
 func (pc *PermissionController) GetUsersForRole(c *gin.Context) {
 	role := c.Param("role")
-	users, err := pc.permService.GetUsersForRole(c.Request.Context(), role)
+	users, err := pc.identityService.GetUsersForRole(c.Request.Context(), role)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to get users for role")
 		return

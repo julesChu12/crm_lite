@@ -12,15 +12,12 @@ const TableNameWallet = "wallets"
 
 // Wallet mapped from table <wallets>
 type Wallet struct {
-	ID             int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
-	CustomerID     int64     `gorm:"column:customer_id;type:bigint(20);not null;uniqueIndex:customer_id,priority:1" json:"customer_id"`
-	Type           string    `gorm:"column:type;type:varchar(20);uniqueIndex:customer_id,priority:2;default:balance;comment:钱包类型: balance, points, coupon, deposit" json:"type"` // 钱包类型: balance, points, coupon, deposit
-	Balance        float64   `gorm:"column:balance;type:decimal(10,2);not null;index:idx_wallets_balance,priority:1;default:0.00" json:"balance"`
-	FrozenBalance  float64   `gorm:"column:frozen_balance;type:decimal(10,2);default:0.00;comment:冻结金额" json:"frozen_balance"`   // 冻结金额
-	TotalRecharged float64   `gorm:"column:total_recharged;type:decimal(10,2);default:0.00;comment:累计充值" json:"total_recharged"` // 累计充值
-	TotalConsumed  float64   `gorm:"column:total_consumed;type:decimal(10,2);default:0.00;comment:累计消费" json:"total_consumed"`   // 累计消费
-	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
-	UpdatedAt      time.Time `gorm:"column:updated_at;type:timestamp;default:current_timestamp()" json:"updated_at"`
+	ID         int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	CustomerID int64     `gorm:"column:customer_id;type:bigint(20);not null;uniqueIndex:customer_id,priority:1;index:idx_wallets_customer,priority:1;comment:客户ID，每个客户只有一个钱包" json:"customer_id"` // 客户ID，每个客户只有一个钱包
+	Balance    int64     `gorm:"column:balance;type:bigint(20);not null;comment:当前余额（分），只读字段，由交易聚合计算" json:"balance"`                                                                             // 当前余额（分），只读字段，由交易聚合计算
+	Status     int32     `gorm:"column:status;type:tinyint(4);not null;index:idx_wallets_status,priority:1;default:1;comment:钱包状态：1-正常，0-冻结" json:"status"`                                       // 钱包状态：1-正常，0-冻结
+	CreatedAt  time.Time `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
+	UpdatedAt  int64     `gorm:"column:updated_at;type:bigint(20);not null;comment:Unix时间戳，用于乐观锁" json:"updated_at"` // Unix时间戳，用于乐观锁
 }
 
 // TableName Wallet's table name

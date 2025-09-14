@@ -36,6 +36,9 @@ func newOrderItem(db *gorm.DB, opts ...gen.DOOption) orderItem {
 	_orderItem.DiscountAmount = field.NewFloat64(tableName, "discount_amount")
 	_orderItem.FinalPrice = field.NewFloat64(tableName, "final_price")
 	_orderItem.CreatedAt = field.NewTime(tableName, "created_at")
+	_orderItem.ProductNameSnapshot = field.NewString(tableName, "product_name_snapshot")
+	_orderItem.UnitPriceSnapshot = field.NewInt64(tableName, "unit_price_snapshot")
+	_orderItem.DurationMinSnapshot = field.NewInt32(tableName, "duration_min_snapshot")
 
 	_orderItem.fillFieldMap()
 
@@ -45,16 +48,19 @@ func newOrderItem(db *gorm.DB, opts ...gen.DOOption) orderItem {
 type orderItem struct {
 	orderItemDo
 
-	ALL            field.Asterisk
-	ID             field.Int64
-	OrderID        field.Int64
-	ProductID      field.Int64
-	ProductName    field.String
-	Quantity       field.Int32
-	UnitPrice      field.Float64
-	DiscountAmount field.Float64
-	FinalPrice     field.Float64
-	CreatedAt      field.Time
+	ALL                 field.Asterisk
+	ID                  field.Int64
+	OrderID             field.Int64
+	ProductID           field.Int64
+	ProductName         field.String
+	Quantity            field.Int32
+	UnitPrice           field.Float64
+	DiscountAmount      field.Float64
+	FinalPrice          field.Float64
+	CreatedAt           field.Time
+	ProductNameSnapshot field.String // 产品名称快照，下单时的产品名称
+	UnitPriceSnapshot   field.Int64  // 单价快照（分），下单时的产品价格
+	DurationMinSnapshot field.Int32  // 服务时长快照（分钟），下单时的服务时长
 
 	fieldMap map[string]field.Expr
 }
@@ -80,6 +86,9 @@ func (o *orderItem) updateTableName(table string) *orderItem {
 	o.DiscountAmount = field.NewFloat64(table, "discount_amount")
 	o.FinalPrice = field.NewFloat64(table, "final_price")
 	o.CreatedAt = field.NewTime(table, "created_at")
+	o.ProductNameSnapshot = field.NewString(table, "product_name_snapshot")
+	o.UnitPriceSnapshot = field.NewInt64(table, "unit_price_snapshot")
+	o.DurationMinSnapshot = field.NewInt32(table, "duration_min_snapshot")
 
 	o.fillFieldMap()
 
@@ -96,7 +105,7 @@ func (o *orderItem) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (o *orderItem) fillFieldMap() {
-	o.fieldMap = make(map[string]field.Expr, 9)
+	o.fieldMap = make(map[string]field.Expr, 12)
 	o.fieldMap["id"] = o.ID
 	o.fieldMap["order_id"] = o.OrderID
 	o.fieldMap["product_id"] = o.ProductID
@@ -106,6 +115,9 @@ func (o *orderItem) fillFieldMap() {
 	o.fieldMap["discount_amount"] = o.DiscountAmount
 	o.fieldMap["final_price"] = o.FinalPrice
 	o.fieldMap["created_at"] = o.CreatedAt
+	o.fieldMap["product_name_snapshot"] = o.ProductNameSnapshot
+	o.fieldMap["unit_price_snapshot"] = o.UnitPriceSnapshot
+	o.fieldMap["duration_min_snapshot"] = o.DurationMinSnapshot
 }
 
 func (o orderItem) clone(db *gorm.DB) orderItem {

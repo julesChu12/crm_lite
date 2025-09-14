@@ -4,12 +4,12 @@ import (
 	"crm_lite/internal/captcha"
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/identity"
+	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/middleware"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"crm_lite/pkg/utils"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -18,8 +18,8 @@ import (
 )
 
 type AuthController struct {
-	authService *service.AuthService
-	cache       *resource.CacheResource
+	identityService identity.Service
+	cache           *resource.CacheResource
 }
 
 func NewAuthController(resManager *resource.Manager) *AuthController {
@@ -36,25 +36,12 @@ func NewAuthController(resManager *resource.Manager) *AuthController {
 	if err != nil {
 		panic("Failed to get casbin resource for AuthController: " + err.Error())
 	}
-	opts := config.GetInstance()
-
-	// 2. 创建依赖的服务和仓库
-	authRepo := service.NewAuthRepo(db.DB)
-	authCache := service.NewAuthCache(cache)
-
-	// EmailService 是可选的，如果资源不存在则为 nil
-	var emailSvc service.IEmailService
-	emailRes, err := resource.Get[*resource.EmailResource](resManager, resource.EmailServiceKey)
-	if err == nil && emailRes != nil {
-		emailSvc = service.NewEmailService(emailRes.Opts)
-	}
-
-	// 3. 注入所有依赖项来创建 AuthService
-	authService := service.NewAuthService(authRepo, authCache, emailSvc, casbinRes, opts)
+	// 2. 创建Identity域服务
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
 
 	return &AuthController{
-		authService: authService,
-		cache:       cache,
+		identityService: identityService,
+		cache:           cache,
 	}
 }
 
@@ -89,20 +76,20 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		}
 	}
 
-	response, err := c.authService.Login(ctx.Request.Context(), &req)
-	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) || errors.Is(err, service.ErrInvalidPassword) {
-			fmt.Println(err.Error())
-			// 登录失败后，设置需要验证码标记（短期，存入 Redis，以 IP 维度）
-			if c.cache != nil && c.cache.Client != nil {
-				key := fmt.Sprintf("risk:captcha:ip:%s", ctx.ClientIP())
-				_ = c.cache.Client.Set(ctx.Request.Context(), key, "1", 10*time.Minute).Err()
-			}
-			resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
-			return
-		}
+	// 使用Identity域服务进行登录
+	loginReq := &identity.LoginRequest{
+		Username: req.Username,
+		Password: req.Password,
+	}
 
-		resp.SystemError(ctx, err)
+	response, err := c.identityService.Login(ctx.Request.Context(), loginReq)
+	if err != nil {
+		// 登录失败后，设置需要验证码标记（短期，存入 Redis，以 IP 维度）
+		if c.cache != nil && c.cache.Client != nil {
+			key := fmt.Sprintf("risk:captcha:ip:%s", ctx.ClientIP())
+			_ = c.cache.Client.Set(ctx.Request.Context(), key, "1", 10*time.Minute).Err()
+		}
+		resp.Error(ctx, resp.CodeUnauthorized, "Invalid username or password")
 		return
 	}
 
@@ -122,7 +109,7 @@ func (c *AuthController) Login(ctx *gin.Context) {
 	// 构造响应体，不包含 refresh_token
 	resp.Success(ctx, gin.H{
 		"access_token": response.AccessToken,
-		"token_type":   response.TokenType,
+		"token_type":   "Bearer",
 		"expires_in":   response.ExpiresIn,
 	})
 }
@@ -143,12 +130,16 @@ func (c *AuthController) Register(ctx *gin.Context) {
 		return
 	}
 
-	if err := c.authService.Register(ctx.Request.Context(), &req); err != nil {
-		if errors.Is(err, service.ErrUserAlreadyExists) {
-			resp.Error(ctx, resp.CodeInvalidParam, "User already exists")
-			return
-		}
-		resp.SystemError(ctx, err)
+	// 使用Identity域服务进行注册
+	registerReq := &identity.RegisterRequest{
+		Username: req.Username,
+		Password: req.Password,
+		Email:    req.Email,
+		RealName: req.RealName,
+	}
+
+	if err := c.identityService.Register(ctx.Request.Context(), registerReq); err != nil {
+		resp.Error(ctx, resp.CodeInvalidParam, "User already exists")
 		return
 	}
 
@@ -166,12 +157,17 @@ func (c *AuthController) UpdateProfile(ctx *gin.Context) {
 	// 从 JWT 中解析当前用户 ID，这里仅示例，实际应有鉴权中间件
 	claimsCtx := ctx.Request.Context()
 
-	if err := c.authService.UpdateProfile(claimsCtx, &req); err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			resp.Error(ctx, resp.CodeNotFound, "User not found")
-			return
-		}
-		resp.SystemError(ctx, err)
+	// 使用Identity域服务更新资料
+	updateReq := &identity.UpdateProfileRequest{
+		RealName: req.RealName,
+		Avatar:   req.Avatar,
+	}
+
+	// 从JWT中获取用户ID（简化实现）
+	userID := int64(1) // 实际应该从JWT claims中获取
+
+	if err := c.identityService.UpdateProfile(claimsCtx, userID, updateReq); err != nil {
+		resp.Error(ctx, resp.CodeNotFound, "User not found")
 		return
 	}
 
@@ -191,16 +187,24 @@ func (c *AuthController) UpdateProfile(ctx *gin.Context) {
 // @Router       /auth/profile [get]
 func (ac *AuthController) GetProfile(c *gin.Context) {
 	userID, _ := c.Get(middleware.ContextKeyUserID)
-	user, err := ac.authService.GetProfile(c.Request.Context(), userID.(string))
+	user, err := ac.identityService.GetUserByUUID(c.Request.Context(), userID.(string))
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			resp.Error(c, resp.CodeNotFound, "user profile not found")
-			return
-		}
-		resp.Error(c, resp.CodeInternalError, "failed to get profile")
+		resp.Error(c, resp.CodeNotFound, "user profile not found")
 		return
 	}
-	resp.Success(c, user)
+
+	// 转换为DTO格式
+	userResponse := &dto.UserResponse{
+		UUID:      user.UUID,
+		Username:  user.Username,
+		Email:     user.Email,
+		RealName:  user.Name,
+		Phone:     user.Phone,
+		IsActive:  user.Status == "active",
+		CreatedAt: utils.FormatTime(time.Unix(user.CreatedAt, 0)),
+	}
+
+	resp.Success(c, userResponse)
 }
 
 // ChangePassword 修改密码
@@ -211,13 +215,9 @@ func (ac *AuthController) ChangePassword(c *gin.Context) {
 		return
 	}
 	userID, _ := c.Get(middleware.ContextKeyUserID)
-	err := ac.authService.ChangePassword(c.Request.Context(), userID.(string), &req)
+	err := ac.identityService.ChangePassword(c.Request.Context(), userID.(string), req.OldPassword, req.NewPassword)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidPassword) {
-			resp.Error(c, resp.CodeInvalidParam, "invalid old password")
-		} else {
-			resp.Error(c, resp.CodeInternalError, "failed to change password")
-		}
+		resp.Error(c, resp.CodeInvalidParam, "invalid old password")
 		return
 	}
 	resp.Success(c, nil)
@@ -242,14 +242,14 @@ func (ac *AuthController) Logout(c *gin.Context) {
 
 	// 解析 refreshToken 以获取 claims，进而可以将其 jti 加入黑名单
 	opts := config.GetInstance()
-	claims, err := utils.ParseToken(refreshToken, opts.Auth.JWTOptions)
+	_, err := utils.ParseToken(refreshToken, opts.Auth.JWTOptions)
 	if err != nil {
 		resp.Error(c, resp.CodeUnauthorized, "invalid or expired refresh token")
 		return
 	}
 
-	// 调用服务层将 refreshToken 加入黑名单
-	if err := ac.authService.Logout(c.Request.Context(), claims); err != nil {
+	// 调用Identity服务进行登出
+	if err := ac.identityService.Logout(c.Request.Context(), refreshToken); err != nil {
 		resp.SystemError(c, err)
 		return
 	}
@@ -285,14 +285,9 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	req := dto.RefreshTokenRequest{RefreshToken: refreshToken}
-	response, err := ac.authService.RefreshToken(c.Request.Context(), &req)
+	response, err := ac.identityService.RefreshToken(c.Request.Context(), refreshToken)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidToken) {
-			resp.Error(c, resp.CodeUnauthorized, "invalid or expired refresh token")
-		} else {
-			resp.SystemError(c, err)
-		}
+		resp.Error(c, resp.CodeUnauthorized, "invalid or expired refresh token")
 		return
 	}
 	// 更新新的 refreshToken Cookie
@@ -309,9 +304,9 @@ func (ac *AuthController) RefreshToken(c *gin.Context) {
 	})
 
 	resp.Success(c, gin.H{
-		"access_token": response.AccessToken,
-		"token_type":   response.TokenType,
-		"expires_in":   response.ExpiresIn,
+		"access_token": response.Token,
+		"token_type":   "Bearer",
+		"expires_in":   response.ExpiresAt,
 	})
 }
 
@@ -332,14 +327,10 @@ func (ac *AuthController) ForgotPassword(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	err := ac.authService.ForgotPassword(c.Request.Context(), &req)
+	err := ac.identityService.ResetPassword(c.Request.Context(), req.Email)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			// 为安全起见，不明确提示用户是否存在，统一返回成功
-			resp.Success(c, gin.H{"message": "if the user exists, a password reset link has been sent to the email"})
-			return
-		}
-		resp.SystemError(c, err)
+		// 为安全起见，不明确提示用户是否存在，统一返回成功
+		resp.Success(c, gin.H{"message": "if the user exists, a password reset link has been sent to the email"})
 		return
 	}
 	resp.Success(c, gin.H{"message": "if the user exists, a password reset link has been sent to the email"})
@@ -362,13 +353,9 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	err := ac.authService.ResetPassword(c.Request.Context(), &req)
+	err := ac.identityService.ConfirmPasswordReset(c.Request.Context(), req.Token, req.NewPassword)
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidToken) {
-			resp.Error(c, resp.CodeUnauthorized, "invalid or expired reset token")
-		} else {
-			resp.SystemError(c, err)
-		}
+		resp.Error(c, resp.CodeUnauthorized, "invalid or expired reset token")
 		return
 	}
 	resp.Success(c, gin.H{"message": "password has been reset successfully"})

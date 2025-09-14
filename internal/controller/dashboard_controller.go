@@ -2,6 +2,8 @@ package controller
 
 import (
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/analytics"
+	"crm_lite/internal/domains/analytics/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
@@ -12,13 +14,23 @@ import (
 // DashboardController 工作台相关接口
 
 type DashboardController struct {
-	svc *service.DashboardService
+	svc          *service.DashboardService
+	analyticsSvc analytics.Service
 }
 
 // NewDashboardController 注入资源管理器
 func NewDashboardController(resManager *resource.Manager) *DashboardController {
+	// 创建Analytics领域服务
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for DashboardController: " + err.Error())
+	}
+	// 暂时使用nil作为cache，后续可以添加Redis支持
+	analyticsSvc := impl.NewAnalyticsService(dbRes.DB, nil)
+
 	return &DashboardController{
-		svc: service.NewDashboardService(resManager),
+		svc:          service.NewDashboardService(resManager), // 保留旧服务作为备用
+		analyticsSvc: analyticsSvc,
 	}
 }
 
@@ -40,10 +52,26 @@ func (dc *DashboardController) Overview(c *gin.Context) {
 		return
 	}
 
-	data, err := dc.svc.GetOverview(c.Request.Context())
+	// 调用Analytics领域服务
+	overview, err := dc.analyticsSvc.GetOverview(c.Request.Context())
 	if err != nil {
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, data)
+
+	// 转换为DTO格式
+	overviewResponse := &dto.DashboardOverviewResponse{
+		TotalCustomers:      overview.TotalCustomers,
+		TotalOrders:         overview.TotalOrders,
+		TotalProducts:       overview.TotalProducts,
+		TotalRevenue:        overview.TotalRevenue,
+		MonthlyNewCustomers: overview.MonthlyCustomers,
+		MonthlyOrders:       overview.MonthlyOrders,
+		MonthlyRevenue:      overview.MonthlyRevenue,
+		CustomerGrowthRate:  overview.GrowthRate,
+		OrderGrowthRate:     overview.GrowthRate,
+		RevenueGrowthRate:   overview.GrowthRate,
+	}
+
+	resp.Success(c, overviewResponse)
 }

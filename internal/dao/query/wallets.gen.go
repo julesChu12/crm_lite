@@ -29,13 +29,10 @@ func newWallet(db *gorm.DB, opts ...gen.DOOption) wallet {
 	_wallet.ALL = field.NewAsterisk(tableName)
 	_wallet.ID = field.NewInt64(tableName, "id")
 	_wallet.CustomerID = field.NewInt64(tableName, "customer_id")
-	_wallet.Type = field.NewString(tableName, "type")
-	_wallet.Balance = field.NewFloat64(tableName, "balance")
-	_wallet.FrozenBalance = field.NewFloat64(tableName, "frozen_balance")
-	_wallet.TotalRecharged = field.NewFloat64(tableName, "total_recharged")
-	_wallet.TotalConsumed = field.NewFloat64(tableName, "total_consumed")
+	_wallet.Balance = field.NewInt64(tableName, "balance")
+	_wallet.Status = field.NewInt32(tableName, "status")
 	_wallet.CreatedAt = field.NewTime(tableName, "created_at")
-	_wallet.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_wallet.UpdatedAt = field.NewInt64(tableName, "updated_at")
 
 	_wallet.fillFieldMap()
 
@@ -45,16 +42,13 @@ func newWallet(db *gorm.DB, opts ...gen.DOOption) wallet {
 type wallet struct {
 	walletDo
 
-	ALL            field.Asterisk
-	ID             field.Int64
-	CustomerID     field.Int64
-	Type           field.String // 钱包类型: balance, points, coupon, deposit
-	Balance        field.Float64
-	FrozenBalance  field.Float64 // 冻结金额
-	TotalRecharged field.Float64 // 累计充值
-	TotalConsumed  field.Float64 // 累计消费
-	CreatedAt      field.Time
-	UpdatedAt      field.Time
+	ALL        field.Asterisk
+	ID         field.Int64
+	CustomerID field.Int64 // 客户ID，每个客户只有一个钱包
+	Balance    field.Int64 // 当前余额（分），只读字段，由交易聚合计算
+	Status     field.Int32 // 钱包状态：1-正常，0-冻结
+	CreatedAt  field.Time
+	UpdatedAt  field.Int64 // Unix时间戳，用于乐观锁
 
 	fieldMap map[string]field.Expr
 }
@@ -73,13 +67,10 @@ func (w *wallet) updateTableName(table string) *wallet {
 	w.ALL = field.NewAsterisk(table)
 	w.ID = field.NewInt64(table, "id")
 	w.CustomerID = field.NewInt64(table, "customer_id")
-	w.Type = field.NewString(table, "type")
-	w.Balance = field.NewFloat64(table, "balance")
-	w.FrozenBalance = field.NewFloat64(table, "frozen_balance")
-	w.TotalRecharged = field.NewFloat64(table, "total_recharged")
-	w.TotalConsumed = field.NewFloat64(table, "total_consumed")
+	w.Balance = field.NewInt64(table, "balance")
+	w.Status = field.NewInt32(table, "status")
 	w.CreatedAt = field.NewTime(table, "created_at")
-	w.UpdatedAt = field.NewTime(table, "updated_at")
+	w.UpdatedAt = field.NewInt64(table, "updated_at")
 
 	w.fillFieldMap()
 
@@ -96,14 +87,11 @@ func (w *wallet) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wallet) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 9)
+	w.fieldMap = make(map[string]field.Expr, 6)
 	w.fieldMap["id"] = w.ID
 	w.fieldMap["customer_id"] = w.CustomerID
-	w.fieldMap["type"] = w.Type
 	w.fieldMap["balance"] = w.Balance
-	w.fieldMap["frozen_balance"] = w.FrozenBalance
-	w.fieldMap["total_recharged"] = w.TotalRecharged
-	w.fieldMap["total_consumed"] = w.TotalConsumed
+	w.fieldMap["status"] = w.Status
 	w.fieldMap["created_at"] = w.CreatedAt
 	w.fieldMap["updated_at"] = w.UpdatedAt
 }

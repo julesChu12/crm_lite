@@ -31,7 +31,6 @@ type Order struct {
 	CreatedAt      time.Time      `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
 	UpdatedAt      time.Time      `gorm:"column:updated_at;type:timestamp;default:current_timestamp()" json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"column:deleted_at;type:datetime(6)" json:"deleted_at"`
-	OrderItems     []OrderItem    `gorm:"foreignKey:OrderID"` // 添加关联关系
 }
 
 // TableName Order's table name

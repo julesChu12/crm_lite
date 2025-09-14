@@ -1,22 +1,41 @@
 package controller
 
 import (
+	"context"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/dao/query"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 	"strconv"
 
+	crmimpl "crm_lite/internal/domains/crm/impl"
+
 	"github.com/gin-gonic/gin"
 )
 
 type ContactController struct {
-	svc *service.ContactService
+	svc interface {
+		List(ctx context.Context, customerID int64) ([]*dto.ContactResponse, error)
+		GetContactByID(ctx context.Context, id int64) (*dto.ContactResponse, error)
+		Create(ctx context.Context, customerID int64, req *dto.ContactCreateRequest) (*dto.ContactResponse, error)
+		Update(ctx context.Context, id int64, req *dto.ContactUpdateRequest) error
+		Delete(ctx context.Context, id int64) error
+	}
+	resManager *resource.Manager
 }
 
 func NewContactController(resManager *resource.Manager) *ContactController {
-	return &ContactController{svc: service.NewContactService(resManager)}
+	// 注入 domains 实现；可回滚至旧 service
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic(err)
+	}
+	q := query.Use(dbRes.DB)
+	_ = q // kept for potential use/extensions
+	svc := crmimpl.NewContactServiceWithQuery(query.Use(dbRes.DB))
+	return &ContactController{svc: svc, resManager: resManager}
 }
 
 // ListContacts godoc
@@ -72,7 +91,7 @@ func (cc *ContactController) GetContact(c *gin.Context) {
 
 	contact, err := cc.svc.GetContactByID(c.Request.Context(), contactID)
 	if err != nil {
-		if errors.Is(err, service.ErrContactNotFound) {
+		if errors.Is(err, crmimpl.ErrContactNotFound) {
 			resp.Error(c, resp.CodeNotFound, "contact not found")
 			return
 		}
@@ -124,7 +143,7 @@ func (cc *ContactController) CreateContact(c *gin.Context) {
 			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
 			return
 		}
-		if errors.Is(err, service.ErrContactEmailAlreadyExists) {
+		if errors.Is(err, crmimpl.ErrContactEmailAlreadyExists) {
 			resp.Error(c, resp.CodeConflict, "contact email already exists")
 			return
 		}
@@ -165,7 +184,7 @@ func (cc *ContactController) UpdateContact(c *gin.Context) {
 
 	err = cc.svc.Update(c.Request.Context(), contactID, &req)
 	if err != nil {
-		if errors.Is(err, service.ErrContactNotFound) {
+		if errors.Is(err, crmimpl.ErrContactNotFound) {
 			resp.Error(c, resp.CodeNotFound, "contact not found")
 			return
 		}
@@ -177,7 +196,7 @@ func (cc *ContactController) UpdateContact(c *gin.Context) {
 			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
 			return
 		}
-		if errors.Is(err, service.ErrContactEmailAlreadyExists) {
+		if errors.Is(err, crmimpl.ErrContactEmailAlreadyExists) {
 			resp.Error(c, resp.CodeConflict, "contact email already exists")
 			return
 		}
@@ -209,7 +228,7 @@ func (cc *ContactController) DeleteContact(c *gin.Context) {
 
 	err = cc.svc.Delete(c.Request.Context(), contactID)
 	if err != nil {
-		if errors.Is(err, service.ErrContactNotFound) {
+		if errors.Is(err, crmimpl.ErrContactNotFound) {
 			resp.Error(c, resp.CodeNotFound, "contact not found")
 			return
 		}

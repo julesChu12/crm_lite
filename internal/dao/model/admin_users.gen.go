@@ -22,6 +22,7 @@ type AdminUser struct {
 	RealName     string         `gorm:"column:real_name;type:varchar(50)" json:"real_name"`
 	Phone        string         `gorm:"column:phone;type:varchar(20)" json:"phone"`
 	Avatar       string         `gorm:"column:avatar;type:varchar(255)" json:"avatar"`
+	ManagerID    int64          `gorm:"column:manager_id;type:bigint(20);index:idx_manager_id,priority:1;comment:上级经理ID" json:"manager_id"` // 上级经理ID
 	IsActive     bool           `gorm:"column:is_active;type:tinyint(1);default:1" json:"is_active"`
 	LastLoginAt  time.Time      `gorm:"column:last_login_at;type:datetime(6)" json:"last_login_at"`
 	CreatedAt    time.Time      `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`

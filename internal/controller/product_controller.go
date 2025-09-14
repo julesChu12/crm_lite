@@ -1,9 +1,10 @@
 package controller
 
 import (
+	"context"
 	"crm_lite/internal/core/resource"
+	catimpl "crm_lite/internal/domains/catalog/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 
@@ -12,7 +13,13 @@ import (
 
 // ProductController 负责处理与产品相关的 HTTP 请求。
 type ProductController struct {
-	productService *service.ProductService
+	productService interface {
+		CreateProduct(ctx context.Context, req *dto.ProductCreateRequest) (*dto.ProductResponse, error)
+		GetProductByID(ctx context.Context, idStr string) (*dto.ProductResponse, error)
+		ListProducts(ctx context.Context, req *dto.ProductListRequest) (*dto.ProductListResponse, error)
+		UpdateProduct(ctx context.Context, idStr string, req *dto.ProductUpdateRequest) (*dto.ProductResponse, error)
+		DeleteProduct(ctx context.Context, idStr string) error
+	}
 }
 
 // NewProductController 创建一个新的 ProductController 实例。
@@ -22,12 +29,11 @@ func NewProductController(rm *resource.Manager) *ProductController {
 	if err != nil {
 		panic("初始化 ProductController 失败，无法获取数据库资源: " + err.Error())
 	}
-	// 2. 创建 repo
-	productRepo := service.NewProductRepo(db.DB)
-	// 3. 注入 repo 来创建 service
-	return &ProductController{
-		productService: service.NewProductService(productRepo),
-	}
+	// 2. 使用 domains 的等价实现（保留旧实现可随时回滚）
+	productRepo := catimpl.NewProductRepo(db.DB)
+	svc := catimpl.NewProductService(productRepo)
+	// 使用新的域服务
+	return &ProductController{productService: svc}
 }
 
 // CreateProduct
@@ -47,7 +53,7 @@ func (cc *ProductController) CreateProduct(c *gin.Context) {
 	}
 	product, err := cc.productService.CreateProduct(c.Request.Context(), &req)
 	if err != nil {
-		if errors.Is(err, service.ErrSKUAlreadyExists) {
+		if errors.Is(err, catimpl.ErrSKUAlreadyExists) {
 			resp.Error(c, resp.CodeConflict, "SKU 已存在")
 			return
 		}
@@ -69,7 +75,7 @@ func (cc *ProductController) GetProduct(c *gin.Context) {
 	id := c.Param("id")
 	product, err := cc.productService.GetProductByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrProductNotFound) {
+		if errors.Is(err, catimpl.ErrProductNotFound) {
 			resp.Error(c, resp.CodeNotFound, "产品未找到")
 			return
 		}
@@ -148,7 +154,7 @@ func (cc *ProductController) UpdateProduct(c *gin.Context) {
 	}
 	product, err := cc.productService.UpdateProduct(c.Request.Context(), id, &req)
 	if err != nil {
-		if errors.Is(err, service.ErrProductNotFound) {
+		if errors.Is(err, catimpl.ErrProductNotFound) {
 			resp.Error(c, resp.CodeNotFound, "产品未找到")
 			return
 		}
@@ -169,7 +175,7 @@ func (cc *ProductController) UpdateProduct(c *gin.Context) {
 func (cc *ProductController) DeleteProduct(c *gin.Context) {
 	id := c.Param("id")
 	if err := cc.productService.DeleteProduct(c.Request.Context(), id); err != nil {
-		if errors.Is(err, service.ErrProductNotFound) {
+		if errors.Is(err, catimpl.ErrProductNotFound) {
 			resp.Error(c, resp.CodeNotFound, "产品未找到")
 			return
 		}

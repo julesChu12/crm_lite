@@ -30,6 +30,7 @@ var (
 	OrderItem         *orderItem
 	Product           *product
 	Role              *role
+	SysOutbox         *sysOutbox
 	Wallet            *wallet
 	WalletTransaction *walletTransaction
 )
@@ -49,6 +50,7 @@ func SetDefault(db *gorm.DB, opts ...gen.DOOption) {
 	OrderItem = &Q.OrderItem
 	Product = &Q.Product
 	Role = &Q.Role
+	SysOutbox = &Q.SysOutbox
 	Wallet = &Q.Wallet
 	WalletTransaction = &Q.WalletTransaction
 }
@@ -69,6 +71,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		OrderItem:         newOrderItem(db, opts...),
 		Product:           newProduct(db, opts...),
 		Role:              newRole(db, opts...),
+		SysOutbox:         newSysOutbox(db, opts...),
 		Wallet:            newWallet(db, opts...),
 		WalletTransaction: newWalletTransaction(db, opts...),
 	}
@@ -90,6 +93,7 @@ type Query struct {
 	OrderItem         orderItem
 	Product           product
 	Role              role
+	SysOutbox         sysOutbox
 	Wallet            wallet
 	WalletTransaction walletTransaction
 }
@@ -112,6 +116,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		OrderItem:         q.OrderItem.clone(db),
 		Product:           q.Product.clone(db),
 		Role:              q.Role.clone(db),
+		SysOutbox:         q.SysOutbox.clone(db),
 		Wallet:            q.Wallet.clone(db),
 		WalletTransaction: q.WalletTransaction.clone(db),
 	}
@@ -141,6 +146,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		OrderItem:         q.OrderItem.replaceDB(db),
 		Product:           q.Product.replaceDB(db),
 		Role:              q.Role.replaceDB(db),
+		SysOutbox:         q.SysOutbox.replaceDB(db),
 		Wallet:            q.Wallet.replaceDB(db),
 		WalletTransaction: q.WalletTransaction.replaceDB(db),
 	}
@@ -160,6 +166,7 @@ type queryCtx struct {
 	OrderItem         IOrderItemDo
 	Product           IProductDo
 	Role              IRoleDo
+	SysOutbox         ISysOutboxDo
 	Wallet            IWalletDo
 	WalletTransaction IWalletTransactionDo
 }
@@ -179,6 +186,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		OrderItem:         q.OrderItem.WithContext(ctx),
 		Product:           q.Product.WithContext(ctx),
 		Role:              q.Role.WithContext(ctx),
+		SysOutbox:         q.SysOutbox.WithContext(ctx),
 		Wallet:            q.Wallet.WithContext(ctx),
 		WalletTransaction: q.WalletTransaction.WithContext(ctx),
 	}

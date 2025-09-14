@@ -2,11 +2,14 @@ package controller
 
 import (
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/marketing"
+	"crm_lite/internal/domains/marketing/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,12 +17,21 @@ import (
 // MarketingController 负责处理营销相关的HTTP请求
 type MarketingController struct {
 	marketingService *service.MarketingService
+	marketingSvc     marketing.Service
 }
 
 // NewMarketingController 创建一个新的MarketingController实例
 func NewMarketingController(resManager *resource.Manager) *MarketingController {
+	// 创建Marketing领域服务
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for MarketingController: " + err.Error())
+	}
+	marketingSvc := impl.NewMarketingService(dbRes.DB)
+
 	return &MarketingController{
-		marketingService: service.NewMarketingService(resManager),
+		marketingService: service.NewMarketingService(resManager), // 保留旧服务作为备用
+		marketingSvc:     marketingSvc,
 	}
 }
 
@@ -64,21 +76,43 @@ func (mc *MarketingController) CreateCampaign(c *gin.Context) {
 		return
 	}
 
-	campaign, err := mc.marketingService.CreateCampaign(c.Request.Context(), &req, createdByInt)
+	// 转换为Marketing领域请求
+	marketingReq := marketing.CreateCampaignRequest{
+		Name:        req.Name,
+		Description: req.Content, // 使用Content作为Description
+		Type:        req.Type,
+		Channel:     req.Type, // 使用Type作为Channel
+		StartTime:   req.StartTime,
+		EndTime:     req.EndTime,
+		Budget:      0, // 默认预算为0
+		TargetCount: 0, // 默认目标数为0
+	}
+
+	campaign, err := mc.marketingSvc.CreateCampaign(c.Request.Context(), marketingReq, createdByInt)
 	if err != nil {
-		if errors.Is(err, service.ErrMarketingCampaignNameExists) {
-			resp.Error(c, resp.CodeConflict, "campaign name already exists")
-			return
-		}
-		if errors.Is(err, service.ErrMarketingInvalidTimeRange) {
-			resp.Error(c, resp.CodeInvalidParam, "invalid time range: start time must be before end time")
-			return
-		}
 		resp.SystemError(c, err)
 		return
 	}
 
-	resp.SuccessWithCode(c, resp.CodeCreated, campaign)
+	// 转换为DTO格式
+	campaignResponse := &dto.MarketingCampaignResponse{
+		ID:           campaign.ID,
+		Name:         campaign.Name,
+		Type:         campaign.Type,
+		Status:       campaign.Status,
+		Content:      campaign.Description,
+		StartTime:    campaign.StartTime,
+		EndTime:      campaign.EndTime,
+		TargetCount:  int32(campaign.TargetCount),
+		SentCount:    int32(campaign.ActualCount),
+		SuccessCount: int32(campaign.ActualCount),
+		ClickCount:   0,
+		CreatedBy:    campaign.CreatedBy,
+		CreatedAt:    time.Unix(campaign.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		UpdatedAt:    time.Unix(campaign.UpdatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.SuccessWithCode(c, resp.CodeCreated, campaignResponse)
 }
 
 // GetCampaign godoc
@@ -94,16 +128,37 @@ func (mc *MarketingController) CreateCampaign(c *gin.Context) {
 // @Router       /marketing/campaigns/{id} [get]
 func (mc *MarketingController) GetCampaign(c *gin.Context) {
 	id := c.Param("id")
-	campaign, err := mc.marketingService.GetCampaign(c.Request.Context(), id)
+	campaignID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		if errors.Is(err, service.ErrMarketingCampaignNotFound) {
-			resp.Error(c, resp.CodeNotFound, "marketing campaign not found")
-			return
-		}
-		resp.SystemError(c, err)
+		resp.Error(c, resp.CodeInvalidParam, "invalid campaign ID")
 		return
 	}
-	resp.Success(c, campaign)
+
+	campaign, err := mc.marketingSvc.GetCampaign(c.Request.Context(), campaignID)
+	if err != nil {
+		resp.Error(c, resp.CodeNotFound, "marketing campaign not found")
+		return
+	}
+
+	// 转换为DTO格式
+	campaignResponse := &dto.MarketingCampaignResponse{
+		ID:           campaign.ID,
+		Name:         campaign.Name,
+		Type:         campaign.Type,
+		Status:       campaign.Status,
+		Content:      campaign.Description,
+		StartTime:    campaign.StartTime,
+		EndTime:      campaign.EndTime,
+		TargetCount:  int32(campaign.TargetCount),
+		SentCount:    int32(campaign.ActualCount),
+		SuccessCount: int32(campaign.ActualCount),
+		ClickCount:   0,
+		CreatedBy:    campaign.CreatedBy,
+		CreatedAt:    time.Unix(campaign.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		UpdatedAt:    time.Unix(campaign.UpdatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.Success(c, campaignResponse)
 }
 
 // ListCampaigns godoc
@@ -129,11 +184,47 @@ func (mc *MarketingController) ListCampaigns(c *gin.Context) {
 		return
 	}
 
-	result, err := mc.marketingService.ListCampaigns(c.Request.Context(), &req)
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	// 调用Marketing领域服务
+	campaigns, total, err := mc.marketingSvc.ListCampaigns(c.Request.Context(), req.Status, req.Page, req.PageSize)
 	if err != nil {
 		resp.SystemError(c, err)
 		return
 	}
+
+	// 转换为DTO格式
+	campaignResponses := make([]*dto.MarketingCampaignResponse, len(campaigns))
+	for i, campaign := range campaigns {
+		campaignResponses[i] = &dto.MarketingCampaignResponse{
+			ID:           campaign.ID,
+			Name:         campaign.Name,
+			Type:         campaign.Type,
+			Status:       campaign.Status,
+			Content:      campaign.Description,
+			StartTime:    campaign.StartTime,
+			EndTime:      campaign.EndTime,
+			TargetCount:  int32(campaign.TargetCount),
+			SentCount:    int32(campaign.ActualCount),
+			SuccessCount: int32(campaign.ActualCount),
+			ClickCount:   0,
+			CreatedBy:    campaign.CreatedBy,
+			CreatedAt:    time.Unix(campaign.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+			UpdatedAt:    time.Unix(campaign.UpdatedAt, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	result := &dto.MarketingCampaignListResponse{
+		Campaigns: campaignResponses,
+		Total:     total,
+	}
+
 	resp.Success(c, result)
 }
 

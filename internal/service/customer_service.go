@@ -147,10 +147,16 @@ func (r *customerRepo) FindByPhoneExcludingID(ctx context.Context, phone string,
 
 type CustomerService struct {
 	repo      ICustomerRepo
-	walletSvc IWalletService
+	walletSvc ICustomerWalletPort
 }
 
-func NewCustomerService(repo ICustomerRepo, walletSvc IWalletService) *CustomerService {
+// ICustomerWalletPort 为 CustomerService 依赖的最小钱包端口（仅用于创建与查询余额）
+type ICustomerWalletPort interface {
+	CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error)
+	GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error)
+}
+
+func NewCustomerService(repo ICustomerRepo, walletSvc ICustomerWalletPort) *CustomerService {
 	return &CustomerService{
 		repo:      repo,
 		walletSvc: walletSvc,
@@ -360,12 +366,14 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, id string, req *dt
 	if req.Level != "" {
 		updates["level"] = req.Level
 	}
-	// 注意：这里允许传入空数组来清空Tags
-	tagsJSON, err := json.Marshal(req.Tags)
-	if err != nil {
-		return fmt.Errorf("failed to marshal tags: %w", err)
+	// 注意：仅当请求中提供了 tags（nil 表示未提供）时才更新；空数组表示清空
+	if req.Tags != nil {
+		tagsJSON, err := json.Marshal(req.Tags)
+		if err != nil {
+			return fmt.Errorf("failed to marshal tags: %w", err)
+		}
+		updates["tags"] = string(tagsJSON)
 	}
-	updates["tags"] = string(tagsJSON)
 
 	if req.Note != "" {
 		updates["note"] = req.Note

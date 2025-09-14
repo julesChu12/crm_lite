@@ -1,9 +1,12 @@
 package controller
 
 import (
+	"context"
 	"crm_lite/internal/core/resource"
+	billingimpl "crm_lite/internal/domains/billing/impl"
+	"crm_lite/internal/domains/crm"
+	crmimpl "crm_lite/internal/domains/crm/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 
@@ -11,23 +14,25 @@ import (
 )
 
 type CustomerController struct {
-	customerService *service.CustomerService
+	customerService interface {
+		CreateCustomerLegacy(ctx context.Context, req *crm.CustomerCreateRequest) (*crm.CustomerResponse, error)
+		ListCustomersLegacy(ctx context.Context, req *crm.CustomerListRequest) (*crm.CustomerListResponse, error)
+		GetCustomerByIDLegacy(ctx context.Context, id string) (*crm.CustomerResponse, error)
+		UpdateCustomerLegacy(ctx context.Context, id string, req *crm.CustomerUpdateRequest) error
+		DeleteCustomerLegacy(ctx context.Context, id string) error
+	}
 }
 
 func NewCustomerController(resManager *resource.Manager) *CustomerController {
-	// 1. 从资源管理器获取数据库资源
-	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	// 默认注入 domains 实现；如需回滚，可改回旧 service 构造
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic("Failed to get database resource for CustomerController: " + err.Error())
 	}
-	// 2. 创建 repo
-	customerRepo := service.NewCustomerRepo(db.DB)
-	// 3. 创建依赖的服务
-	walletSvc := service.NewWalletService(resManager)
-	// 4. 注入 repo 和依赖服务来创建 service
-	customerSvc := service.NewCustomerService(customerRepo, walletSvc)
-
-	return &CustomerController{customerService: customerSvc}
+	// 使用新的billing域服务
+	billingSvc := billingimpl.NewBillingService(dbRes.DB)
+	domainSvc := crmimpl.NewCRMServiceWithBilling(dbRes.DB, billingSvc)
+	return &CustomerController{customerService: domainSvc}
 }
 
 // CreateCustomer
@@ -42,14 +47,27 @@ func NewCustomerController(resManager *resource.Manager) *CustomerController {
 // @Failure      500      {object}  resp.Response
 // @Router       /customers [post]
 func (cc *CustomerController) CreateCustomer(c *gin.Context) {
-	var req dto.CustomerCreateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var dtoReq dto.CustomerCreateRequest
+	if err := c.ShouldBindJSON(&dtoReq); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	customer, err := cc.customerService.CreateCustomer(c.Request.Context(), &req)
+	// 转换 DTO 为 CRM 域类型
+	req := &crm.CustomerCreateRequest{
+		Name:       dtoReq.Name,
+		Phone:      dtoReq.Phone,
+		Email:      dtoReq.Email,
+		Gender:     dtoReq.Gender,
+		Birthday:   dtoReq.Birthday,
+		Level:      dtoReq.Level,
+		Tags:       dtoReq.Tags,
+		Note:       dtoReq.Note,
+		Source:     dtoReq.Source,
+		AssignedTo: dtoReq.AssignedTo,
+	}
+	customer, err := cc.customerService.CreateCustomerLegacy(c.Request.Context(), req)
 	if err != nil {
-		if errors.Is(err, service.ErrPhoneAlreadyExists) {
+		if errors.Is(err, crmimpl.ErrPhoneAlreadyExists) {
 			resp.Error(c, resp.CodeConflict, "phone number already exists")
 			return
 		}
@@ -70,12 +88,22 @@ func (cc *CustomerController) CreateCustomer(c *gin.Context) {
 // @Failure      500  {object}  resp.Response
 // @Router       /customers [get]
 func (cc *CustomerController) ListCustomers(c *gin.Context) {
-	var req dto.CustomerListRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
+	var dtoReq dto.CustomerListRequest
+	if err := c.ShouldBindQuery(&dtoReq); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	customers, err := cc.customerService.ListCustomers(c.Request.Context(), &req)
+	// 转换 DTO 为 CRM 域类型
+	req := &crm.CustomerListRequest{
+		Page:     dtoReq.Page,
+		PageSize: dtoReq.PageSize,
+		IDs:      dtoReq.IDs,
+		Name:     dtoReq.Name,
+		Phone:    dtoReq.Phone,
+		Email:    dtoReq.Email,
+		OrderBy:  dtoReq.OrderBy,
+	}
+	customers, err := cc.customerService.ListCustomersLegacy(c.Request.Context(), req)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to list customers")
 		return
@@ -101,11 +129,11 @@ func (cc *CustomerController) BatchGetCustomers(c *gin.Context) {
 		return
 	}
 
-	serviceReq := &dto.CustomerListRequest{
+	serviceReq := &crm.CustomerListRequest{
 		IDs: req.IDs,
 	}
 
-	customers, err := cc.customerService.ListCustomers(c.Request.Context(), serviceReq)
+	customers, err := cc.customerService.ListCustomersLegacy(c.Request.Context(), serviceReq)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "failed to list customers")
 		return
@@ -125,9 +153,9 @@ func (cc *CustomerController) BatchGetCustomers(c *gin.Context) {
 // @Router       /customers/{id} [get]
 func (cc *CustomerController) GetCustomer(c *gin.Context) {
 	id := c.Param("id")
-	customer, err := cc.customerService.GetCustomerByID(c.Request.Context(), id)
+	customer, err := cc.customerService.GetCustomerByIDLegacy(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
+		if errors.Is(err, crmimpl.ErrCustomerNotFound) {
 			resp.Error(c, resp.CodeNotFound, "customer not found")
 			return
 		}
@@ -151,17 +179,30 @@ func (cc *CustomerController) GetCustomer(c *gin.Context) {
 // @Router       /customers/{id} [put]
 func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 	id := c.Param("id")
-	var req dto.CustomerUpdateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var dtoReq dto.CustomerUpdateRequest
+	if err := c.ShouldBindJSON(&dtoReq); err != nil {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	if err := cc.customerService.UpdateCustomer(c.Request.Context(), id, &req); err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
+	// 转换 DTO 为 CRM 域类型
+	req := &crm.CustomerUpdateRequest{
+		Name:       dtoReq.Name,
+		Phone:      dtoReq.Phone,
+		Email:      dtoReq.Email,
+		Gender:     dtoReq.Gender,
+		Birthday:   dtoReq.Birthday,
+		Level:      dtoReq.Level,
+		Tags:       &dtoReq.Tags,
+		Note:       dtoReq.Note,
+		Source:     dtoReq.Source,
+		AssignedTo: dtoReq.AssignedTo,
+	}
+	if err := cc.customerService.UpdateCustomerLegacy(c.Request.Context(), id, req); err != nil {
+		if errors.Is(err, crmimpl.ErrCustomerNotFound) {
 			resp.Error(c, resp.CodeNotFound, "customer not found")
 			return
 		}
-		if errors.Is(err, service.ErrPhoneAlreadyExists) {
+		if errors.Is(err, crmimpl.ErrPhoneAlreadyExists) {
 			resp.Error(c, resp.CodeConflict, "phone number already exists")
 			return
 		}
@@ -182,8 +223,8 @@ func (cc *CustomerController) UpdateCustomer(c *gin.Context) {
 // @Router       /customers/{id} [delete]
 func (cc *CustomerController) DeleteCustomer(c *gin.Context) {
 	id := c.Param("id")
-	if err := cc.customerService.DeleteCustomer(c.Request.Context(), id); err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
+	if err := cc.customerService.DeleteCustomerLegacy(c.Request.Context(), id); err != nil {
+		if errors.Is(err, crmimpl.ErrCustomerNotFound) {
 			resp.Error(c, resp.CodeNotFound, "customer not found")
 			return
 		}

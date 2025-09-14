@@ -1,17 +1,17 @@
 package controller
 
 import (
-	"crm_lite/internal/service"
-	"crm_lite/pkg/resp"
-	"errors"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/query"
+	"crm_lite/internal/domains/billing"
+	"crm_lite/internal/domains/billing/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/middleware"
+	"crm_lite/internal/service"
+	"crm_lite/pkg/resp"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,12 +19,24 @@ import (
 // WalletController 负责处理钱包相关的 API 请求
 type WalletController struct {
 	walletSvc  service.IWalletService
+	billingSvc billing.Service
 	resManager *resource.Manager
 }
 
 // NewWalletController 创建一个新的 WalletController
 func NewWalletController(walletSvc service.IWalletService, resManager *resource.Manager) *WalletController {
-	return &WalletController{walletSvc: walletSvc, resManager: resManager}
+	// 创建Billing领域服务
+	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for WalletController: " + err.Error())
+	}
+	billingSvc := impl.NewBillingService(dbRes.DB)
+
+	return &WalletController{
+		walletSvc:  walletSvc, // 保留旧服务作为备用
+		billingSvc: billingSvc,
+		resManager: resManager,
+	}
 }
 
 // GetWalletByCustomerID @Summary 获取客户钱包信息
@@ -46,17 +58,22 @@ func (c *WalletController) GetWalletByCustomerID(ctx *gin.Context) {
 		return
 	}
 
-	wallet, err := c.walletSvc.GetWalletByCustomerID(ctx.Request.Context(), customerID)
+	walletInfo, err := c.billingSvc.GetWalletByCustomerID(ctx.Request.Context(), customerID)
 	if err != nil {
-		if errors.Is(err, service.ErrWalletNotFound) {
-			resp.Error(ctx, http.StatusNotFound, err.Error())
-		} else {
-			resp.Error(ctx, http.StatusInternalServerError, err.Error())
-		}
+		resp.Error(ctx, http.StatusNotFound, "钱包未找到")
 		return
 	}
 
-	resp.Success(ctx, wallet)
+	// 转换为DTO格式
+	walletResponse := &dto.WalletResponse{
+		ID:         walletInfo.ID,
+		CustomerID: walletInfo.CustomerID,
+		Balance:    float64(walletInfo.Balance) / 100, // 转换为元
+		Type:       "balance",                         // 默认类型
+		CreatedAt:  time.Unix(walletInfo.UpdatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.Success(ctx, walletResponse)
 }
 
 // CreateTransaction @Summary 创建钱包交易
@@ -123,23 +140,36 @@ func (c *WalletController) CreateTransaction(ctx *gin.Context) {
 		return
 	}
 
-	// 3. 调用服务
-	err = c.walletSvc.CreateTransaction(ctx.Request.Context(), customerID, operatorID, &req)
+	// 3. 转换为Billing领域请求
+	billingReq := &billing.CreateTransactionRequest{
+		CustomerID: customerID,
+		Amount:     req.Amount,
+		Type:       req.Type,
+		Reason:     req.Remark,
+		OrderID:    &req.RelatedID,
+		OperatorID: operatorID,
+	}
+
+	// 4. 调用Billing领域服务
+	transaction, err := c.billingSvc.CreateTransaction(ctx.Request.Context(), billingReq)
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrCustomerNotFound), errors.Is(err, service.ErrWalletNotFound):
-			resp.Error(ctx, http.StatusNotFound, err.Error())
-		case strings.Contains(err.Error(), "phone last4"):
-			resp.Error(ctx, http.StatusForbidden, err.Error())
-		case errors.Is(err, service.ErrInsufficientBalance):
-			resp.Error(ctx, http.StatusUnprocessableEntity, err.Error())
-		default:
-			resp.Error(ctx, http.StatusInternalServerError, err.Error())
-		}
+		resp.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	resp.Success(ctx, nil)
+	// 5. 转换为DTO格式返回
+	transactionResponse := &dto.WalletTransactionResponse{
+		ID:         transaction.ID,
+		Amount:     float64(transaction.Amount) / 100, // 转换为元
+		Type:       transaction.Type,
+		Source:     transaction.BizRefType,
+		Remark:     transaction.Note,
+		RelatedID:  transaction.BizRefID,
+		OperatorID: transaction.OperatorID,
+		CreatedAt:  time.Unix(transaction.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.Success(ctx, transactionResponse)
 }
 
 // GetTransactions @Summary 获取客户钱包交易流水列表
@@ -182,18 +212,36 @@ func (c *WalletController) GetTransactions(ctx *gin.Context) {
 		req.Limit = 20
 	}
 
-	transactions, total, err := c.walletSvc.GetTransactions(ctx.Request.Context(), customerID, &req)
+	// 转换为Billing领域请求
+	billingReq := &billing.TransactionHistoryRequest{
+		Page:     req.Page,
+		PageSize: req.Limit,
+		Type:     req.Type,
+	}
+
+	transactions, total, err := c.billingSvc.GetTransactions(ctx.Request.Context(), customerID, billingReq)
 	if err != nil {
-		if errors.Is(err, service.ErrWalletNotFound) {
-			resp.Error(ctx, http.StatusNotFound, err.Error())
-		} else {
-			resp.Error(ctx, http.StatusInternalServerError, err.Error())
-		}
+		resp.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	// 转换为DTO格式
+	transactionResponses := make([]*dto.WalletTransactionResponse, len(transactions))
+	for i, transaction := range transactions {
+		transactionResponses[i] = &dto.WalletTransactionResponse{
+			ID:         transaction.ID,
+			Amount:     float64(transaction.Amount) / 100, // 转换为元
+			Type:       transaction.Type,
+			Source:     transaction.BizRefType,
+			Remark:     transaction.Note,
+			RelatedID:  transaction.BizRefID,
+			OperatorID: transaction.OperatorID,
+			CreatedAt:  time.Unix(transaction.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
 	resp.Success(ctx, dto.ListWalletTransactionsResponse{
-		Transactions: transactions,
+		Transactions: transactionResponses,
 		Total:        total,
 	})
 }
@@ -226,51 +274,10 @@ func (c *WalletController) ProcessRefund(ctx *gin.Context) {
 		return
 	}
 
-	// 从上下文中获取操作员信息（支持 UUID → 数值ID 回退）
-	operatorIDVal, exists := ctx.Get(middleware.ContextKeyUserID)
-	if !exists {
-		resp.Error(ctx, http.StatusUnauthorized, "操作员信息不存在")
-		return
-	}
-
-	var operatorID int64
-	switch v := operatorIDVal.(type) {
-	case int64:
-		operatorID = v
-	case string:
-		if id, errConv := strconv.ParseInt(v, 10, 64); errConv == nil {
-			operatorID = id
-		} else {
-			dbRes, errDB := resource.Get[*resource.DBResource](c.resManager, resource.DBServiceKey)
-			if errDB != nil {
-				resp.SystemError(ctx, errDB)
-				return
-			}
-			q := query.Use(dbRes.DB)
-			admin, errFind := q.AdminUser.WithContext(ctx.Request.Context()).
-				Where(q.AdminUser.UUID.Eq(v)).First()
-			if errFind != nil {
-				resp.Error(ctx, http.StatusUnauthorized, "无效的操作员身份")
-				return
-			}
-			operatorID = admin.ID
-		}
-	default:
-		resp.Error(ctx, http.StatusUnauthorized, "未知的操作员身份")
-		return
-	}
-
-	// 调用服务处理退款
-	err = c.walletSvc.ProcessRefund(ctx.Request.Context(), customerID, operatorID, &req)
+	// 调用Billing领域服务处理退款
+	err = c.billingSvc.CreditForRefund(ctx.Request.Context(), customerID, req.OrderID, int64(req.Amount*100), req.Remark)
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrCustomerNotFound), errors.Is(err, service.ErrWalletNotFound):
-			resp.Error(ctx, http.StatusNotFound, err.Error())
-		case err.Error() == "订单不存在或不属于该客户" || err.Error() == "订单状态不允许退款":
-			resp.Error(ctx, http.StatusUnprocessableEntity, err.Error())
-		default:
-			resp.Error(ctx, http.StatusInternalServerError, err.Error())
-		}
+		resp.Error(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 

@@ -35,6 +35,7 @@ func newAdminUser(db *gorm.DB, opts ...gen.DOOption) adminUser {
 	_adminUser.RealName = field.NewString(tableName, "real_name")
 	_adminUser.Phone = field.NewString(tableName, "phone")
 	_adminUser.Avatar = field.NewString(tableName, "avatar")
+	_adminUser.ManagerID = field.NewInt64(tableName, "manager_id")
 	_adminUser.IsActive = field.NewBool(tableName, "is_active")
 	_adminUser.LastLoginAt = field.NewTime(tableName, "last_login_at")
 	_adminUser.CreatedAt = field.NewTime(tableName, "created_at")
@@ -58,6 +59,7 @@ type adminUser struct {
 	RealName     field.String
 	Phone        field.String
 	Avatar       field.String
+	ManagerID    field.Int64 // 上级经理ID
 	IsActive     field.Bool
 	LastLoginAt  field.Time
 	CreatedAt    field.Time
@@ -87,6 +89,7 @@ func (a *adminUser) updateTableName(table string) *adminUser {
 	a.RealName = field.NewString(table, "real_name")
 	a.Phone = field.NewString(table, "phone")
 	a.Avatar = field.NewString(table, "avatar")
+	a.ManagerID = field.NewInt64(table, "manager_id")
 	a.IsActive = field.NewBool(table, "is_active")
 	a.LastLoginAt = field.NewTime(table, "last_login_at")
 	a.CreatedAt = field.NewTime(table, "created_at")
@@ -108,7 +111,7 @@ func (a *adminUser) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (a *adminUser) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 13)
+	a.fieldMap = make(map[string]field.Expr, 14)
 	a.fieldMap["id"] = a.ID
 	a.fieldMap["uuid"] = a.UUID
 	a.fieldMap["username"] = a.Username
@@ -117,6 +120,7 @@ func (a *adminUser) fillFieldMap() {
 	a.fieldMap["real_name"] = a.RealName
 	a.fieldMap["phone"] = a.Phone
 	a.fieldMap["avatar"] = a.Avatar
+	a.fieldMap["manager_id"] = a.ManagerID
 	a.fieldMap["is_active"] = a.IsActive
 	a.fieldMap["last_login_at"] = a.LastLoginAt
 	a.fieldMap["created_at"] = a.CreatedAt

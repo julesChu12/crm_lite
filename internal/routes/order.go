@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func registerOrderRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
+func RegisterOrderRoutes(rg *gin.RouterGroup, rm *resource.Manager) {
 	orderController := controller.NewOrderController(rm)
 
 	orders := rg.Group("/orders").Use(middleware.NewSimpleCustomerAccessMiddleware(rm))

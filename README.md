@@ -120,3 +120,26 @@ internal/
 ## 📄 许可证
 
 本项目基于 MIT License 开源。
+
+## Database Migrations
+
+Use the built-in migration tool to apply migrations.
+
+Dev environment:
+
+```
+RUN_DB_TESTS=0 go run cmd/tools/db/migrate.go -env=dev -direction=up -steps=0
+```
+
+Test environment:
+
+```
+RUN_DB_TESTS=0 go run cmd/tools/db/migrate.go -env=test -direction=up -steps=0
+```
+
+Notes:
+- New domain-related migrations added:
+  - `db/migrations/20250913_01_billing_tables.sql`
+  - `db/migrations/20250913_02_sales_item_snapshots.sql`
+  - `db/migrations/20250913_03_sys_outbox.sql`
+- These are additive and safe to apply. Rollback with `-direction=down` if needed.

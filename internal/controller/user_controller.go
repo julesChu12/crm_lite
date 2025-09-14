@@ -1,24 +1,43 @@
 package controller
 
 import (
+	"crm_lite/internal/common"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/identity"
+	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 // UserController 负责处理用户管理相关的HTTP请求
 type UserController struct {
-	userService *service.UserService
+	userService     *service.UserService
+	identityService identity.Service
 }
 
 // NewUserController 创建一个新的 UserController
 func NewUserController(resManager *resource.Manager) *UserController {
+	// 获取必要的资源
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for UserController: " + err.Error())
+	}
+	casbinRes, err := resource.Get[*resource.CasbinResource](resManager, resource.CasbinServiceKey)
+	if err != nil {
+		panic("Failed to get casbin resource for UserController: " + err.Error())
+	}
+
+	// 创建Identity域服务
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+
 	return &UserController{
-		userService: service.NewUserService(resManager),
+		userService:     service.NewUserService(resManager),
+		identityService: identityService,
 	}
 }
 
@@ -41,25 +60,40 @@ func (uc *UserController) CreateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.userService.CreateUserByAdmin(c.Request.Context(), &req)
+	// 转换为Identity域请求
+	createReq := identity.CreateUserRequest{
+		Username:        req.Username,
+		Email:           req.Email,
+		Phone:           req.Phone,
+		Name:            req.RealName,
+		Password:        req.Password,
+		ConfirmPassword: req.Password, // 简化实现
+		Roles:           []string{},   // 简化实现，不处理角色
+	}
+
+	user, err := uc.identityService.CreateUser(c.Request.Context(), createReq)
 	if err != nil {
-		if errors.Is(err, service.ErrUserAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "username already exists")
-			return
-		}
-		if errors.Is(err, service.ErrEmailAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "email already exists")
-			return
-		}
-		if errors.Is(err, service.ErrPhoneAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "phone number already exists")
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceExists, "")) {
+			resp.Error(c, resp.CodeConflict, "username or email already exists")
 			return
 		}
 		resp.SystemError(c, err)
 		return
 	}
 
-	resp.SuccessWithCode(c, resp.CodeCreated, user)
+	// 转换为DTO格式
+	userResponse := &dto.UserResponse{
+		UUID:      user.UUID,
+		Username:  user.Username,
+		Email:     user.Email,
+		RealName:  user.Name,
+		Phone:     user.Phone,
+		IsActive:  user.Status == "active",
+		Roles:     []string{}, // 简化实现
+		CreatedAt: time.Unix(user.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.SuccessWithCode(c, resp.CodeCreated, userResponse)
 }
 
 // GetUserList godoc
@@ -80,10 +114,48 @@ func (uc *UserController) GetUserList(c *gin.Context) {
 		return
 	}
 
-	result, err := uc.userService.ListUsers(c.Request.Context(), &req)
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	// 转换状态参数
+	status := ""
+	if req.IsActive != nil {
+		if *req.IsActive {
+			status = "active"
+		} else {
+			status = "inactive"
+		}
+	}
+
+	users, total, err := uc.identityService.ListUsers(c.Request.Context(), req.Page, req.PageSize, status)
 	if err != nil {
 		resp.SystemError(c, err)
 		return
+	}
+
+	// 转换为DTO格式
+	userResponses := make([]*dto.UserResponse, len(users))
+	for i, user := range users {
+		userResponses[i] = &dto.UserResponse{
+			UUID:      user.UUID,
+			Username:  user.Username,
+			Email:     user.Email,
+			RealName:  user.Name,
+			Phone:     user.Phone,
+			IsActive:  user.Status == "active",
+			Roles:     []string{}, // 简化实现
+			CreatedAt: time.Unix(user.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	result := &dto.UserListResponse{
+		Total: total,
+		Users: userResponses,
 	}
 
 	resp.Success(c, result)
@@ -107,15 +179,30 @@ func (uc *UserController) BatchGetUsers(c *gin.Context) {
 		return
 	}
 
-	// 复用 UserListRequest DTO 来调用现有的服务层方法
-	serviceReq := &dto.UserListRequest{
-		UUIDs: req.UUIDs,
-	}
-
-	result, err := uc.userService.ListUsers(c.Request.Context(), serviceReq)
+	users, err := uc.identityService.BatchGetUsers(c.Request.Context(), req.UUIDs)
 	if err != nil {
 		resp.SystemError(c, err)
 		return
+	}
+
+	// 转换为DTO格式
+	userResponses := make([]*dto.UserResponse, len(users))
+	for i, user := range users {
+		userResponses[i] = &dto.UserResponse{
+			UUID:      user.UUID,
+			Username:  user.Username,
+			Email:     user.Email,
+			RealName:  user.Name,
+			Phone:     user.Phone,
+			IsActive:  user.Status == "active",
+			Roles:     []string{}, // 简化实现
+			CreatedAt: time.Unix(user.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	result := &dto.UserListResponse{
+		Total: int64(len(userResponses)),
+		Users: userResponses,
 	}
 
 	resp.Success(c, result)
@@ -134,16 +221,25 @@ func (uc *UserController) BatchGetUsers(c *gin.Context) {
 // @Router       /users/{uuid} [get]
 func (uc *UserController) GetUserByID(c *gin.Context) {
 	uuid := c.Param("uuid")
-	user, err := uc.userService.GetUserByUUID(c.Request.Context(), uuid)
+	user, err := uc.identityService.GetUserByUUID(c.Request.Context(), uuid)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			resp.Error(c, resp.CodeNotFound, "user not found")
-			return
-		}
-		resp.SystemError(c, err)
+		resp.Error(c, resp.CodeNotFound, "user not found")
 		return
 	}
-	resp.Success(c, user)
+
+	// 转换为DTO格式
+	userResponse := &dto.UserResponse{
+		UUID:      user.UUID,
+		Username:  user.Username,
+		Email:     user.Email,
+		RealName:  user.Name,
+		Phone:     user.Phone,
+		IsActive:  user.Status == "active",
+		Roles:     []string{}, // 简化实现
+		CreatedAt: time.Unix(user.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.Success(c, userResponse)
 }
 
 // UpdateUser godoc
@@ -167,24 +263,56 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 		return
 	}
 
-	user, err := uc.userService.UpdateUserByAdmin(c.Request.Context(), uuid, &req)
+	// 转换为Identity域请求
+	updateReq := identity.UpdateUserRequest{
+		Email: &req.Email,
+		Phone: &req.Phone,
+		Name:  &req.RealName,
+	}
+
+	// 转换状态
+	if req.IsActive != nil {
+		status := "inactive"
+		if *req.IsActive {
+			status = "active"
+		}
+		updateReq.Status = &status
+	}
+
+	err := uc.identityService.UpdateUser(c.Request.Context(), uuid, updateReq)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceNotFound, "")) {
 			resp.Error(c, resp.CodeNotFound, "user not found")
 			return
 		}
-		if errors.Is(err, service.ErrEmailAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "email already exists")
-			return
-		}
-		if errors.Is(err, service.ErrPhoneAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "phone number already exists")
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceExists, "")) {
+			resp.Error(c, resp.CodeConflict, "email or phone already exists")
 			return
 		}
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, user)
+
+	// 获取更新后的用户信息
+	user, err := uc.identityService.GetUserByUUID(c.Request.Context(), uuid)
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+
+	// 转换为DTO格式
+	userResponse := &dto.UserResponse{
+		UUID:      user.UUID,
+		Username:  user.Username,
+		Email:     user.Email,
+		RealName:  user.Name,
+		Phone:     user.Phone,
+		IsActive:  user.Status == "active",
+		Roles:     []string{}, // 简化实现
+		CreatedAt: time.Unix(user.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	resp.Success(c, userResponse)
 }
 
 // DeleteUser godoc
@@ -200,9 +328,9 @@ func (uc *UserController) UpdateUser(c *gin.Context) {
 // @Router       /users/{uuid} [delete]
 func (uc *UserController) DeleteUser(c *gin.Context) {
 	uuid := c.Param("uuid")
-	err := uc.userService.DeleteUser(c.Request.Context(), uuid)
+	err := uc.identityService.DeleteUser(c.Request.Context(), uuid)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceNotFound, "")) {
 			// 在DELETE操作中，如果资源不存在，也可以认为是成功的（幂等性）
 			resp.SuccessWithCode(c, resp.CodeNoContent, nil)
 			return

@@ -28,7 +28,7 @@ func TestWalletService_CreateTransaction_Recharge(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.RelatedID.Eq(3990)).Delete()
+		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3990)).Delete()
 		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(999)).Delete()
 		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(999)).Delete()
 	}()
@@ -48,8 +48,8 @@ func TestWalletService_CreateTransaction_Recharge(t *testing.T) {
 	testWallet, err := walletSvc.CreateWallet(ctx, 999, "balance")
 	require.NoError(t, err)
 	assert.Equal(t, int64(999), testWallet.CustomerID)
-	assert.Equal(t, "balance", testWallet.Type)
-	assert.Equal(t, 0.0, testWallet.Balance)
+	// 注意：新模型中没有Type字段，钱包统一为balance类型
+	assert.Equal(t, int64(0), testWallet.Balance) // 新模型中Balance是int64类型（分）
 
 	// 3. 测试充值交易 - 使用用户提供的参数
 	req := &dto.WalletTransactionRequest{
@@ -68,11 +68,12 @@ func TestWalletService_CreateTransaction_Recharge(t *testing.T) {
 	updatedWallet, err := walletSvc.GetWalletByCustomerID(ctx, 999)
 	require.NoError(t, err)
 	assert.Equal(t, 300.0, updatedWallet.Balance)
-	assert.Equal(t, 300.0, updatedWallet.TotalRecharged)
-	assert.Equal(t, 0.0, updatedWallet.TotalConsumed)
+	// 注意：新模型中不再存储TotalRecharged和TotalConsumed
+	// 这些数据需要从交易记录中计算得出
 
 	// 5. 验证交易记录
-	transactions, total, err := walletSvc.GetTransactions(ctx, 999, 1, 10)
+	reqList := &dto.ListWalletTransactionsRequest{Page: 1, Limit: 10}
+	transactions, total, err := walletSvc.GetTransactions(ctx, 999, reqList)
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), total)
 	assert.Len(t, transactions, 1)
@@ -80,8 +81,9 @@ func TestWalletService_CreateTransaction_Recharge(t *testing.T) {
 	txn := transactions[0]
 	assert.Equal(t, "recharge", txn.Type)
 	assert.Equal(t, 300.0, txn.Amount)
-	assert.Equal(t, 0.0, txn.BalanceBefore)
-	assert.Equal(t, 300.0, txn.BalanceAfter)
+	// 注意：新模型中不再存储BalanceBefore和BalanceAfter
+	// assert.Equal(t, 0.0, txn.BalanceBefore)   // 已删除
+	// assert.Equal(t, 300.0, txn.BalanceAfter)  // 已删除
 	assert.Equal(t, "promotion:FULL_100_GET_20", txn.Source)
 	assert.Equal(t, int64(3990), txn.RelatedID)
 	assert.Equal(t, "会员充值奖励", txn.Remark)
@@ -103,7 +105,7 @@ func TestWalletService_CreateTransaction_RechargeWithBonus(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.RelatedID.Eq(3991)).Delete()
+		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3991)).Delete()
 		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(998)).Delete()
 		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(998)).Delete()
 	}()
@@ -140,12 +142,13 @@ func TestWalletService_CreateTransaction_RechargeWithBonus(t *testing.T) {
 	// 4. 验证钱包余额更新（包含赠送金额）
 	updatedWallet, err := walletSvc.GetWalletByCustomerID(ctx, 998)
 	require.NoError(t, err)
-	assert.Equal(t, 350.0, updatedWallet.Balance)        // 300 + 50
-	assert.Equal(t, 300.0, updatedWallet.TotalRecharged) // 赠送金额不计入总充值
-	assert.Equal(t, 0.0, updatedWallet.TotalConsumed)
+	assert.Equal(t, 350.0, updatedWallet.Balance) // 300 + 50
+	// 注意：新模型中不再存储TotalRecharged和TotalConsumed
+	// 这些数据需要从交易记录中计算得出
 
 	// 5. 验证交易记录（应该有两条：充值 + 赠送）
-	transactions, total, err := walletSvc.GetTransactions(ctx, 998, 1, 10)
+	reqList2 := &dto.ListWalletTransactionsRequest{Page: 1, Limit: 10}
+	transactions, total, err := walletSvc.GetTransactions(ctx, 998, reqList2)
 	require.NoError(t, err)
 	assert.Equal(t, int64(2), total)
 	assert.Len(t, transactions, 2)
@@ -155,20 +158,21 @@ func TestWalletService_CreateTransaction_RechargeWithBonus(t *testing.T) {
 	for _, txn := range transactions {
 		if txn.Type == "recharge" {
 			rechargeTransaction = txn
-		} else if txn.Type == "correction" {
+		} else if txn.Type == "adjust_in" { // 新模型中改为adjust_in
 			bonusTransaction = txn
 		}
 	}
 
 	require.NotNil(t, rechargeTransaction)
 	assert.Equal(t, 300.0, rechargeTransaction.Amount)
-	assert.Equal(t, 0.0, rechargeTransaction.BalanceBefore)
-	assert.Equal(t, 300.0, rechargeTransaction.BalanceAfter)
+	// 注意：新模型中不再存储BalanceBefore和BalanceAfter
+	// assert.Equal(t, 0.0, rechargeTransaction.BalanceBefore)   // 已删除
+	// assert.Equal(t, 300.0, rechargeTransaction.BalanceAfter)  // 已删除
 
 	require.NotNil(t, bonusTransaction)
 	assert.Equal(t, 50.0, bonusTransaction.Amount)
-	assert.Equal(t, 300.0, bonusTransaction.BalanceBefore)
-	assert.Equal(t, 350.0, bonusTransaction.BalanceAfter)
+	// assert.Equal(t, 300.0, bonusTransaction.BalanceBefore)   // 已删除
+	// assert.Equal(t, 350.0, bonusTransaction.BalanceAfter)    // 已删除
 	assert.Equal(t, "promotion", bonusTransaction.Source)
 }
 

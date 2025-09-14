@@ -29,15 +29,16 @@ func newWalletTransaction(db *gorm.DB, opts ...gen.DOOption) walletTransaction {
 	_walletTransaction.ALL = field.NewAsterisk(tableName)
 	_walletTransaction.ID = field.NewInt64(tableName, "id")
 	_walletTransaction.WalletID = field.NewInt64(tableName, "wallet_id")
+	_walletTransaction.Direction = field.NewString(tableName, "direction")
+	_walletTransaction.Amount = field.NewInt64(tableName, "amount")
 	_walletTransaction.Type = field.NewString(tableName, "type")
-	_walletTransaction.Amount = field.NewFloat64(tableName, "amount")
-	_walletTransaction.BalanceBefore = field.NewFloat64(tableName, "balance_before")
-	_walletTransaction.BalanceAfter = field.NewFloat64(tableName, "balance_after")
-	_walletTransaction.Source = field.NewString(tableName, "source")
-	_walletTransaction.RelatedID = field.NewInt64(tableName, "related_id")
-	_walletTransaction.Remark = field.NewString(tableName, "remark")
+	_walletTransaction.BizRefType = field.NewString(tableName, "biz_ref_type")
+	_walletTransaction.BizRefID = field.NewInt64(tableName, "biz_ref_id")
+	_walletTransaction.IdempotencyKey = field.NewString(tableName, "idempotency_key")
 	_walletTransaction.OperatorID = field.NewInt64(tableName, "operator_id")
-	_walletTransaction.CreatedAt = field.NewTime(tableName, "created_at")
+	_walletTransaction.ReasonCode = field.NewString(tableName, "reason_code")
+	_walletTransaction.Note = field.NewString(tableName, "note")
+	_walletTransaction.CreatedAt = field.NewInt64(tableName, "created_at")
 
 	_walletTransaction.fillFieldMap()
 
@@ -47,18 +48,19 @@ func newWalletTransaction(db *gorm.DB, opts ...gen.DOOption) walletTransaction {
 type walletTransaction struct {
 	walletTransactionDo
 
-	ALL           field.Asterisk
-	ID            field.Int64
-	WalletID      field.Int64
-	Type          field.String  // 交易类型: recharge, consume, refund, freeze, unfreeze, correction
-	Amount        field.Float64 // 正数表示增加，负数表示减少
-	BalanceBefore field.Float64 // 交易前余额
-	BalanceAfter  field.Float64 // 交易后余额
-	Source        field.String  // 交易来源：manual, order, refund, system等
-	RelatedID     field.Int64   // 关联ID（如订单ID、退款ID等）
-	Remark        field.String
-	OperatorID    field.Int64 // 操作人员
-	CreatedAt     field.Time
+	ALL            field.Asterisk
+	ID             field.Int64
+	WalletID       field.Int64  // 钱包ID
+	Direction      field.String // 资金方向：credit-入账，debit-出账
+	Amount         field.Int64  // 交易金额（分），始终为正数
+	Type           field.String // 交易类型
+	BizRefType     field.String // 业务引用类型：order/refund/manual等
+	BizRefID       field.Int64  // 业务引用ID，如订单ID
+	IdempotencyKey field.String // 幂等键，防止重复交易
+	OperatorID     field.Int64  // 操作员ID
+	ReasonCode     field.String // 交易原因代码
+	Note           field.String // 备注信息
+	CreatedAt      field.Int64  // 创建时间（Unix时间戳）
 
 	fieldMap map[string]field.Expr
 }
@@ -77,15 +79,16 @@ func (w *walletTransaction) updateTableName(table string) *walletTransaction {
 	w.ALL = field.NewAsterisk(table)
 	w.ID = field.NewInt64(table, "id")
 	w.WalletID = field.NewInt64(table, "wallet_id")
+	w.Direction = field.NewString(table, "direction")
+	w.Amount = field.NewInt64(table, "amount")
 	w.Type = field.NewString(table, "type")
-	w.Amount = field.NewFloat64(table, "amount")
-	w.BalanceBefore = field.NewFloat64(table, "balance_before")
-	w.BalanceAfter = field.NewFloat64(table, "balance_after")
-	w.Source = field.NewString(table, "source")
-	w.RelatedID = field.NewInt64(table, "related_id")
-	w.Remark = field.NewString(table, "remark")
+	w.BizRefType = field.NewString(table, "biz_ref_type")
+	w.BizRefID = field.NewInt64(table, "biz_ref_id")
+	w.IdempotencyKey = field.NewString(table, "idempotency_key")
 	w.OperatorID = field.NewInt64(table, "operator_id")
-	w.CreatedAt = field.NewTime(table, "created_at")
+	w.ReasonCode = field.NewString(table, "reason_code")
+	w.Note = field.NewString(table, "note")
+	w.CreatedAt = field.NewInt64(table, "created_at")
 
 	w.fillFieldMap()
 
@@ -102,17 +105,18 @@ func (w *walletTransaction) GetFieldByName(fieldName string) (field.OrderExpr, b
 }
 
 func (w *walletTransaction) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 11)
+	w.fieldMap = make(map[string]field.Expr, 12)
 	w.fieldMap["id"] = w.ID
 	w.fieldMap["wallet_id"] = w.WalletID
-	w.fieldMap["type"] = w.Type
+	w.fieldMap["direction"] = w.Direction
 	w.fieldMap["amount"] = w.Amount
-	w.fieldMap["balance_before"] = w.BalanceBefore
-	w.fieldMap["balance_after"] = w.BalanceAfter
-	w.fieldMap["source"] = w.Source
-	w.fieldMap["related_id"] = w.RelatedID
-	w.fieldMap["remark"] = w.Remark
+	w.fieldMap["type"] = w.Type
+	w.fieldMap["biz_ref_type"] = w.BizRefType
+	w.fieldMap["biz_ref_id"] = w.BizRefID
+	w.fieldMap["idempotency_key"] = w.IdempotencyKey
 	w.fieldMap["operator_id"] = w.OperatorID
+	w.fieldMap["reason_code"] = w.ReasonCode
+	w.fieldMap["note"] = w.Note
 	w.fieldMap["created_at"] = w.CreatedAt
 }
 

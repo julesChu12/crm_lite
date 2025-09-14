@@ -12,15 +12,18 @@ const TableNameOrderItem = "order_items"
 
 // OrderItem mapped from table <order_items>
 type OrderItem struct {
-	ID             int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
-	OrderID        int64     `gorm:"column:order_id;type:bigint(20);not null;index:idx_items_order,priority:1" json:"order_id"`
-	ProductID      int64     `gorm:"column:product_id;type:bigint(20);not null" json:"product_id"`
-	ProductName    string    `gorm:"column:product_name;type:varchar(100);not null" json:"product_name"`
-	Quantity       int32     `gorm:"column:quantity;type:int(11);not null;default:1" json:"quantity"`
-	UnitPrice      float64   `gorm:"column:unit_price;type:decimal(12,2);not null" json:"unit_price"`
-	DiscountAmount float64   `gorm:"column:discount_amount;type:decimal(12,2);not null;default:0.00" json:"discount_amount"`
-	FinalPrice     float64   `gorm:"column:final_price;type:decimal(12,2);not null" json:"final_price"`
-	CreatedAt      time.Time `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
+	ID                  int64     `gorm:"column:id;type:bigint(20);primaryKey;autoIncrement:true" json:"id"`
+	OrderID             int64     `gorm:"column:order_id;type:bigint(20);not null;index:idx_items_order,priority:1" json:"order_id"`
+	ProductID           int64     `gorm:"column:product_id;type:bigint(20);not null" json:"product_id"`
+	ProductName         string    `gorm:"column:product_name;type:varchar(100);not null" json:"product_name"`
+	Quantity            int32     `gorm:"column:quantity;type:int(11);not null;default:1" json:"quantity"`
+	UnitPrice           float64   `gorm:"column:unit_price;type:decimal(12,2);not null" json:"unit_price"`
+	DiscountAmount      float64   `gorm:"column:discount_amount;type:decimal(12,2);not null;default:0.00" json:"discount_amount"`
+	FinalPrice          float64   `gorm:"column:final_price;type:decimal(12,2);not null" json:"final_price"`
+	CreatedAt           time.Time `gorm:"column:created_at;type:timestamp;default:current_timestamp()" json:"created_at"`
+	ProductNameSnapshot string    `gorm:"column:product_name_snapshot;type:varchar(255);index:idx_order_items_snapshots,priority:1;comment:产品名称快照，下单时的产品名称" json:"product_name_snapshot"` // 产品名称快照，下单时的产品名称
+	UnitPriceSnapshot   int64     `gorm:"column:unit_price_snapshot;type:bigint(20);index:idx_order_items_snapshots,priority:2;comment:单价快照（分），下单时的产品价格" json:"unit_price_snapshot"`      // 单价快照（分），下单时的产品价格
+	DurationMinSnapshot int32     `gorm:"column:duration_min_snapshot;type:int(11);comment:服务时长快照（分钟），下单时的服务时长" json:"duration_min_snapshot"`                                             // 服务时长快照（分钟），下单时的服务时长
 }
 
 // TableName OrderItem's table name

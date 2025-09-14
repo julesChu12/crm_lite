@@ -1,7 +1,10 @@
 package controller
 
 import (
+	"crm_lite/internal/common"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/identity"
+	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
@@ -11,11 +14,28 @@ import (
 )
 
 type RoleController struct {
-	roleService *service.RoleService
+	roleService     *service.RoleService
+	identityService identity.Service
 }
 
 func NewRoleController(resManager *resource.Manager) *RoleController {
-	return &RoleController{roleService: service.NewRoleService(resManager)}
+	// 获取必要的资源
+	db, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
+	if err != nil {
+		panic("Failed to get database resource for RoleController: " + err.Error())
+	}
+	casbinRes, err := resource.Get[*resource.CasbinResource](resManager, resource.CasbinServiceKey)
+	if err != nil {
+		panic("Failed to get casbin resource for RoleController: " + err.Error())
+	}
+
+	// 创建Identity域服务
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+
+	return &RoleController{
+		roleService:     service.NewRoleService(resManager),
+		identityService: identityService,
+	}
 }
 
 // CreateRole godoc
@@ -35,16 +55,35 @@ func (rc *RoleController) CreateRole(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	role, err := rc.roleService.CreateRole(c.Request.Context(), &req)
+
+	// 转换为Identity域请求
+	createReq := identity.CreateRoleRequest{
+		Name:        req.Name,
+		DisplayName: req.DisplayName,
+		Description: req.Description,
+		IsActive:    true, // 默认激活
+	}
+
+	role, err := rc.identityService.CreateRole(c.Request.Context(), createReq)
 	if err != nil {
-		if errors.Is(err, service.ErrRoleNameAlreadyExists) {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceExists, "")) {
 			resp.Error(c, resp.CodeConflict, "role name already exists")
 			return
 		}
 		resp.SystemError(c, err)
 		return
 	}
-	resp.SuccessWithCode(c, resp.CodeCreated, role)
+
+	// 转换为DTO格式
+	roleResponse := &dto.RoleResponse{
+		ID:          role.ID,
+		Name:        role.Name,
+		DisplayName: role.DisplayName,
+		Description: role.Description,
+		IsActive:    role.IsActive,
+	}
+
+	resp.SuccessWithCode(c, resp.CodeCreated, roleResponse)
 }
 
 // ListRoles godoc
@@ -57,12 +96,25 @@ func (rc *RoleController) CreateRole(c *gin.Context) {
 // @Security     ApiKeyAuth
 // @Router       /roles [get]
 func (rc *RoleController) ListRoles(c *gin.Context) {
-	roles, err := rc.roleService.ListRoles(c.Request.Context())
+	roles, err := rc.identityService.ListRoles(c.Request.Context())
 	if err != nil {
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, roles)
+
+	// 转换为DTO格式
+	roleResponses := make([]*dto.RoleResponse, len(roles))
+	for i, role := range roles {
+		roleResponses[i] = &dto.RoleResponse{
+			ID:          role.ID,
+			Name:        role.Name,
+			DisplayName: role.DisplayName,
+			Description: role.Description,
+			IsActive:    role.IsActive,
+		}
+	}
+
+	resp.Success(c, roleResponses)
 }
 
 // GetRoleByID godoc
@@ -78,16 +130,26 @@ func (rc *RoleController) ListRoles(c *gin.Context) {
 // @Router       /roles/{id} [get]
 func (rc *RoleController) GetRoleByID(c *gin.Context) {
 	id := c.Param("id")
-	role, err := rc.roleService.GetRoleByID(c.Request.Context(), id)
+	role, err := rc.identityService.GetRole(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrRoleNotFound) {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceNotFound, "")) {
 			resp.Error(c, resp.CodeNotFound, "role not found")
 			return
 		}
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, role)
+
+	// 转换为DTO格式
+	roleResponse := &dto.RoleResponse{
+		ID:          role.ID,
+		Name:        role.Name,
+		DisplayName: role.DisplayName,
+		Description: role.Description,
+		IsActive:    role.IsActive,
+	}
+
+	resp.Success(c, roleResponse)
 }
 
 // UpdateRole godoc
@@ -110,20 +172,41 @@ func (rc *RoleController) UpdateRole(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	role, err := rc.roleService.UpdateRole(c.Request.Context(), id, &req)
+
+	// 转换为Identity域请求
+	updateReq := identity.UpdateRoleRequest{
+		DisplayName: &req.DisplayName,
+		Description: &req.Description,
+		IsActive:    req.IsActive,
+	}
+
+	err := rc.identityService.UpdateRole(c.Request.Context(), id, updateReq)
 	if err != nil {
-		if errors.Is(err, service.ErrRoleNotFound) {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceNotFound, "")) {
 			resp.Error(c, resp.CodeNotFound, "role not found")
-			return
-		}
-		if errors.Is(err, service.ErrRoleNameAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "role name already exists")
 			return
 		}
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, role)
+
+	// 获取更新后的角色信息
+	role, err := rc.identityService.GetRole(c.Request.Context(), id)
+	if err != nil {
+		resp.SystemError(c, err)
+		return
+	}
+
+	// 转换为DTO格式
+	roleResponse := &dto.RoleResponse{
+		ID:          role.ID,
+		Name:        role.Name,
+		DisplayName: role.DisplayName,
+		Description: role.Description,
+		IsActive:    role.IsActive,
+	}
+
+	resp.Success(c, roleResponse)
 }
 
 // DeleteRole godoc
@@ -139,8 +222,10 @@ func (rc *RoleController) UpdateRole(c *gin.Context) {
 // @Router       /roles/{id} [delete]
 func (rc *RoleController) DeleteRole(c *gin.Context) {
 	id := c.Param("id")
-	if err := rc.roleService.DeleteRole(c.Request.Context(), id); err != nil {
-		if errors.Is(err, service.ErrRoleNotFound) {
+	err := rc.identityService.DeleteRole(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, common.NewBusinessError(common.ErrCodeResourceNotFound, "")) {
+			// 在DELETE操作中，如果资源不存在，也可以认为是成功的（幂等性）
 			resp.SuccessWithCode(c, resp.CodeNoContent, nil)
 			return
 		}

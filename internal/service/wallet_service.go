@@ -49,7 +49,7 @@ func (s *WalletService) CreateWallet(ctx context.Context, customerID int64, wall
 
 	// 检查钱包是否已存在，确保幂等性
 	existingWallet, err := s.q.Wallet.WithContext(ctx).
-		Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq(walletType)).
+		Where(s.q.Wallet.CustomerID.Eq(customerID)).
 		First()
 
 	if err == nil {
@@ -63,8 +63,9 @@ func (s *WalletService) CreateWallet(ctx context.Context, customerID int64, wall
 	// 钱包不存在，创建新的钱包
 	newWallet := &model.Wallet{
 		CustomerID: customerID,
-		Type:       walletType,
 		Balance:    0, // 初始余额为0
+		Status:     1, // 1-正常状态
+		UpdatedAt:  time.Now().Unix(),
 	}
 
 	if err := s.q.Wallet.WithContext(ctx).Create(newWallet); err != nil {
@@ -112,7 +113,7 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 	return s.q.Transaction(func(tx *query.Query) error {
 		// a. 锁定钱包记录以防止并发问题
 		wallet, err := tx.Wallet.WithContext(ctx).
-			Where(tx.Wallet.CustomerID.Eq(customerID), tx.Wallet.Type.Eq("balance")).
+			Where(tx.Wallet.CustomerID.Eq(customerID)).
 			First()
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -123,42 +124,45 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 
 		// b. 计算新余额和交易金额
 		balanceBefore := wallet.Balance
-		var transactionAmount float64
-		var newBalance float64
-		var newTotalConsumed float64 = wallet.TotalConsumed
-		var newTotalRecharged float64 = wallet.TotalRecharged
+		var transactionAmount int64
+		var newBalance int64
 
 		switch req.Type {
 		case "consume":
-			transactionAmount = -req.Amount
-			newBalance = balanceBefore - req.Amount
-			newTotalConsumed += req.Amount
+			transactionAmount = -int64(req.Amount * 100) // 转换为分
+			newBalance = balanceBefore + transactionAmount
 			if newBalance < 0 {
 				return ErrInsufficientBalance
 			}
 		case "recharge":
-			transactionAmount = req.Amount
-			newBalance = balanceBefore + req.Amount
-			newTotalRecharged += req.Amount
+			transactionAmount = int64(req.Amount * 100) // 转换为分
+			newBalance = balanceBefore + transactionAmount
 		case "refund":
-			transactionAmount = req.Amount
-			newBalance = balanceBefore + req.Amount
-			newTotalRecharged += req.Amount // 退款计入总充值金额
+			transactionAmount = int64(req.Amount * 100) // 转换为分
+			newBalance = balanceBefore + transactionAmount
 		default:
 			return errors.New("unsupported transaction type")
 		}
 
 		// c. 创建交易记录
+		direction := "credit"
+		amount := transactionAmount
+		if transactionAmount < 0 {
+			direction = "debit"
+			amount = -transactionAmount
+		}
+
 		transaction := &model.WalletTransaction{
-			WalletID:      wallet.ID,
-			Type:          req.Type,
-			Amount:        transactionAmount,
-			BalanceBefore: balanceBefore,
-			BalanceAfter:  newBalance,
-			Source:        req.Source,
-			RelatedID:     req.RelatedID,
-			Remark:        req.Remark,
-			OperatorID:    operatorID,
+			WalletID:       wallet.ID,
+			Direction:      direction,
+			Amount:         amount,
+			Type:           req.Type,
+			BizRefType:     req.Source,
+			BizRefID:       req.RelatedID,
+			Note:           req.Remark,
+			OperatorID:     operatorID,
+			IdempotencyKey: fmt.Sprintf("tx_%d_%d_%d", customerID, time.Now().UnixNano(), operatorID),
+			CreatedAt:      time.Now().Unix(),
 		}
 		if err := tx.WalletTransaction.WithContext(ctx).Create(transaction); err != nil {
 			return err
@@ -167,9 +171,8 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 		// d. 更新钱包余额和累计数据
 		_, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
 			Updates(map[string]interface{}{
-				"balance":         newBalance,
-				"total_consumed":  newTotalConsumed,
-				"total_recharged": newTotalRecharged,
+				"balance":    newBalance,
+				"updated_at": time.Now().Unix(),
 			})
 		if err != nil {
 			return err
@@ -177,18 +180,18 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 
 		// 满赠：bonus_amount > 0 时，追加一条 correction 正向流水，不计入 total_recharged
 		if req.Type == "recharge" && req.BonusAmount > 0 {
-			bonusBefore := newBalance
-			bonusAfter := bonusBefore + req.BonusAmount
+			bonusAfter := newBalance + int64(req.BonusAmount*100)
 			bonusTx := &model.WalletTransaction{
-				WalletID:      wallet.ID,
-				Type:          "correction",
-				Amount:        req.BonusAmount,
-				BalanceBefore: bonusBefore,
-				BalanceAfter:  bonusAfter,
-				Source:        "promotion",
-				RelatedID:     req.RelatedID,
-				Remark:        req.Remark,
-				OperatorID:    operatorID,
+				WalletID:       wallet.ID,
+				Direction:      "credit",
+				Amount:         int64(req.BonusAmount * 100),
+				Type:           "adjust_in",
+				BizRefType:     "promotion",
+				BizRefID:       req.RelatedID,
+				Note:           req.Remark,
+				OperatorID:     operatorID,
+				IdempotencyKey: fmt.Sprintf("bonus_%d_%d_%d", customerID, time.Now().UnixNano(), operatorID),
+				CreatedAt:      time.Now().Unix(),
 			}
 			if err := tx.WalletTransaction.WithContext(ctx).Create(bonusTx); err != nil {
 				return err
@@ -196,7 +199,8 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 			// 更新余额
 			_, err = tx.Wallet.WithContext(ctx).Where(tx.Wallet.ID.Eq(wallet.ID)).
 				Updates(map[string]interface{}{
-					"balance": bonusAfter,
+					"balance":    bonusAfter,
+					"updated_at": time.Now().Unix(),
 				})
 			if err != nil {
 				return err
@@ -210,7 +214,7 @@ func (s *WalletService) CreateTransaction(ctx context.Context, customerID int64,
 // GetWalletByCustomerID 获取指定客户的钱包信息
 func (s *WalletService) GetWalletByCustomerID(ctx context.Context, customerID int64) (*dto.WalletResponse, error) {
 	wallet, err := s.q.Wallet.WithContext(ctx).
-		Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq("balance")).
+		Where(s.q.Wallet.CustomerID.Eq(customerID)).
 		First()
 
 	if err != nil {
@@ -227,7 +231,7 @@ func (s *WalletService) GetWalletByCustomerID(ctx context.Context, customerID in
 func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, req *dto.ListWalletTransactionsRequest) ([]*dto.WalletTransactionResponse, int64, error) {
 	// 1. 获取钱包ID
 	wallet, err := s.q.Wallet.WithContext(ctx).
-		Where(s.q.Wallet.CustomerID.Eq(customerID), s.q.Wallet.Type.Eq("balance")).
+		Where(s.q.Wallet.CustomerID.Eq(customerID)).
 		First()
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -245,8 +249,8 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, r
 
 	// 添加筛选条件
 	if req.Source != "" {
-		query = query.Where(s.q.WalletTransaction.Source.Eq(req.Source))
-		countQuery = countQuery.Where(s.q.WalletTransaction.Source.Eq(req.Source))
+		query = query.Where(s.q.WalletTransaction.BizRefType.Eq(req.Source))
+		countQuery = countQuery.Where(s.q.WalletTransaction.BizRefType.Eq(req.Source))
 	}
 	if req.Type != "" {
 		query = query.Where(s.q.WalletTransaction.Type.Eq(req.Type))
@@ -255,18 +259,18 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, r
 	if req.Remark != "" {
 		// 使用模糊匹配查询备注
 		likePattern := "%" + req.Remark + "%"
-		query = query.Where(s.q.WalletTransaction.Remark.Like(likePattern))
-		countQuery = countQuery.Where(s.q.WalletTransaction.Remark.Like(likePattern))
+		query = query.Where(s.q.WalletTransaction.Note.Like(likePattern))
+		countQuery = countQuery.Where(s.q.WalletTransaction.Note.Like(likePattern))
 	}
 	if req.RelatedID > 0 {
-		query = query.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))
-		countQuery = countQuery.Where(s.q.WalletTransaction.RelatedID.Eq(req.RelatedID))
+		query = query.Where(s.q.WalletTransaction.BizRefID.Eq(req.RelatedID))
+		countQuery = countQuery.Where(s.q.WalletTransaction.BizRefID.Eq(req.RelatedID))
 	}
 	if req.StartDate != "" {
 		startDateTime, err := time.Parse("2006-01-02", req.StartDate)
 		if err == nil {
-			query = query.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime))
-			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime))
+			query = query.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime.Unix()))
+			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Gte(startDateTime.Unix()))
 		}
 	}
 	if req.EndDate != "" {
@@ -274,8 +278,8 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, r
 		if err == nil {
 			// 设置为当天的 23:59:59
 			endDateTime = endDateTime.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
-			query = query.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime))
-			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime))
+			query = query.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime.Unix()))
+			countQuery = countQuery.Where(s.q.WalletTransaction.CreatedAt.Lte(endDateTime.Unix()))
 		}
 	}
 
@@ -302,14 +306,14 @@ func (s *WalletService) GetTransactions(ctx context.Context, customerID int64, r
 			ID:            t.ID,
 			WalletID:      t.WalletID,
 			Type:          t.Type,
-			Amount:        t.Amount,
-			BalanceBefore: t.BalanceBefore,
-			BalanceAfter:  t.BalanceAfter,
-			Source:        t.Source,
-			RelatedID:     t.RelatedID,
-			Remark:        t.Remark,
+			Amount:        float64(t.Amount) / 100, // 转换为元
+			BalanceBefore: 0,                       // 暂时设为0，新模型不存储这个字段
+			BalanceAfter:  0,                       // 暂时设为0，新模型不存储这个字段
+			Source:        t.BizRefType,
+			RelatedID:     t.BizRefID,
+			Remark:        t.Note,
 			OperatorID:    t.OperatorID,
-			CreatedAt:     t.CreatedAt.Format("2006-01-02 15:04:05"),
+			CreatedAt:     time.Unix(t.CreatedAt, 0).Format("2006-01-02 15:04:05"),
 		})
 	}
 
@@ -357,12 +361,12 @@ func (s *WalletService) toWalletResponse(wallet *model.Wallet) *dto.WalletRespon
 	return &dto.WalletResponse{
 		ID:             wallet.ID,
 		CustomerID:     wallet.CustomerID,
-		Type:           wallet.Type,
-		Balance:        wallet.Balance,
-		FrozenBalance:  wallet.FrozenBalance,
-		TotalRecharged: wallet.TotalRecharged,
-		TotalConsumed:  wallet.TotalConsumed,
+		Type:           "balance",                     // 固定为balance类型
+		Balance:        float64(wallet.Balance) / 100, // 转换为元
+		FrozenBalance:  0,                             // 新模型暂不支持冻结金额
+		TotalRecharged: 0,                             // 新模型不存储此字段，需要从交易记录计算
+		TotalConsumed:  0,                             // 新模型不存储此字段，需要从交易记录计算
 		CreatedAt:      wallet.CreatedAt.Format("2006-01-02 15:04:05"),
-		UpdatedAt:      wallet.UpdatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      time.Unix(wallet.UpdatedAt, 0).Format("2006-01-02 15:04:05"),
 	}
 }

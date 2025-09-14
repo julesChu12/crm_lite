@@ -2,10 +2,12 @@ package controller
 
 import (
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/domains/sales"
+	"crm_lite/internal/domains/sales/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
-	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,12 +15,18 @@ import (
 // OrderController 负责处理与订单相关的 HTTP 请求。
 type OrderController struct {
 	orderService *service.OrderService
+	salesService sales.Service
 }
 
 // NewOrderController 创建一个新的 OrderController 实例。
+// 现在使用新的Sales域服务
 func NewOrderController(rm *resource.Manager) *OrderController {
+	// 创建Sales领域服务
+	salesService := impl.ProvideSales(rm)
+
 	return &OrderController{
-		orderService: service.NewOrderService(rm),
+		orderService: service.NewOrderService(rm), // 保留旧服务作为备用
+		salesService: salesService,
 	}
 }
 
@@ -37,20 +45,54 @@ func (cc *OrderController) CreateOrder(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	order, err := cc.orderService.CreateOrder(c.Request.Context(), &req)
+
+	// 转换为Sales领域请求
+	salesReq := &sales.CreateOrderRequest{
+		CustomerID: req.CustomerID,
+		Items:      make([]sales.CreateOrderItemRequest, len(req.Items)),
+		Remark:     req.Remark,
+	}
+
+	// 转换订单项
+	for i, item := range req.Items {
+		salesReq.Items[i] = sales.CreateOrderItemRequest{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+			Price:     item.UnitPrice,
+		}
+	}
+
+	order, err := cc.salesService.CreateOrder(c.Request.Context(), salesReq)
 	if err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
-			resp.Error(c, resp.CodeInvalidParam, "客户不存在")
-			return
-		}
-		if errors.Is(err, service.ErrProductNotFound) {
-			resp.Error(c, resp.CodeInvalidParam, "一个或多个产品不存在")
-			return
-		}
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, order)
+
+	// 转换为DTO格式
+	orderResponse := &dto.OrderResponse{
+		ID:          order.ID,
+		OrderNo:     order.OrderNo,
+		CustomerID:  order.CustomerID,
+		OrderDate:   time.Unix(order.CreatedAt, 0),
+		Status:      order.Status,
+		TotalAmount: order.TotalAmount, // Sales领域已经是float64
+		FinalAmount: order.TotalAmount, // 使用TotalAmount作为FinalAmount
+		Items:       make([]*dto.OrderItemResponse, len(order.Items)),
+		CreatedAt:   time.Unix(order.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	// 转换订单项
+	for i, item := range order.Items {
+		orderResponse.Items[i] = &dto.OrderItemResponse{
+			ID:         item.ID,
+			ProductID:  item.ProductID,
+			Quantity:   item.Quantity,
+			UnitPrice:  item.Price,  // 使用Price字段
+			FinalPrice: item.Amount, // 使用Amount字段
+		}
+	}
+
+	resp.Success(c, orderResponse)
 }
 
 // GetOrder
@@ -63,16 +105,37 @@ func (cc *OrderController) CreateOrder(c *gin.Context) {
 // @Router /orders/{id} [get]
 func (cc *OrderController) GetOrder(c *gin.Context) {
 	id := c.Param("id")
-	order, err := cc.orderService.GetOrderByID(c.Request.Context(), id)
+	order, err := cc.salesService.GetOrderByID(c.Request.Context(), id)
 	if err != nil {
-		if errors.Is(err, service.ErrOrderNotFound) {
-			resp.Error(c, resp.CodeNotFound, "订单未找到")
-			return
-		}
-		resp.SystemError(c, err)
+		resp.Error(c, resp.CodeNotFound, "订单未找到")
 		return
 	}
-	resp.Success(c, order)
+
+	// 转换为DTO格式
+	orderResponse := &dto.OrderResponse{
+		ID:          order.ID,
+		OrderNo:     order.OrderNo,
+		CustomerID:  order.CustomerID,
+		OrderDate:   time.Unix(order.CreatedAt, 0),
+		Status:      order.Status,
+		TotalAmount: order.TotalAmount, // Sales领域已经是float64
+		FinalAmount: order.TotalAmount, // 使用TotalAmount作为FinalAmount
+		Items:       make([]*dto.OrderItemResponse, len(order.Items)),
+		CreatedAt:   time.Unix(order.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+	}
+
+	// 转换订单项
+	for i, item := range order.Items {
+		orderResponse.Items[i] = &dto.OrderItemResponse{
+			ID:         item.ID,
+			ProductID:  item.ProductID,
+			Quantity:   item.Quantity,
+			UnitPrice:  item.Price,  // 使用Price字段
+			FinalPrice: item.Amount, // 使用Amount字段
+		}
+	}
+
+	resp.Success(c, orderResponse)
 }
 
 // ListOrders
@@ -93,10 +156,59 @@ func (cc *OrderController) ListOrders(c *gin.Context) {
 		resp.Error(c, resp.CodeInvalidParam, err.Error())
 		return
 	}
-	result, err := cc.orderService.ListOrders(c.Request.Context(), &req)
+
+	// 设置默认值
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+
+	// 转换为Sales领域请求
+	salesReq := &sales.ListOrdersRequest{
+		CustomerID: req.CustomerID,
+		Status:     req.Status,
+		Page:       req.Page,
+		PageSize:   req.PageSize,
+	}
+
+	result, err := cc.salesService.ListOrdersForController(c.Request.Context(), salesReq)
 	if err != nil {
 		resp.SystemError(c, err)
 		return
 	}
-	resp.Success(c, result)
+
+	// 转换为DTO格式
+	orderListResponse := &dto.OrderListResponse{
+		Orders: make([]*dto.OrderResponse, len(result.Orders)),
+		Total:  result.Total,
+	}
+
+	for i, order := range result.Orders {
+		orderListResponse.Orders[i] = &dto.OrderResponse{
+			ID:          order.ID,
+			OrderNo:     order.OrderNo,
+			CustomerID:  order.CustomerID,
+			OrderDate:   time.Unix(order.CreatedAt, 0),
+			Status:      order.Status,
+			TotalAmount: order.TotalAmount, // Sales领域已经是float64
+			FinalAmount: order.TotalAmount, // 使用TotalAmount作为FinalAmount
+			Items:       make([]*dto.OrderItemResponse, len(order.Items)),
+			CreatedAt:   time.Unix(order.CreatedAt, 0).Format("2006-01-02 15:04:05"),
+		}
+
+		// 转换订单项
+		for j, item := range order.Items {
+			orderListResponse.Orders[i].Items[j] = &dto.OrderItemResponse{
+				ID:         item.ID,
+				ProductID:  item.ProductID,
+				Quantity:   item.Quantity,
+				UnitPrice:  item.Price,  // 使用Price字段
+				FinalPrice: item.Amount, // 使用Amount字段
+			}
+		}
+	}
+
+	resp.Success(c, orderListResponse)
 }

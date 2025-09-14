@@ -34,7 +34,7 @@ logger:
 # ==================== 数据库配置 ====================
 db:
   driver: mysql # 数据库驱动: mysql, sqlite3
-  host: mariadb # 数据库服务器地址
+  host: mariadb # Docker容器内使用服务名访问
   port: 3306 # 数据库端口 (MySQL/MariaDB 默认 3306)
   user: "crm_user" # 数据库用户名
   password: "crm_pass" # 数据库密码
