@@ -43,9 +43,6 @@ func NewTx(db *gorm.DB) Tx {
 	return &gormTx{db: db}
 }
 
-// txKey 事务上下文键
-// 用于在context中存储和获取事务连接
-type txKey struct{}
 
 // InTx 实现Tx接口
 // 检查当前上下文是否包含事务连接

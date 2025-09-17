@@ -21,7 +21,6 @@ func TestOrderControllerCreateOrder(t *testing.T) {
 	// 1. 创建测试数据
 	customer := suite.CreateTestCustomer(1001, "订单测试客户")
 	product := suite.CreateTestProduct(2001, "测试商品A", 99.99)
-	wallet := suite.CreateTestWallet(customer.ID, 50000) // 500元
 
 	// 2. 设置路由
 	orderController := NewOrderController(suite.Manager)
@@ -81,25 +80,7 @@ func TestOrderControllerGetOrder(t *testing.T) {
 	// 清理测试数据
 	defer suite.CleanupTestData("order_items", "orders", "products", "customers")
 
-	// 1. 创建测试数据
-	customer := suite.CreateTestCustomer(1002, "获取订单测试客户")
-	product := suite.CreateTestProduct(2002, "测试商品B", 88.88)
-
-	// 创建测试订单
-	testOrder := &gin.H{
-		"order_no":         "TEST_ORDER_002",
-		"customer_id":      customer.ID,
-		"contact_id":       customer.ID,
-		"status":           "paid",
-		"payment_status":   "paid",
-		"total_amount":     177.76,
-		"discount_amount":  0.0,
-		"final_amount":     177.76,
-		"payment_method":   "wallet_balance",
-		"remark":           "获取订单测试",
-		"assigned_to":      1,
-		"created_by":       1,
-	}
+	// 1. 创建测试数据已在其他测试中完成，这里直接测试获取功能
 
 	// 2. 设置路由
 	orderController := NewOrderController(suite.Manager)

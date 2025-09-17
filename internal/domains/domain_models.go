@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"regexp"
 	"time"
+
+	"crm_lite/internal/constants"
 )
 
 // DomainError 域错误基类
@@ -135,7 +137,7 @@ func (c *CustomerDomain) validateEmail() error {
 
 // validateGender 验证性别
 func (c *CustomerDomain) validateGender() error {
-	validGenders := []string{"male", "female", "unknown"}
+	validGenders := constants.ValidCustomerGenders()
 	for _, valid := range validGenders {
 		if c.Gender == valid {
 			return nil
@@ -151,7 +153,7 @@ func (c *CustomerDomain) validateGender() error {
 
 // validateLevel 验证客户等级
 func (c *CustomerDomain) validateLevel() error {
-	validLevels := []string{"普通", "银牌", "金牌", "铂金"}
+	validLevels := constants.ValidCustomerLevels()
 	for _, valid := range validLevels {
 		if c.Level == valid {
 			return nil
@@ -226,7 +228,7 @@ func (p *ProductDomain) Validate() error {
 
 // validateType 验证产品类型
 func (p *ProductDomain) validateType() error {
-	validTypes := []string{"product", "service"}
+	validTypes := constants.ValidProductTypes()
 	for _, valid := range validTypes {
 		if p.Type == valid {
 			return nil

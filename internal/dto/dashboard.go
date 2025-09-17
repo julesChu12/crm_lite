@@ -272,7 +272,7 @@ type ActivitySummaryResponse struct {
 
 // DashboardRequest 工作台数据请求参数
 type DashboardRequest struct {
-	DateRange string `form:"date_range" binding:"omitempty,oneof=today week month quarter year" example:"month"`
+	DateRange string `form:"date_range" binding:"omitempty,date_range" example:"month"`
 	TimeZone  string `form:"timezone" example:"Asia/Shanghai"`
 }
 
@@ -291,7 +291,7 @@ type TrendAnalysisRequest struct {
 	Metrics     []string `form:"metrics" binding:"required" example:"revenue,customers,orders"`
 	StartDate   string   `form:"start_date" binding:"required" example:"2024-01-01"`
 	EndDate     string   `form:"end_date" binding:"required" example:"2024-06-30"`
-	Granularity string   `form:"granularity" binding:"omitempty,oneof=day week month" example:"month"`
+	Granularity string   `form:"granularity" binding:"omitempty,granularity" example:"month"`
 }
 
 // TrendAnalysisResponse 趋势分析响应

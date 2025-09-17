@@ -10,6 +10,7 @@ import (
 	"crm_lite/internal/core/config"
 	"crm_lite/internal/core/logger"
 	"crm_lite/internal/core/resource"
+	"crm_lite/internal/validators"
 	"crm_lite/pkg/scheduler"
 	"crm_lite/pkg/validator"
 
@@ -41,6 +42,7 @@ func Bootstrap() (*resource.Manager, *scheduler.LogCleaner, func(), error) {
 
 	// 注册自定义验证器
 	validator.RegisterMobileValidator()
+	validators.RegisterCustomValidators()
 
 	logger.Info("Bootstrap process started", zap.String("env", getEnvFromConfig()))
 

@@ -5,12 +5,12 @@ type CustomerCreateRequest struct {
 	Name       string   `json:"name" binding:"required"`
 	Phone      string   `json:"phone" binding:"required,mobile"` // 支持中国大陆手机号格式
 	Email      string   `json:"email" binding:"omitempty,email"`
-	Gender     string   `json:"gender"`                                           // 性别: male, female, unknown
+	Gender     string   `json:"gender" binding:"omitempty,customer_gender"`                                           // 性别: male, female, unknown
 	Birthday   string   `json:"birthday" binding:"omitempty,datetime=2006-01-02"` // 生日，格式：YYYY-MM-DD
-	Level      string   `json:"level"`                                            // 客户等级: 普通, 银牌, 金牌, 铂金
+	Level      string   `json:"level" binding:"omitempty,customer_level"`                                            // 客户等级: 普通, 银牌, 金牌, 铂金
 	Tags       []string `json:"tags"`                                             // 标签，逗号分隔
 	Note       string   `json:"note"`                                             // 备注
-	Source     string   `json:"source"`                                           // 客户来源：manual, referral, marketing, etc.
+	Source     string   `json:"source" binding:"omitempty,customer_source"`                                           // 客户来源：manual, referral, marketing, etc.
 	AssignedTo int64    `json:"assigned_to"`                                      // 分配给哪个员工
 }
 
@@ -19,12 +19,12 @@ type CustomerUpdateRequest struct {
 	Name       string   `json:"name"`
 	Phone      string   `json:"phone" binding:"required,mobile"`
 	Email      string   `json:"email" binding:"omitempty,email"`
-	Gender     string   `json:"gender"`                                           // 性别: male, female, unknown
+	Gender     string   `json:"gender" binding:"omitempty,customer_gender"`                                           // 性别: male, female, unknown
 	Birthday   string   `json:"birthday" binding:"omitempty,datetime=2006-01-02"` // 生日，格式：YYYY-MM-DD
-	Level      string   `json:"level"`                                            // 客户等级: 普通, 银牌, 金牌, 铂金
+	Level      string   `json:"level" binding:"omitempty,customer_level"`                                            // 客户等级: 普通, 银牌, 金牌, 铂金
 	Tags       []string `json:"tags"`                                             // 标签，逗号分隔
 	Note       string   `json:"note"`                                             // 备注
-	Source     string   `json:"source"`                                           // 客户来源：manual, referral, marketing, etc.
+	Source     string   `json:"source" binding:"omitempty,customer_source"`                                           // 客户来源：manual, referral, marketing, etc.
 	AssignedTo int64    `json:"assigned_to"`                                      // 分配给哪个员工
 }
 

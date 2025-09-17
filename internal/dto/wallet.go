@@ -15,7 +15,7 @@ type WalletResponse struct {
 
 // WalletTransactionRequest 创建钱包交易的请求
 type WalletTransactionRequest struct {
-	Type        string  `json:"type" binding:"required,oneof=recharge consume refund"` // 交易类型: recharge (充值), consume (消费), refund (退款)
+	Type        string  `json:"type" binding:"required,wallet_transaction_type"` // 交易类型: recharge (充值), consume (消费), refund (退款)
 	Amount      float64 `json:"amount" binding:"required,gt=0"`                        // 交易金额，必须为正数
 	Source      string  `json:"source" binding:"required"`                             // 交易来源: manual, order, refund, system 等
 	Remark      string  `json:"remark"`                                                // 备注

@@ -13,14 +13,14 @@ type OrderItemRequest struct {
 type OrderCreateRequest struct {
 	CustomerID int64               `json:"customer_id" binding:"required"`
 	OrderDate  time.Time           `json:"order_date" binding:"required"`
-	Status     string              `json:"status" binding:"omitempty,oneof=draft pending confirmed"`
+	Status     string              `json:"status" binding:"omitempty,order_create_status"`
 	Items      []*OrderItemRequest `json:"items" binding:"required,min=1"` // 订单项，至少要有一项
 	Remark     string              `json:"remark"`
 }
 
 // OrderUpdateRequest 定义了更新订单的请求体。
 type OrderUpdateRequest struct {
-	Status string `json:"status" binding:"omitempty,oneof=draft pending confirmed processing shipped completed cancelled refunded"`
+	Status string `json:"status" binding:"omitempty,order_update_status"`
 	Remark string `json:"remark"`
 }
 

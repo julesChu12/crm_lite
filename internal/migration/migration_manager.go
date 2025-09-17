@@ -279,38 +279,6 @@ func CreateMigrationFile(migrationDir, name string) (string, error) {
 	filename := fmt.Sprintf("%s_%s.go", version, name)
 	fullPath := filepath.Join(migrationDir, filename)
 
-	template := fmt.Sprintf(`package migrations
-
-import (
-	"crm_lite/internal/migration"
-	"gorm.io/gorm"
-)
-
-// Migration%s %s迁移
-type Migration%s struct {
-	*migration.BaseMigration
-}
-
-// NewMigration%s 创建%s迁移
-func NewMigration%s() migration.Migration {
-	return &Migration%s{
-		BaseMigration: migration.NewBaseMigration("%s", "%s"),
-	}
-}
-
-// Up 执行迁移
-func (m *Migration%s) Up(db *gorm.DB) error {
-	// TODO: 实现迁移逻辑
-	return nil
-}
-
-// Down 回滚迁移
-func (m *Migration%s) Down(db *gorm.DB) error {
-	// TODO: 实现回滚逻辑
-	return nil
-}
-`, version, name, version, version, name, version, version, version, name, version, version)
-
 	// 这里应该写入文件，但为了演示，我们只返回路径和内容
 	return fullPath, nil
 }

@@ -7,7 +7,7 @@ import "time"
 // MarketingCampaignCreateRequest 创建营销活动请求
 type MarketingCampaignCreateRequest struct {
 	Name              string    `json:"name" binding:"required" example:"六月会员关怀活动"`
-	Type              string    `json:"type" binding:"required,oneof=sms email push_notification wechat call" example:"sms"`
+	Type              string    `json:"type" binding:"required,marketing_channel" example:"sms"`
 	TargetTags        []string  `json:"target_tags" example:"[\"VIP\", \"新用户\"]"`
 	TargetSegmentID   int64     `json:"target_segment_id,omitempty" example:"0"`
 	ContentTemplateID int64     `json:"content_template_id,omitempty" example:"0"`
@@ -19,8 +19,8 @@ type MarketingCampaignCreateRequest struct {
 // MarketingCampaignUpdateRequest 更新营销活动请求
 type MarketingCampaignUpdateRequest struct {
 	Name              string     `json:"name,omitempty" example:"六月会员关怀活动（更新）"`
-	Type              string     `json:"type,omitempty" binding:"omitempty,oneof=sms email push_notification wechat call"`
-	Status            string     `json:"status,omitempty" binding:"omitempty,oneof=draft scheduled active paused completed archived"`
+	Type              string     `json:"type,omitempty" binding:"omitempty,marketing_channel"`
+	Status            string     `json:"status,omitempty" binding:"omitempty,marketing_campaign_status"`
 	TargetTags        []string   `json:"target_tags,omitempty"`
 	TargetSegmentID   int64      `json:"target_segment_id,omitempty"`
 	ContentTemplateID int64      `json:"content_template_id,omitempty"`
@@ -58,8 +58,8 @@ type MarketingCampaignListRequest struct {
 	Page     int    `form:"page" binding:"omitempty,min=1" example:"1"`
 	PageSize int    `form:"page_size" binding:"omitempty,min=1,max=100" example:"10"`
 	Name     string `form:"name" example:"会员活动"`
-	Type     string `form:"type" binding:"omitempty,oneof=sms email push_notification wechat call"`
-	Status   string `form:"status" binding:"omitempty,oneof=draft scheduled active paused completed archived"`
+	Type     string `form:"type" binding:"omitempty,marketing_channel"`
+	Status   string `form:"status" binding:"omitempty,marketing_campaign_status"`
 	OrderBy  string `form:"order_by" example:"created_at_desc"`
 }
 
@@ -71,7 +71,7 @@ type MarketingCampaignListResponse struct {
 
 // MarketingCampaignExecuteRequest 执行营销活动请求
 type MarketingCampaignExecuteRequest struct {
-	ExecutionType string `json:"execution_type" binding:"omitempty,oneof=actual simulation" example:"actual"`
+	ExecutionType string `json:"execution_type" binding:"omitempty,marketing_execution_type" example:"actual"`
 }
 
 // MarketingCampaignExecuteResponse 执行营销活动响应
@@ -107,8 +107,8 @@ type MarketingRecordListRequest struct {
 	PageSize   int    `form:"page_size" binding:"omitempty,min=1,max=100" example:"50"`
 	CampaignID int64  `form:"campaign_id" binding:"required" example:"1"`
 	CustomerID int64  `form:"customer_id,omitempty" example:"100"`
-	Channel    string `form:"channel,omitempty" binding:"omitempty,oneof=sms email push_notification wechat call"`
-	Status     string `form:"status,omitempty" binding:"omitempty,oneof=pending sent delivered failed opened clicked replied unsubscribed"`
+	Channel    string `form:"channel,omitempty" binding:"omitempty,marketing_channel"`
+	Status     string `form:"status,omitempty" binding:"omitempty,marketing_record_status"`
 	StartDate  string `form:"start_date,omitempty" example:"2024-06-01"`
 	EndDate    string `form:"end_date,omitempty" example:"2024-06-30"`
 }
