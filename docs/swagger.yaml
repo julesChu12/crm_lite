@@ -131,7 +131,7 @@ definitions:
         description: 备注
         type: string
       phone:
-        description: 使用e164格式校验手机号
+        description: 支持中国大陆手机号格式
         type: string
       source:
         description: 客户来源：manual, referral, marketing, etc.
@@ -270,6 +270,8 @@ definitions:
         items:
           type: string
         type: array
+    required:
+    - phone
     type: object
   dto.DashboardOverviewResponse:
     properties:
@@ -369,7 +371,7 @@ definitions:
   dto.LoginRequest:
     properties:
       captcha_token:
-        description: Turnstile Token
+        description: Turnstile Token，可选
         type: string
       password:
         description: 密码，必须提供
@@ -378,7 +380,6 @@ definitions:
         description: 用户名，必须提供
         type: string
     required:
-    - captcha_token
     - password
     - username
     type: object
@@ -3157,7 +3158,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 根据客户ID获取其钱包交易记录，支持分页
+      description: 根据客户ID获取其钱包交易记录，支持分页和多条件筛选
       parameters:
       - description: 客户ID
         in: path
@@ -3173,6 +3174,30 @@ paths:
         description: 每页数量
         in: query
         name: limit
+        type: integer
+      - description: 交易来源筛选
+        in: query
+        name: source
+        type: string
+      - description: '交易类型筛选: recharge, consume, refund'
+        in: query
+        name: type
+        type: string
+      - description: 备注内容筛选（模糊匹配）
+        in: query
+        name: remark
+        type: string
+      - description: 开始日期 YYYY-MM-DD
+        in: query
+        name: start_date
+        type: string
+      - description: 结束日期 YYYY-MM-DD
+        in: query
+        name: end_date
+        type: string
+      - description: 关联ID筛选
+        in: query
+        name: related_id
         type: integer
       produces:
       - application/json

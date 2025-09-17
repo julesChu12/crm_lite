@@ -3334,7 +3334,7 @@ const docTemplate = `{
         },
         "/v1/customers/{id}/wallet/transactions": {
             "get": {
-                "description": "根据客户ID获取其钱包交易记录，支持分页",
+                "description": "根据客户ID获取其钱包交易记录，支持分页和多条件筛选",
                 "consumes": [
                     "application/json"
                 ],
@@ -3364,6 +3364,42 @@ const docTemplate = `{
                         "default": 20,
                         "description": "每页数量",
                         "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "交易来源筛选",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "交易类型筛选: recharge, consume, refund",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "备注内容筛选（模糊匹配）",
+                        "name": "remark",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYY-MM-DD",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYY-MM-DD",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "关联ID筛选",
+                        "name": "related_id",
                         "in": "query"
                     }
                 ],
@@ -3675,7 +3711,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "phone": {
-                    "description": "使用e164格式校验手机号",
+                    "description": "支持中国大陆手机号格式",
                     "type": "string"
                 },
                 "source": {
@@ -3830,6 +3866,9 @@ const docTemplate = `{
         },
         "dto.CustomerUpdateRequest": {
             "type": "object",
+            "required": [
+                "phone"
+            ],
             "properties": {
                 "assigned_to": {
                     "description": "分配给哪个员工",
@@ -4004,13 +4043,12 @@ const docTemplate = `{
         "dto.LoginRequest": {
             "type": "object",
             "required": [
-                "captcha_token",
                 "password",
                 "username"
             ],
             "properties": {
                 "captcha_token": {
-                    "description": "Turnstile Token",
+                    "description": "Turnstile Token，可选",
                     "type": "string"
                 },
                 "password": {

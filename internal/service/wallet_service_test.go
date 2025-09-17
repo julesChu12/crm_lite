@@ -183,7 +183,30 @@ func TestWalletService_CreateTransaction_InvalidType(t *testing.T) {
 	}
 
 	walletSvc := NewWalletService(testResManager)
+	dbResource, err := resource.Get[*resource.DBResource](testResManager, resource.DBServiceKey)
+	require.NoError(t, err)
+	q := query.Use(dbResource.DB)
 	ctx := context.Background()
+
+	// 先创建一个测试客户，确保客户存在
+	testCustomer := &model.Customer{
+		Name:  "测试客户",
+		Phone: "13800138000",
+		Email: "test@example.com",
+		Tags:  "[]", // JSON格式的空数组，满足约束
+	}
+	err = q.Customer.WithContext(ctx).Create(testCustomer)
+	assert.NoError(t, err)
+
+	// 为客户创建钱包
+	_, err = walletSvc.CreateWallet(ctx, testCustomer.ID, "balance")
+	assert.NoError(t, err)
+
+	defer func() {
+		// 清理测试数据
+		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(testCustomer.ID)).Delete()
+		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(testCustomer.ID)).Delete()
+	}()
 
 	req := &dto.WalletTransactionRequest{
 		Type:      "invalid_type",
@@ -193,7 +216,7 @@ func TestWalletService_CreateTransaction_InvalidType(t *testing.T) {
 		RelatedID: 1000,
 	}
 
-	err := walletSvc.CreateTransaction(ctx, 999, 1, req)
+	err = walletSvc.CreateTransaction(ctx, testCustomer.ID, 1, req)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported transaction type")
 }
