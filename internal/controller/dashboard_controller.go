@@ -5,32 +5,31 @@ import (
 	"crm_lite/internal/domains/analytics"
 	"crm_lite/internal/domains/analytics/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 
 	"github.com/gin-gonic/gin"
 )
 
 // DashboardController 工作台相关接口
-
+// 已迁移到 analytics 域服务
 type DashboardController struct {
-	svc          *service.DashboardService
-	analyticsSvc analytics.Service
+	dashboardService analytics.DashboardService
 }
 
 // NewDashboardController 注入资源管理器
+// 完全使用 analytics 域服务
 func NewDashboardController(resManager *resource.Manager) *DashboardController {
 	// 创建Analytics领域服务
 	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic("Failed to get database resource for DashboardController: " + err.Error())
 	}
-	// 暂时使用nil作为cache，后续可以添加Redis支持
-	analyticsSvc := impl.NewAnalyticsService(dbRes.DB, nil)
+
+	// 创建仪表盘服务
+	dashboardService := impl.NewDashboardService(dbRes.DB)
 
 	return &DashboardController{
-		svc:          service.NewDashboardService(resManager), // 保留旧服务作为备用
-		analyticsSvc: analyticsSvc,
+		dashboardService: dashboardService,
 	}
 }
 
@@ -53,7 +52,7 @@ func (dc *DashboardController) Overview(c *gin.Context) {
 	}
 
 	// 调用Analytics领域服务
-	overview, err := dc.analyticsSvc.GetOverview(c.Request.Context())
+	overview, err := dc.dashboardService.GetOverview(c.Request.Context())
 	if err != nil {
 		resp.SystemError(c, err)
 		return

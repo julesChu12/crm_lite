@@ -4,15 +4,13 @@ import (
 	"crm_lite/internal/controller"
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/middleware"
-	"crm_lite/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterWalletRoutes(router *gin.RouterGroup, resourceManager *resource.Manager) {
-	// 初始化 Service 和 Controller
-	walletSvc := service.NewWalletService(resourceManager)
-	walletCtl := controller.NewWalletController(walletSvc, resourceManager)
+	// 初始化 Controller (现已迁移到 billing 域服务)
+	walletCtl := controller.NewWalletController(resourceManager)
 
 	// 创建一个 "wallets" 路由组
 	walletRoutes := router.Group("/customers/:id").Use(middleware.NewSimpleCustomerAccessMiddleware(resourceManager))

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"crm_lite/internal/service"
 	"crm_lite/internal/testutil"
 	"net/http"
 	"testing"
@@ -121,8 +120,7 @@ func TestWalletControllerGetWallet(t *testing.T) {
 	wallet := suite.CreateTestWallet(customer.ID, 50000)
 
 	// 2. 设置路由
-	walletService := service.NewWalletService(suite.Manager)
-	walletController := NewWalletController(walletService, suite.Manager)
+	walletController := NewWalletController(suite.Manager)
 	suite.Router.GET("/customers/:customer_id/wallet", walletController.GetWalletByCustomerID)
 
 	// 3. 发送获取钱包请求

@@ -6,15 +6,15 @@ import (
 	"crm_lite/internal/domains/identity"
 	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 
 	"github.com/gin-gonic/gin"
 )
 
+// RoleController 负责处理角色相关的HTTP请求
+// 已完全迁移到 identity 域服务
 type RoleController struct {
-	roleService     *service.RoleService
 	identityService identity.Service
 }
 
@@ -33,7 +33,6 @@ func NewRoleController(resManager *resource.Manager) *RoleController {
 	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
 
 	return &RoleController{
-		roleService:     service.NewRoleService(resManager),
 		identityService: identityService,
 	}
 }

@@ -5,14 +5,14 @@ import (
 	"crm_lite/internal/domains/identity"
 	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 
 	"github.com/gin-gonic/gin"
 )
 
+// PermissionController 负责处理权限相关的HTTP请求
+// 已完全迁移到 identity 域服务
 type PermissionController struct {
-	permService     *service.PermissionService
 	identityService identity.Service
 }
 
@@ -30,14 +30,7 @@ func NewPermissionController(rm *resource.Manager) *PermissionController {
 	// 创建Identity域服务
 	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
 
-	// 创建旧的PermissionService（保持兼容性）
-	ps, err := service.NewPermissionService(rm)
-	if err != nil {
-		panic("failed to initialize permission service: " + err.Error())
-	}
-
 	return &PermissionController{
-		permService:     ps,
 		identityService: identityService,
 	}
 }
