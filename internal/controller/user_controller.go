@@ -6,7 +6,6 @@ import (
 	"crm_lite/internal/domains/identity"
 	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 	"time"
@@ -15,8 +14,8 @@ import (
 )
 
 // UserController 负责处理用户管理相关的HTTP请求
+// 已完全迁移到 identity 域服务
 type UserController struct {
-	userService     *service.UserService
 	identityService identity.Service
 }
 
@@ -36,7 +35,6 @@ func NewUserController(resManager *resource.Manager) *UserController {
 	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
 
 	return &UserController{
-		userService:     service.NewUserService(resManager),
 		identityService: identityService,
 	}
 }

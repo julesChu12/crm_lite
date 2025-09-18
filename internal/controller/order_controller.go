@@ -5,7 +5,6 @@ import (
 	"crm_lite/internal/domains/sales"
 	"crm_lite/internal/domains/sales/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"time"
 
@@ -13,8 +12,8 @@ import (
 )
 
 // OrderController 负责处理与订单相关的 HTTP 请求。
+// 已完全迁移到 sales 域服务
 type OrderController struct {
-	orderService *service.OrderService
 	salesService sales.Service
 }
 
@@ -25,7 +24,6 @@ func NewOrderController(rm *resource.Manager) *OrderController {
 	salesService := impl.ProvideSales(rm)
 
 	return &OrderController{
-		orderService: service.NewOrderService(rm), // 保留旧服务作为备用
 		salesService: salesService,
 	}
 }

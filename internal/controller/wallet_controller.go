@@ -7,7 +7,6 @@ import (
 	"crm_lite/internal/domains/billing/impl"
 	"crm_lite/internal/dto"
 	"crm_lite/internal/middleware"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"net/http"
 	"strconv"
@@ -17,14 +16,14 @@ import (
 )
 
 // WalletController 负责处理钱包相关的 API 请求
+// 已完全迁移到 billing 域服务
 type WalletController struct {
-	walletSvc  service.IWalletService
 	billingSvc billing.Service
 	resManager *resource.Manager
 }
 
 // NewWalletController 创建一个新的 WalletController
-func NewWalletController(walletSvc service.IWalletService, resManager *resource.Manager) *WalletController {
+func NewWalletController(resManager *resource.Manager) *WalletController {
 	// 创建Billing领域服务
 	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
@@ -33,7 +32,6 @@ func NewWalletController(walletSvc service.IWalletService, resManager *resource.
 	billingSvc := impl.NewBillingService(dbRes.DB)
 
 	return &WalletController{
-		walletSvc:  walletSvc, // 保留旧服务作为备用
 		billingSvc: billingSvc,
 		resManager: resManager,
 	}

@@ -64,6 +64,7 @@ type ProductListResponse struct {
 // Service 产品域服务接口
 // 提供产品相关的核心业务操作，供其他域调用
 type Service interface {
+	// 核心域接口 - 供其他域调用
 	// Get 根据ID获取产品信息
 	// 用于订单下单时获取产品详情和快照
 	Get(ctx context.Context, id int64) (Product, error)
@@ -77,7 +78,7 @@ type Service interface {
 	// 用于订单下单时一次性获取多个产品信息，提高性能
 	BatchGet(ctx context.Context, ids []int64) ([]Product, error)
 
-	// Legacy CRUD 接口 - 兼容现有控制器
+	// Controller 接口 - 供 HTTP API 调用
 	CreateProduct(ctx context.Context, req *CreateProductRequest) (*ProductResponse, error)
 	GetProductByID(ctx context.Context, idStr string) (*ProductResponse, error)
 	ListProducts(ctx context.Context, req *ProductListRequest) (*ProductListResponse, error)
