@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/mysql"
 	mysqlDriver "gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -27,8 +26,8 @@ func SetupTestDatabase() (*gorm.DB, func(), error) {
 		ctx := context.Background()
 
 		// 启动MySQL容器
-		container, err := mysql.RunContainer(ctx,
-			testcontainers.WithImage("mysql:8.0"),
+		container, err := mysql.Run(ctx,
+			"mysql:8.0",
 			mysql.WithDatabase("crm_test"),
 			mysql.WithUsername("root"),
 			mysql.WithPassword("testpass"),

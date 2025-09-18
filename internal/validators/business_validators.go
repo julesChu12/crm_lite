@@ -14,29 +14,29 @@ import (
 func RegisterCustomValidators() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		// Customer related validators
-		v.RegisterValidation("customer_gender", validateCustomerGender)
-		v.RegisterValidation("customer_source", validateCustomerSource)
-		v.RegisterValidation("customer_level", validateCustomerLevel)
+		_ = v.RegisterValidation("customer_gender", validateCustomerGender)
+		_ = v.RegisterValidation("customer_source", validateCustomerSource)
+		_ = v.RegisterValidation("customer_level", validateCustomerLevel)
 
 		// Order related validators
-		v.RegisterValidation("order_create_status", validateOrderCreateStatus)
-		v.RegisterValidation("order_update_status", validateOrderUpdateStatus)
+		_ = v.RegisterValidation("order_create_status", validateOrderCreateStatus)
+		_ = v.RegisterValidation("order_update_status", validateOrderUpdateStatus)
 
 		// Marketing related validators
-		v.RegisterValidation("marketing_channel", validateMarketingChannel)
-		v.RegisterValidation("marketing_campaign_status", validateMarketingCampaignStatus)
-		v.RegisterValidation("marketing_record_status", validateMarketingRecordStatus)
-		v.RegisterValidation("marketing_execution_type", validateMarketingExecutionType)
+		_ = v.RegisterValidation("marketing_channel", validateMarketingChannel)
+		_ = v.RegisterValidation("marketing_campaign_status", validateMarketingCampaignStatus)
+		_ = v.RegisterValidation("marketing_record_status", validateMarketingRecordStatus)
+		_ = v.RegisterValidation("marketing_execution_type", validateMarketingExecutionType)
 
 		// Wallet related validators
-		v.RegisterValidation("wallet_transaction_type", validateWalletTransactionType)
+		_ = v.RegisterValidation("wallet_transaction_type", validateWalletTransactionType)
 
 		// Dashboard related validators
-		v.RegisterValidation("date_range", validateDateRange)
-		v.RegisterValidation("granularity", validateGranularity)
+		_ = v.RegisterValidation("date_range", validateDateRange)
+		_ = v.RegisterValidation("granularity", validateGranularity)
 
 		// Product related validators
-		v.RegisterValidation("product_type", validateProductType)
+		_ = v.RegisterValidation("product_type", validateProductType)
 	}
 }
 

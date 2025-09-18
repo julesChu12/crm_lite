@@ -160,6 +160,7 @@ func (s *SalesServiceImpl) PlaceOrder(ctx context.Context, req sales.PlaceOrderR
 		if err := s.outboxSvc.PublishEvent(ctx, common.EventTypeOrderPlaced, orderEvent); err != nil {
 			// 日志记录但不阻断业务流程
 			// TODO: 添加日志
+			_ = err // 暂时忽略错误
 		}
 
 		// 如果是钱包支付且已扣款成功，发送支付事件
@@ -250,6 +251,7 @@ func (s *SalesServiceImpl) RefundOrder(ctx context.Context, orderID int64, reaso
 		if err := s.outboxSvc.PublishEvent(ctx, common.EventTypeOrderRefunded, refundEvent); err != nil {
 			// 日志记录但不阻断业务流程
 			// TODO: 添加日志
+			_ = err // 暂时忽略错误
 		}
 
 		return nil

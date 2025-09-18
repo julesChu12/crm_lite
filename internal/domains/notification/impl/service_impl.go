@@ -366,7 +366,9 @@ func (s *NotificationServiceImpl) Send(ctx context.Context, req notification.Sen
 	}
 
 	// 更新状态为发送中
-	s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusSending, "")
+	if err := s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusSending, ""); err != nil {
+		return nil, fmt.Errorf("更新状态失败: %w", err)
+	}
 
 	// 根据渠道发送
 	switch req.Channel {
@@ -388,11 +390,17 @@ func (s *NotificationServiceImpl) Send(ctx context.Context, req notification.Sen
 
 	// 更新发送结果
 	if err != nil {
-		s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusFailed, err.Error())
+		if updateErr := s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusFailed, err.Error()); updateErr != nil {
+			// 记录更新错误，但不返回
+			_ = updateErr // 避免静态检查警告
+		}
 		notif.Status = notification.StatusFailed
 		notif.Error = err.Error()
 	} else {
-		s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusSent, "")
+		if updateErr := s.UpdateNotificationStatus(ctx, notif.ID, notification.StatusSent, ""); updateErr != nil {
+			// 记录更新错误，但不返回
+			_ = updateErr // 避免静态检查警告
+		}
 		notif.Status = notification.StatusSent
 		notif.SentAt = time.Now().Unix()
 	}

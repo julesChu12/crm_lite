@@ -23,6 +23,6 @@ func MobileValidator(fl validator.FieldLevel) bool {
 // RegisterMobileValidator 注册手机号验证器到 gin 的验证器引擎
 func RegisterMobileValidator() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("mobile", MobileValidator)
+		_ = v.RegisterValidation("mobile", MobileValidator)
 	}
 }

@@ -89,7 +89,7 @@ func (s *OrderServiceSuite) SetupSuite() {
 	rm := resource.NewManager()
 	dbResource := resource.NewDBResource(config.DBOptions{})
 	dbResource.DB = s.db
-	rm.Register(resource.DBServiceKey, dbResource)
+	_ = rm.Register(resource.DBServiceKey, dbResource)
 
 	s.service = NewOrderService(rm)
 	s.ctx = context.Background()

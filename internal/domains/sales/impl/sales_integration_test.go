@@ -44,7 +44,7 @@ func TestSalesControllerIntegration(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		testutil.CleanupTestData(db,
+		_ = testutil.CleanupTestData(db,
 			"order_items", "orders",
 			"wallet_transactions", "wallets", "products", "customers")
 	}()
@@ -232,7 +232,7 @@ func TestSalesRefundIntegration(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		testutil.CleanupTestData(db,
+		_ = testutil.CleanupTestData(db,
 			"order_items", "orders",
 			"wallet_transactions", "wallets", "products", "customers")
 	}()
@@ -360,7 +360,7 @@ func TestSalesControllerInterface(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		testutil.CleanupTestData(db, "order_items", "orders", "products", "customers")
+		_ = testutil.CleanupTestData(db, "order_items", "orders", "products", "customers")
 	}()
 
 	// 准备测试数据

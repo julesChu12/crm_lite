@@ -47,8 +47,10 @@ func TestWritePIDFile(t *testing.T) {
 	t.Run("使用默认PID文件名", func(t *testing.T) {
 		// 更改工作目录到临时目录
 		originalDir, _ := os.Getwd()
-		defer os.Chdir(originalDir)
-		os.Chdir(tempDir)
+		defer func() {
+			_ = os.Chdir(originalDir)
+		}()
+		_ = os.Chdir(tempDir)
 
 		err := WritePIDFile("")
 		if err != nil {
@@ -105,8 +107,10 @@ func TestReadPIDFile(t *testing.T) {
 	t.Run("使用默认PID文件名", func(t *testing.T) {
 		// 更改工作目录到临时目录
 		originalDir, _ := os.Getwd()
-		defer os.Chdir(originalDir)
-		os.Chdir(tempDir)
+		defer func() {
+			_ = os.Chdir(originalDir)
+		}()
+		_ = os.Chdir(tempDir)
 
 		expectedPID := 54321
 		err := os.WriteFile(DefaultPIDFile, []byte(strconv.Itoa(expectedPID)), 0644)
@@ -205,8 +209,10 @@ func TestRemovePIDFile(t *testing.T) {
 	t.Run("使用默认PID文件名", func(t *testing.T) {
 		// 更改工作目录到临时目录
 		originalDir, _ := os.Getwd()
-		defer os.Chdir(originalDir)
-		os.Chdir(tempDir)
+		defer func() {
+			_ = os.Chdir(originalDir)
+		}()
+		_ = os.Chdir(tempDir)
 
 		// 创建默认PID文件
 		err := os.WriteFile(DefaultPIDFile, []byte("12345"), 0644)

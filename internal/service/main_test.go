@@ -79,7 +79,7 @@ func setup() error {
 
 	// 6. 将初始化好的资源保存到全局变量
 	testResManager = resource.NewManager()
-	testResManager.Register(resource.DBServiceKey, dbResource)
+	_ = testResManager.Register(resource.DBServiceKey, dbResource)
 	// 如果需要，也可以在这里注册其他资源，如 Cache
 	// cacheResource := resource.NewCacheResource(opts.Cache)
 	// cacheResource.Initialize(context.Background())

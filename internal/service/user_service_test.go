@@ -107,11 +107,11 @@ func (s *UserServiceTestSuite) SetupSuite() {
 	resManager := resource.NewManager()
 	dbResource := resource.NewDBResource(config.DBOptions{})
 	dbResource.DB = db
-	resManager.Register(resource.DBServiceKey, dbResource)
+	_ = resManager.Register(resource.DBServiceKey, dbResource)
 
 	casbinResource := resource.NewCasbinResource(resManager, config.RbacOptions{})
 	casbinResource.Enforcer = enforcer
-	resManager.Register(resource.CasbinServiceKey, casbinResource)
+	_ = resManager.Register(resource.CasbinServiceKey, casbinResource)
 	s.resManager = resManager
 
 	// Setup config
@@ -304,7 +304,7 @@ func (s *UserServiceTestSuite) TestUpdateUserByAdmin_Success() {
 	s.db.Create(&role_to_remove)
 	role_to_add := model.Role{Name: "new_role"}
 	s.db.Create(&role_to_add)
-	s.enforcer.AddRoleForUser(user.UUID, "old_role")
+	_, _ = s.enforcer.AddRoleForUser(user.UUID, "old_role")
 	s.db.Create(&model.AdminUserRole{AdminUserID: user.ID, RoleID: role_to_remove.ID})
 
 	ctx := context.Background()
@@ -330,7 +330,7 @@ func (s *UserServiceTestSuite) TestDeleteUser_Success() {
 	// Pre-create user and role
 	user := model.AdminUser{UUID: "uuid-delete", Username: "delete-user"}
 	s.db.Create(&user)
-	s.enforcer.AddRoleForUser(user.UUID, "some-role")
+	_, _ = s.enforcer.AddRoleForUser(user.UUID, "some-role")
 
 	err := s.service.DeleteUser(context.Background(), user.UUID)
 	s.NoError(err)
