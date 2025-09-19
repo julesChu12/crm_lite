@@ -262,7 +262,7 @@ func (mc *MarketingController) UpdateCampaign(c *gin.Context) {
 		return
 	}
 
-	_, err := strconv.ParseInt(updatedBy, 10, 64)
+	updatedByInt, err := strconv.ParseInt(updatedBy, 10, 64)
 	if err != nil {
 		resp.Error(c, resp.CodeInternalError, "invalid user ID")
 		return
@@ -282,7 +282,7 @@ func (mc *MarketingController) UpdateCampaign(c *gin.Context) {
 		return
 	}
 
-	err = mc.marketingSvc.UpdateCampaign(c.Request.Context(), campaignID, marketingUpdateReq)
+	err = mc.marketingSvc.UpdateCampaign(c.Request.Context(), campaignID, marketingUpdateReq, updatedByInt)
 	if err != nil {
 		resp.SystemError(c, err)
 		return

@@ -175,7 +175,7 @@ func (s *MarketingServiceImpl) ListCampaigns(ctx context.Context, status string,
 }
 
 // UpdateCampaign 更新活动信息
-func (s *MarketingServiceImpl) UpdateCampaign(ctx context.Context, campaignID int64, req marketing.UpdateCampaignRequest) error {
+func (s *MarketingServiceImpl) UpdateCampaign(ctx context.Context, campaignID int64, req marketing.UpdateCampaignRequest, updatedBy int64) error {
 	// 构建更新字段
 	updates := make(map[string]interface{})
 
@@ -215,8 +215,11 @@ func (s *MarketingServiceImpl) UpdateCampaign(ctx context.Context, campaignID in
 		updates["target_count"] = int32(*req.TargetCount)
 	}
 
-	if len(updates) == 0 {
-		return nil // 没有需要更新的字段
+	// Always set updated_by for audit trail
+	updates["updated_by"] = updatedBy
+
+	if len(updates) == 1 && updates["updated_by"] != nil {
+		return nil // 只有updated_by字段，没有实际需要更新的内容
 	}
 
 	_, err := s.q.MarketingCampaign.WithContext(ctx).

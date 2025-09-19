@@ -112,7 +112,7 @@ type CampaignService interface {
 	ListCampaigns(ctx context.Context, status string, page, pageSize int) ([]Campaign, int64, error)
 
 	// UpdateCampaign 更新活动信息
-	UpdateCampaign(ctx context.Context, campaignID int64, req UpdateCampaignRequest) error
+	UpdateCampaign(ctx context.Context, campaignID int64, req UpdateCampaignRequest, updatedBy int64) error
 
 	// DeleteCampaign 删除活动
 	DeleteCampaign(ctx context.Context, campaignID int64) error
