@@ -217,6 +217,26 @@ type PermissionService interface {
 	GetUsersForRole(ctx context.Context, role string) ([]string, error)
 }
 
+// HierarchyService 组织架构层级服务接口
+// 负责用户上下级关系管理和权限控制
+type HierarchyService interface {
+	// GetSubordinates 获取下属用户列表(含多级)
+	// 返回指定管理者的所有下属用户ID，包括间接下属
+	GetSubordinates(ctx context.Context, managerID int64) ([]int64, error)
+
+	// CanAccessCustomer 检查用户是否可以访问指定客户
+	// 基于客户分配关系和组织层级关系判断访问权限
+	CanAccessCustomer(ctx context.Context, operatorID int64, customerID int64) (bool, error)
+
+	// GetDirectReports 获取直接下属
+	// 只返回直接汇报的下属，不包括间接下属
+	GetDirectReports(ctx context.Context, managerID int64) ([]int64, error)
+
+	// GetManagerChain 获取管理链
+	// 返回用户的完整管理链，从直接上级到最高级别
+	GetManagerChain(ctx context.Context, userID int64) ([]int64, error)
+}
+
 // Service 身份认证域统一服务接口
 // 整合认证、用户、角色、权限的完整功能
 type Service interface {
@@ -224,6 +244,7 @@ type Service interface {
 	UserService
 	RoleService
 	PermissionService
+	HierarchyService
 
 	// 控制器接口 - 兼容现有控制器
 	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)

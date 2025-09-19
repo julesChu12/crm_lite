@@ -3,7 +3,7 @@ package middleware
 import (
 	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/query"
-	"crm_lite/internal/service"
+	"crm_lite/internal/domains/identity/impl"
 	"crm_lite/pkg/resp"
 	"fmt"
 	"net/http"
@@ -16,7 +16,7 @@ import (
 // NewSimpleCustomerAccessMiddleware 返回一个基于 manager_id 简单层级的权限校验中间件。
 // 必须在 JWTAuthMiddleware 之后调用，才能从上下文中获取 user_id、roles。
 func NewSimpleCustomerAccessMiddleware(resManager *resource.Manager) gin.HandlerFunc {
-	hierarchySvc := service.NewSimpleHierarchyService(resManager)
+	hierarchySvc := impl.NewHierarchyService(resManager)
 
 	return func(c *gin.Context) {
 		// 仅拦截涉及 customer_id 的路由

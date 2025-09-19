@@ -37,7 +37,7 @@ func NewAuthController(resManager *resource.Manager) *AuthController {
 		panic("Failed to get casbin resource for AuthController: " + err.Error())
 	}
 	// 2. 创建Identity域服务
-	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer(), resManager)
 
 	return &AuthController{
 		identityService: identityService,

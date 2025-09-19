@@ -9,6 +9,7 @@ import (
 
 	"crm_lite/internal/common"
 	"crm_lite/internal/core/config"
+	"crm_lite/internal/core/resource"
 	"crm_lite/internal/dao/model"
 	"crm_lite/internal/dao/query"
 	"crm_lite/internal/domains/identity"
@@ -22,9 +23,10 @@ import (
 // SimpleIdentityService Identity域简化实现
 // 先实现基本功能，保证编译通过
 type SimpleIdentityService struct {
-	db       *gorm.DB
-	q        *query.Query
-	enforcer *casbin.Enforcer
+	db                *gorm.DB
+	q                 *query.Query
+	enforcer          *casbin.Enforcer
+	hierarchyService  *HierarchyServiceImpl
 }
 
 // 错误常量
@@ -167,11 +169,13 @@ func (s *SimpleIdentityService) UpdateProfile(ctx context.Context, userID int64,
 }
 
 // NewSimpleIdentityService 创建简化Identity服务实现
-func NewSimpleIdentityService(db *gorm.DB, enforcer *casbin.Enforcer) *SimpleIdentityService {
+func NewSimpleIdentityService(db *gorm.DB, enforcer *casbin.Enforcer, resManager *resource.Manager) *SimpleIdentityService {
+	hierarchyService := NewHierarchyService(resManager)
 	return &SimpleIdentityService{
-		db:       db,
-		q:        query.Use(db),
-		enforcer: enforcer,
+		db:               db,
+		q:                query.Use(db),
+		enforcer:         enforcer,
+		hierarchyService: hierarchyService,
 	}
 }
 
@@ -936,6 +940,28 @@ func (s *SimpleIdentityService) GetUsersForRole(ctx context.Context, role string
 		return nil, fmt.Errorf("获取角色用户失败: %w", err)
 	}
 	return users, nil
+}
+
+// ===== HierarchyService 接口实现 =====
+
+// GetSubordinates 获取下属用户列表(含多级)
+func (s *SimpleIdentityService) GetSubordinates(ctx context.Context, managerID int64) ([]int64, error) {
+	return s.hierarchyService.GetSubordinates(ctx, managerID)
+}
+
+// CanAccessCustomer 检查用户是否可以访问指定客户
+func (s *SimpleIdentityService) CanAccessCustomer(ctx context.Context, operatorID int64, customerID int64) (bool, error) {
+	return s.hierarchyService.CanAccessCustomer(ctx, operatorID, customerID)
+}
+
+// GetDirectReports 获取直接下属
+func (s *SimpleIdentityService) GetDirectReports(ctx context.Context, managerID int64) ([]int64, error) {
+	return s.hierarchyService.GetDirectReports(ctx, managerID)
+}
+
+// GetManagerChain 获取管理链
+func (s *SimpleIdentityService) GetManagerChain(ctx context.Context, userID int64) ([]int64, error) {
+	return s.hierarchyService.GetManagerChain(ctx, userID)
 }
 
 // 确保实现了所有接口

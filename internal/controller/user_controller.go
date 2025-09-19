@@ -32,7 +32,7 @@ func NewUserController(resManager *resource.Manager) *UserController {
 	}
 
 	// 创建Identity域服务
-	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer(), resManager)
 
 	return &UserController{
 		identityService: identityService,

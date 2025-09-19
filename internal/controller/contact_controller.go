@@ -1,41 +1,36 @@
 package controller
 
 import (
-	"context"
+	"crm_lite/internal/common"
 	"crm_lite/internal/core/resource"
-	"crm_lite/internal/dao/query"
+	"crm_lite/internal/domains/billing/impl"
+	"crm_lite/internal/domains/crm"
+	crmimpl "crm_lite/internal/domains/crm/impl"
 	"crm_lite/internal/dto"
-	"crm_lite/internal/service"
 	"crm_lite/pkg/resp"
 	"errors"
 	"strconv"
-
-	crmimpl "crm_lite/internal/domains/crm/impl"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ContactController struct {
-	svc interface {
-		List(ctx context.Context, customerID int64) ([]*dto.ContactResponse, error)
-		GetContactByID(ctx context.Context, id int64) (*dto.ContactResponse, error)
-		Create(ctx context.Context, customerID int64, req *dto.ContactCreateRequest) (*dto.ContactResponse, error)
-		Update(ctx context.Context, id int64, req *dto.ContactUpdateRequest) error
-		Delete(ctx context.Context, id int64) error
-	}
+	crmSvc     crm.Service
 	resManager *resource.Manager
 }
 
 func NewContactController(resManager *resource.Manager) *ContactController {
-	// 注入 domains 实现；可回滚至旧 service
+	// 创建CRM域服务
 	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic(err)
 	}
-	q := query.Use(dbRes.DB)
-	_ = q // kept for potential use/extensions
-	svc := crmimpl.NewContactServiceWithQuery(query.Use(dbRes.DB))
-	return &ContactController{svc: svc, resManager: resManager}
+
+	// 创建billing服务作为依赖
+	billingSvc := impl.NewBillingService(dbRes.DB)
+	crmSvc := crmimpl.NewCRMServiceWithBilling(dbRes.DB, billingSvc)
+
+	return &ContactController{crmSvc: crmSvc, resManager: resManager}
 }
 
 // ListContacts godoc
@@ -57,9 +52,10 @@ func (cc *ContactController) ListContacts(c *gin.Context) {
 		return
 	}
 
-	list, err := cc.svc.List(c.Request.Context(), customerID)
+	list, err := cc.crmSvc.ListContactsLegacy(c.Request.Context(), customerID)
 	if err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
+		var businessErr2 *common.BusinessError
+		if errors.As(err, &businessErr2) && businessErr2.Code == common.ErrCodeResourceNotFound {
 			resp.Error(c, resp.CodeNotFound, "customer not found")
 			return
 		}
@@ -89,12 +85,11 @@ func (cc *ContactController) GetContact(c *gin.Context) {
 		return
 	}
 
-	contact, err := cc.svc.GetContactByID(c.Request.Context(), contactID)
+	contact, err := cc.crmSvc.GetContactByIDLegacy(c.Request.Context(), contactID)
 	if err != nil {
-		if errors.Is(err, crmimpl.ErrContactNotFound) {
-			resp.Error(c, resp.CodeNotFound, "contact not found")
-			return
-		}
+		// Generic error handling since specific errors were removed
+		resp.SystemError(c, err)
+		return
 		resp.SystemError(c, err)
 		return
 	}
@@ -129,24 +124,32 @@ func (cc *ContactController) CreateContact(c *gin.Context) {
 		return
 	}
 
-	contact, err := cc.svc.Create(c.Request.Context(), customerID, &req)
+	// Convert DTO to CRM domain type
+	crmReq := &crm.ContactCreateRequest{
+		Name:      req.Name,
+		Phone:     req.Phone,
+		Email:     req.Email,
+		Position:  req.Position,
+		IsPrimary: req.IsPrimary,
+		Note:      req.Note,
+	}
+
+	contact, err := cc.crmSvc.CreateContactLegacy(c.Request.Context(), customerID, crmReq)
 	if err != nil {
-		if errors.Is(err, service.ErrCustomerNotFound) {
-			resp.Error(c, resp.CodeNotFound, "customer not found")
-			return
+		var businessErr *common.BusinessError
+		if errors.As(err, &businessErr) {
+			switch businessErr.Code {
+			case common.ErrCodeResourceNotFound:
+				resp.Error(c, resp.CodeNotFound, "customer not found")
+				return
+			case common.ErrCodeDuplicateResource:
+				resp.Error(c, resp.CodeConflict, "contact already exists")
+				return
+			}
 		}
-		if errors.Is(err, service.ErrPrimaryContactAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "primary contact already exists for this customer")
-			return
-		}
-		if errors.Is(err, service.ErrContactPhoneAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
-			return
-		}
-		if errors.Is(err, crmimpl.ErrContactEmailAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "contact email already exists")
-			return
-		}
+		// Generic error handling since specific errors were removed
+		resp.SystemError(c, err)
+		return
 		resp.SystemError(c, err)
 		return
 	}
@@ -182,24 +185,35 @@ func (cc *ContactController) UpdateContact(c *gin.Context) {
 		return
 	}
 
-	err = cc.svc.Update(c.Request.Context(), contactID, &req)
+	// Convert DTO to CRM domain type
+	crmReq := &crm.ContactUpdateRequest{
+		Name:      req.Name,
+		Phone:     req.Phone,
+		Email:     req.Email,
+		Position:  req.Position,
+		IsPrimary: req.IsPrimary,
+		Note:      req.Note,
+	}
+
+	err = cc.crmSvc.UpdateContactLegacy(c.Request.Context(), contactID, crmReq)
 	if err != nil {
-		if errors.Is(err, crmimpl.ErrContactNotFound) {
-			resp.Error(c, resp.CodeNotFound, "contact not found")
-			return
+		// Generic error handling since specific errors were removed
+		resp.SystemError(c, err)
+		return
+		var businessErr *common.BusinessError
+		if errors.As(err, &businessErr) {
+			switch businessErr.Code {
+			case common.ErrCodeResourceNotFound:
+				resp.Error(c, resp.CodeNotFound, "customer not found")
+				return
+			case common.ErrCodeDuplicateResource:
+				resp.Error(c, resp.CodeConflict, "contact already exists")
+				return
+			}
 		}
-		if errors.Is(err, service.ErrPrimaryContactAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "primary contact already exists for this customer")
-			return
-		}
-		if errors.Is(err, service.ErrContactPhoneAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "contact phone number already exists")
-			return
-		}
-		if errors.Is(err, crmimpl.ErrContactEmailAlreadyExists) {
-			resp.Error(c, resp.CodeConflict, "contact email already exists")
-			return
-		}
+		// Generic error handling since specific errors were removed
+		resp.SystemError(c, err)
+		return
 		resp.SystemError(c, err)
 		return
 	}
@@ -226,12 +240,11 @@ func (cc *ContactController) DeleteContact(c *gin.Context) {
 		return
 	}
 
-	err = cc.svc.Delete(c.Request.Context(), contactID)
+	err = cc.crmSvc.DeleteContactLegacy(c.Request.Context(), contactID)
 	if err != nil {
-		if errors.Is(err, crmimpl.ErrContactNotFound) {
-			resp.Error(c, resp.CodeNotFound, "contact not found")
-			return
-		}
+		// Generic error handling since specific errors were removed
+		resp.SystemError(c, err)
+		return
 		resp.SystemError(c, err)
 		return
 	}

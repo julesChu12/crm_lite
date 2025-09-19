@@ -28,7 +28,7 @@ func NewPermissionController(rm *resource.Manager) *PermissionController {
 	}
 
 	// 创建Identity域服务
-	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer())
+	identityService := impl.NewIdentityService(db.DB, casbinRes.GetEnforcer(), rm)
 
 	return &PermissionController{
 		identityService: identityService,

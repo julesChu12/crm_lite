@@ -1,4 +1,4 @@
-package service
+package impl
 
 import (
 	"context"
@@ -13,16 +13,16 @@ import (
 	"gorm.io/gorm"
 )
 
-// SimpleHierarchyService 专为中小企业设计的极简上下级关系查询服务
-// 实现了 Redis 缓存以优化性能。
-type SimpleHierarchyService struct {
+// HierarchyServiceImpl 组织架构层级服务实现
+// 专为中小企业设计的极简上下级关系查询服务，使用Redis缓存优化性能
+type HierarchyServiceImpl struct {
 	q     *query.Query
 	db    *gorm.DB
 	cache *redis.Client
 }
 
-// NewSimpleHierarchyService 创建实例，并注入数据库和 Redis 资源
-func NewSimpleHierarchyService(resManager *resource.Manager) *SimpleHierarchyService {
+// NewHierarchyService 创建层级服务实例
+func NewHierarchyService(resManager *resource.Manager) *HierarchyServiceImpl {
 	dbRes, err := resource.Get[*resource.DBResource](resManager, resource.DBServiceKey)
 	if err != nil {
 		panic("Failed to get DB resource for HierarchyService: " + err.Error())
@@ -31,16 +31,16 @@ func NewSimpleHierarchyService(resManager *resource.Manager) *SimpleHierarchySer
 	if err != nil {
 		panic("Failed to get Cache resource for HierarchyService: " + err.Error())
 	}
-	return &SimpleHierarchyService{
+	return &HierarchyServiceImpl{
 		q:     query.Use(dbRes.DB),
 		db:    dbRes.DB,
 		cache: cacheRes.Client,
 	}
 }
 
-// GetSubordinates 返回 managerID 的所有下属（含多级），层级深度不超过 5。
-// 优先从 Redis 缓存获取，失败则查询数据库并回填缓存。
-func (s *SimpleHierarchyService) GetSubordinates(ctx context.Context, managerID int64) ([]int64, error) {
+// GetSubordinates 返回指定管理者的所有下属（含多级），层级深度不超过5层
+// 优先从Redis缓存获取，失败则查询数据库并回填缓存
+func (s *HierarchyServiceImpl) GetSubordinates(ctx context.Context, managerID int64) ([]int64, error) {
 	cacheKey := fmt.Sprintf("subordinates:%d", managerID)
 
 	// 1. 尝试从缓存获取
@@ -85,14 +85,53 @@ func (s *SimpleHierarchyService) GetSubordinates(ctx context.Context, managerID 
 	return subordinates, nil
 }
 
-// CanAccessCustomer 判断 operator 是否可以访问 customer
-// 规则：1) 如果 operator 是 customer 的 assigned_to 负责人，则允许
-//  2. 如果 operator 是负责人的上级（递归），则允许
-func (s *SimpleHierarchyService) CanAccessCustomer(ctx context.Context, operatorID int64, customerID int64) (bool, error) {
+// GetDirectReports 获取直接下属用户列表
+func (s *HierarchyServiceImpl) GetDirectReports(ctx context.Context, managerID int64) ([]int64, error) {
+	var directReports []int64
+	if err := s.db.Raw("SELECT id FROM admin_users WHERE manager_id = ? AND deleted_at IS NULL", managerID).Scan(&directReports).Error; err != nil {
+		return nil, fmt.Errorf("failed to get direct reports for manager %d: %w", managerID, err)
+	}
+	return directReports, nil
+}
+
+// GetManagerChain 获取用户的完整管理链
+func (s *HierarchyServiceImpl) GetManagerChain(ctx context.Context, userID int64) ([]int64, error) {
+	var managers []int64
+	currentID := userID
+	visited := make(map[int64]bool)
+	const maxDepth = 10 // 防止循环引用
+
+	for depth := 0; depth < maxDepth; depth++ {
+		if visited[currentID] {
+			break // 防止循环引用
+		}
+		visited[currentID] = true
+
+		var managerID int64
+		err := s.db.Raw("SELECT manager_id FROM admin_users WHERE id = ? AND deleted_at IS NULL", currentID).Scan(&managerID).Error
+		if err != nil {
+			return nil, fmt.Errorf("failed to get manager for user %d: %w", currentID, err)
+		}
+
+		if managerID == 0 {
+			break // 没有上级了
+		}
+
+		managers = append(managers, managerID)
+		currentID = managerID
+	}
+
+	return managers, nil
+}
+
+// CanAccessCustomer 判断操作者是否可以访问指定客户
+// 规则：1) 如果操作者是客户的assigned_to负责人，则允许
+//       2) 如果操作者是负责人的上级（递归），则允许
+func (s *HierarchyServiceImpl) CanAccessCustomer(ctx context.Context, operatorID int64, customerID int64) (bool, error) {
 	// 查询客户负责人
 	customer, err := s.q.Customer.WithContext(ctx).Where(s.q.Customer.ID.Eq(customerID)).First()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get customer %d: %w", customerID, err)
 	}
 
 	// 负责人本人
@@ -101,11 +140,12 @@ func (s *SimpleHierarchyService) CanAccessCustomer(ctx context.Context, operator
 	}
 
 	// 判断是否上级
-	subs, err := s.GetSubordinates(ctx, operatorID)
+	subordinates, err := s.GetSubordinates(ctx, operatorID)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed to get subordinates for operator %d: %w", operatorID, err)
 	}
-	for _, id := range subs {
+
+	for _, id := range subordinates {
 		if id == customer.AssignedTo {
 			return true, nil
 		}
@@ -115,7 +155,7 @@ func (s *SimpleHierarchyService) CanAccessCustomer(ctx context.Context, operator
 
 // --- 缓存实现 ---
 
-func (s *SimpleHierarchyService) getCachedSubordinates(ctx context.Context, key string) ([]int64, error) {
+func (s *HierarchyServiceImpl) getCachedSubordinates(ctx context.Context, key string) ([]int64, error) {
 	val, err := s.cache.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return nil, nil // 缓存未命中，不是错误
@@ -130,7 +170,7 @@ func (s *SimpleHierarchyService) getCachedSubordinates(ctx context.Context, key 
 	return ids, nil
 }
 
-func (s *SimpleHierarchyService) cacheSubordinates(ctx context.Context, key string, ids []int64, ttl time.Duration) {
+func (s *HierarchyServiceImpl) cacheSubordinates(ctx context.Context, key string, ids []int64, ttl time.Duration) {
 	bytes, err := json.Marshal(ids)
 	if err != nil {
 		log.Printf("Error marshalling subordinates for key %s: %v", key, err)
