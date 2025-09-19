@@ -28,9 +28,9 @@ func TestWalletService_CreateTransaction_Recharge(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3990)).Delete()
-		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(999)).Delete()
-		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(999)).Delete()
+		_, _ = q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3990)).Delete()
+		_, _ = q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(999)).Delete()
+		_, _ = q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(999)).Delete()
 	}()
 
 	// 1. 创建测试客户
@@ -105,9 +105,9 @@ func TestWalletService_CreateTransaction_RechargeWithBonus(t *testing.T) {
 
 	// 清理测试数据
 	defer func() {
-		q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3991)).Delete()
-		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(998)).Delete()
-		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(998)).Delete()
+		_, _ = q.WalletTransaction.WithContext(ctx).Where(q.WalletTransaction.BizRefID.Eq(3991)).Delete()
+		_, _ = q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(998)).Delete()
+		_, _ = q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(998)).Delete()
 	}()
 
 	// 1. 创建测试客户
@@ -204,8 +204,8 @@ func TestWalletService_CreateTransaction_InvalidType(t *testing.T) {
 
 	defer func() {
 		// 清理测试数据
-		q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(testCustomer.ID)).Delete()
-		q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(testCustomer.ID)).Delete()
+		_, _ = q.Wallet.WithContext(ctx).Where(q.Wallet.CustomerID.Eq(testCustomer.ID)).Delete()
+		_, _ = q.Customer.WithContext(ctx).Where(q.Customer.ID.Eq(testCustomer.ID)).Delete()
 	}()
 
 	req := &dto.WalletTransactionRequest{

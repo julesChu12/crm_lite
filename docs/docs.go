@@ -4128,13 +4128,6 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string",
-                    "enum": [
-                        "sms",
-                        "email",
-                        "push_notification",
-                        "wechat",
-                        "call"
-                    ],
                     "example": "sms"
                 }
             }
@@ -4144,10 +4137,6 @@ const docTemplate = `{
             "properties": {
                 "execution_type": {
                     "type": "string",
-                    "enum": [
-                        "actual",
-                        "simulation"
-                    ],
                     "example": "actual"
                 }
             }
@@ -4364,15 +4353,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "draft",
-                        "scheduled",
-                        "active",
-                        "paused",
-                        "completed",
-                        "archived"
-                    ]
+                    "type": "string"
                 },
                 "target_segment_id": {
                     "type": "integer"
@@ -4384,14 +4365,7 @@ const docTemplate = `{
                     }
                 },
                 "type": {
-                    "type": "string",
-                    "enum": [
-                        "sms",
-                        "email",
-                        "push_notification",
-                        "wechat",
-                        "call"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -4495,12 +4469,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "draft",
-                        "pending",
-                        "confirmed"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -5026,12 +4995,7 @@ const docTemplate = `{
                 },
                 "type": {
                     "description": "交易类型: recharge (充值), consume (消费), refund (退款)",
-                    "type": "string",
-                    "enum": [
-                        "recharge",
-                        "consume",
-                        "refund"
-                    ]
+                    "type": "string"
                 }
             }
         },

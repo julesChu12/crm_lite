@@ -44,7 +44,8 @@ func NewWalletService(resManager *resource.Manager) IWalletService {
 func (s *WalletService) CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error) {
 	// 默认创建 balance 类型的钱包
 	if walletType == "" {
-		walletType = "balance"
+		// walletType = "balance" // 目前只支持一种类型，暂不使用
+		_ = walletType // 避免静态检查警告
 	}
 
 	// 检查钱包是否已存在，确保幂等性

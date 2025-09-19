@@ -426,12 +426,6 @@ definitions:
           type: string
         type: array
       type:
-        enum:
-        - sms
-        - email
-        - push_notification
-        - wechat
-        - call
         example: sms
         type: string
     required:
@@ -444,9 +438,6 @@ definitions:
   dto.MarketingCampaignExecuteRequest:
     properties:
       execution_type:
-        enum:
-        - actual
-        - simulation
         example: actual
         type: string
     type: object
@@ -605,13 +596,6 @@ definitions:
       start_time:
         type: string
       status:
-        enum:
-        - draft
-        - scheduled
-        - active
-        - paused
-        - completed
-        - archived
         type: string
       target_segment_id:
         type: integer
@@ -620,12 +604,6 @@ definitions:
           type: string
         type: array
       type:
-        enum:
-        - sms
-        - email
-        - push_notification
-        - wechat
-        - call
         type: string
     type: object
   dto.MarketingRecordListResponse:
@@ -696,10 +674,6 @@ definitions:
       remark:
         type: string
       status:
-        enum:
-        - draft
-        - pending
-        - confirmed
         type: string
     required:
     - customer_id
@@ -1063,10 +1037,6 @@ definitions:
         type: string
       type:
         description: '交易类型: recharge (充值), consume (消费), refund (退款)'
-        enum:
-        - recharge
-        - consume
-        - refund
         type: string
     required:
     - amount

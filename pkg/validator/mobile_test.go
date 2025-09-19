@@ -10,7 +10,7 @@ import (
 func TestMobileValidator(t *testing.T) {
 	// 注册验证器
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("mobile", MobileValidator)
+		_ = v.RegisterValidation("mobile", MobileValidator)
 	}
 
 	tests := []struct {
@@ -33,7 +33,7 @@ func TestMobileValidator(t *testing.T) {
 	}
 
 	validate := validator.New()
-	validate.RegisterValidation("mobile", MobileValidator)
+	_ = validate.RegisterValidation("mobile", MobileValidator)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

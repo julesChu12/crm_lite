@@ -48,7 +48,7 @@ func (s *RoleServiceTestSuite) SetupSuite() {
 	resManager := resource.NewManager()
 	dbResource := resource.NewDBResource(config.DBOptions{})
 	dbResource.DB = db
-	resManager.Register(resource.DBServiceKey, dbResource)
+	_ = resManager.Register(resource.DBServiceKey, dbResource)
 	s.resManager = resManager
 
 	// Setup config

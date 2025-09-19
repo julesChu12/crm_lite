@@ -599,7 +599,7 @@ func (s *MarketingService) toCampaignResponse(campaign *model.MarketingCampaign)
 	// 解析目标标签
 	var targetTags []string
 	if campaign.TargetTags != "" {
-		json.Unmarshal([]byte(campaign.TargetTags), &targetTags)
+		_ = json.Unmarshal([]byte(campaign.TargetTags), &targetTags)
 	}
 
 	response := &dto.MarketingCampaignResponse{
@@ -727,7 +727,7 @@ func (s *MarketingService) createMarketingRecords(ctx context.Context, campaign 
 		"success_count": int32(len(customers)), // 假设全部发送成功
 	}
 
-	s.q.MarketingCampaign.WithContext(ctx).
+	_, _ = s.q.MarketingCampaign.WithContext(ctx).
 		Where(s.q.MarketingCampaign.ID.Eq(campaign.ID)).
 		Updates(updates)
 }

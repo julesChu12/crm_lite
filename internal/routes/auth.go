@@ -15,10 +15,17 @@ func registerAuthRoutes(rg *gin.RouterGroup, resManager *resource.Manager) {
 	{
 		// 登录使用动态风控中间件（Redis 存储），首次不要求验证码，失败后要求
 		auth.POST("/login", middleware.SimpleCaptchaGuard(resManager), authController.Login)
-		auth.POST("/register", middleware.TurnstileMiddleware(), authController.Register)
+
+		// 需要 Turnstile 验证码的路由组
+		turnstileGroup := auth.Group("", middleware.TurnstileMiddleware())
+		{
+			turnstileGroup.POST("/register", authController.Register)
+			turnstileGroup.POST("/forgot-password", authController.ForgotPassword)
+			turnstileGroup.POST("/reset-password", authController.ResetPassword)
+		}
+
+		// 其他认证相关路由
 		auth.POST("/refresh", authController.RefreshToken)
-		auth.POST("/forgot-password", middleware.TurnstileMiddleware(), authController.ForgotPassword)
-		auth.POST("/reset-password", middleware.TurnstileMiddleware(), authController.ResetPassword)
 		auth.POST("/logout", authController.Logout)
 		auth.GET("/profile", authController.GetProfile)
 		auth.PUT("/profile", authController.UpdateProfile)

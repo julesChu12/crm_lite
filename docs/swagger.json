@@ -4122,13 +4122,6 @@
                 },
                 "type": {
                     "type": "string",
-                    "enum": [
-                        "sms",
-                        "email",
-                        "push_notification",
-                        "wechat",
-                        "call"
-                    ],
                     "example": "sms"
                 }
             }
@@ -4138,10 +4131,6 @@
             "properties": {
                 "execution_type": {
                     "type": "string",
-                    "enum": [
-                        "actual",
-                        "simulation"
-                    ],
                     "example": "actual"
                 }
             }
@@ -4358,15 +4347,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "draft",
-                        "scheduled",
-                        "active",
-                        "paused",
-                        "completed",
-                        "archived"
-                    ]
+                    "type": "string"
                 },
                 "target_segment_id": {
                     "type": "integer"
@@ -4378,14 +4359,7 @@
                     }
                 },
                 "type": {
-                    "type": "string",
-                    "enum": [
-                        "sms",
-                        "email",
-                        "push_notification",
-                        "wechat",
-                        "call"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -4489,12 +4463,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "enum": [
-                        "draft",
-                        "pending",
-                        "confirmed"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -5020,12 +4989,7 @@
                 },
                 "type": {
                     "description": "交易类型: recharge (充值), consume (消费), refund (退款)",
-                    "type": "string",
-                    "enum": [
-                        "recharge",
-                        "consume",
-                        "refund"
-                    ]
+                    "type": "string"
                 }
             }
         },

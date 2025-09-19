@@ -363,7 +363,9 @@ func (s *BillingServiceImpl) getWalletWithLock(ctx context.Context, txQuery *que
 func (s *BillingServiceImpl) CreateWallet(ctx context.Context, customerID int64, walletType string) (*model.Wallet, error) {
 	// 默认创建 balance 类型的钱包
 	if walletType == "" {
-		walletType = "balance"
+		// TODO: 目前只支持一种类型，暂不使用
+		// walletType = "balance"
+		_ = walletType // 避免静态检查警告
 	}
 
 	// 检查钱包是否已存在，确保幂等性

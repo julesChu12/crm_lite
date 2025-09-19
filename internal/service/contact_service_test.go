@@ -56,7 +56,7 @@ func setupContactServiceForTest() (*ContactService, *gorm.DB) {
 	// Create a resource manager and register DB resource
 	resManager := resource.NewManager()
 	dbRes := resource.NewDBResource(db)
-	resManager.Register(resource.DBServiceKey, dbRes)
+	_ = resManager.Register(resource.DBServiceKey, dbRes)
 
 	contactService := NewContactService(resManager)
 	return contactService, db

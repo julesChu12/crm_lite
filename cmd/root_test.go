@@ -14,7 +14,9 @@ func TestFindConfigInProject(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current working directory: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() {
+		_ = os.Chdir(originalWd)
+	}()
 
 	t.Run("在真实项目中查找存在的配置文件", func(t *testing.T) {
 		// 切换到项目根目录
@@ -107,7 +109,9 @@ func TestFindConfigInProjectWithMockFileSystem(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current working directory: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() {
+		_ = os.Chdir(originalWd)
+	}()
 
 	t.Run("模拟项目结构测试", func(t *testing.T) {
 		// 创建临时目录结构
@@ -180,7 +184,9 @@ func BenchmarkFindConfigInProject(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to get current working directory: %v", err)
 	}
-	defer os.Chdir(originalWd)
+	defer func() {
+		_ = os.Chdir(originalWd)
+	}()
 
 	// 切换到项目根目录
 	if err := os.Chdir(".."); err != nil {

@@ -125,7 +125,7 @@ func setupAuthServiceForTest() (*AuthService, *MockAuthRepo, *MockAuthCache, *Mo
 		ModelFile: "../../bootstrap/model.conf",
 	})
 	casbinRes.Enforcer = enforcer
-	resManager.Register(resource.CasbinServiceKey, casbinRes)
+	_ = resManager.Register(resource.CasbinServiceKey, casbinRes)
 
 	opts := &config.Options{Auth: config.AuthOptions{JWTOptions: config.JWTOptions{
 		AccessTokenExpire: time.Hour,

@@ -40,19 +40,19 @@ func TestVerifyTurnstile(t *testing.T) {
 		},
 		{
 			name:      "malformed JSON",
-			handler:   func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("{invalid")) },
+			handler:   func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("{invalid")) },
 			expectOK:  false,
 			expectErr: true,
 		},
 		{
 			name:      "success false",
-			handler:   func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`{"success":false}`)) },
+			handler:   func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"success":false}`)) },
 			expectOK:  false,
 			expectErr: false,
 		},
 		{
 			name:      "success true",
-			handler:   func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`{"success":true}`)) },
+			handler:   func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"success":true}`)) },
 			expectOK:  true,
 			expectErr: false,
 		},

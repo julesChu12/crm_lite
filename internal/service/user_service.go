@@ -304,7 +304,7 @@ func (s *UserService) ListUsers(ctx context.Context, req *dto.UserListRequest) (
 			RoleName    string
 		}
 		var userRoles []UserRole
-		s.q.Role.WithContext(ctx).
+		_ = s.q.Role.WithContext(ctx).
 			Select(s.q.AdminUserRole.AdminUserID, s.q.Role.Name.As("role_name")).
 			LeftJoin(s.q.AdminUserRole, s.q.AdminUserRole.RoleID.EqCol(s.q.Role.ID)).
 			Where(s.q.AdminUserRole.AdminUserID.In(userIDs...)).
